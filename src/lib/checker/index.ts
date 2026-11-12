@@ -9,7 +9,7 @@ import type { Program } from "../blocks/program";
 const base = { message: z.string().max(300).optional(), bonus: z.boolean().optional() };
 
 export const checkSpecSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("usesBlock"), opcode: z.string(), ...base }),
+  z.object({ type: z.literal("usesBlock"), opcode: z.string(), min: z.number().int().positive().optional(), ...base }),
   z.object({ type: z.literal("noBlock"), opcode: z.string(), ...base }),
   z.object({ type: z.literal("maxBlocks"), max: z.number().int().positive(), ...base }),
   z.object({ type: z.literal("finalPosition"), x: z.number(), y: z.number(), tolerance: z.number().nonnegative().optional(), ...base }),
@@ -18,6 +18,7 @@ export const checkSpecSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("variableEquals"), name: z.string(), value: z.union([z.number(), z.string()]), ...base }),
   z.object({ type: z.literal("drawnLength"), min: z.number().nonnegative(), max: z.number().optional(), ...base }),
   z.object({ type: z.literal("visible"), value: z.boolean(), ...base }),
+  z.object({ type: z.literal("walked"), min: z.number().positive(), ...base }),
 ]);
 export const checksSchema = z.object({
   checks: z.array(checkSpecSchema).max(30),
@@ -36,8 +37,12 @@ const sameAngle = (a: number, b: number) => Math.abs((((a - b) % 360) + 540) % 3
 function evaluate(spec: CheckSpec, program: Program, s: StageState): { ok: boolean; fail: string; pass: string } {
   switch (spec.type) {
     case "usesBlock": {
-      const ok = (program.opcodeCounts[spec.opcode] ?? 0) > 0;
-      return { ok, pass: `Você usou o bloco “${blockLabel(spec.opcode)}”.`, fail: `Use o bloco “${blockLabel(spec.opcode)}”.` };
+      const min = spec.min ?? 1;
+      const ok = (program.opcodeCounts[spec.opcode] ?? 0) >= min;
+      const name = blockLabel(spec.opcode);
+      return min === 1
+        ? { ok, pass: `Você usou o bloco “${name}”.`, fail: `Use o bloco “${name}”.` }
+        : { ok, pass: `Você usou ${min} blocos “${name}”.`, fail: `Use pelo menos ${min} blocos “${name}”.` };
     }
     case "noBlock": {
       const ok = !program.opcodeCounts[spec.opcode];
@@ -70,6 +75,10 @@ function evaluate(spec: CheckSpec, program: Program, s: StageState): { ok: boole
       const len = s.lines.reduce((acc, [x1, y1, x2, y2]) => acc + Math.hypot(x2 - x1, y2 - y1), 0);
       const ok = len >= spec.min - 1 && (spec.max === undefined || len <= spec.max + 1);
       return { ok, pass: `O desenho ficou do tamanho certo.`, fail: len === 0 ? `Nada foi desenhado. Não esqueça de abaixar a caneta!` : `O desenho não ficou do tamanho esperado.` };
+    }
+    case "walked": {
+      const ok = s.steps >= spec.min;
+      return { ok, pass: "O personagem andou bastante pelo palco.", fail: `O personagem precisa andar pelo menos ${spec.min} passos (andou ${Math.round(s.steps)}). Ele ficou preso na borda?` };
     }
     case "visible": {
       const ok = s.visible === spec.value;

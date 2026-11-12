@@ -122,10 +122,26 @@ export class Runtime {
       case "operator_gt": return compare(this.eval(a.OPERAND1), this.eval(a.OPERAND2)) > 0 ? 1 : 0;
       case "operator_lt": return compare(this.eval(a.OPERAND1), this.eval(a.OPERAND2)) < 0 ? 1 : 0;
       case "operator_equals": return compare(this.eval(a.OPERAND1), this.eval(a.OPERAND2)) === 0 ? 1 : 0;
+      case "operator_and": return this.truthy(a.OPERAND1) && this.truthy(a.OPERAND2) ? 1 : 0;
+      case "operator_or": return this.truthy(a.OPERAND1) || this.truthy(a.OPERAND2) ? 1 : 0;
+      case "operator_not": return this.truthy(a.OPERAND) ? 0 : 1;
+      case "operator_mod": {
+        const n = toNum(this.eval(a.NUM1)), m = toNum(this.eval(a.NUM2));
+        if (m === 0) return 0;
+        return round(((n % m) + m) % m); // como no Scratch: o resto segue o sinal do divisor
+      }
+      case "operator_round": return Math.round(toNum(this.eval(a.NUM)));
+      case "sensing_touchingobject": return this.touchingEdge() ? 1 : 0;
       case "motion_xposition": return round(this.state.x);
       case "motion_yposition": return round(this.state.y);
       default: return "";
     }
+  }
+
+  /** Raio aproximado do Bloquinho (tamanho 100% ≈ 22 px). */
+  private touchingEdge() {
+    const r = 22 * (this.state.size / 100);
+    return Math.abs(this.state.x) + r >= STAGE_W / 2 || Math.abs(this.state.y) + r >= STAGE_H / 2;
   }
 
   private truthy(e: Expr | undefined) {
@@ -177,9 +193,12 @@ export class Runtime {
         case "motion_sety": this.moveTo(s.x, toNum(this.eval(a.Y))); break;
         case "motion_pointindirection": s.direction = normDir(toNum(this.eval(a.DIRECTION))); break;
         case "motion_ifonedgebounce": {
-          const r = 20;
-          if (Math.abs(s.x) >= STAGE_W / 2 - r) s.direction = normDir(-s.direction);
-          if (Math.abs(s.y) >= STAGE_H / 2 - r) s.direction = normDir(180 - s.direction);
+          const r = 22 * (s.size / 100);
+          const rad = ((90 - s.direction) * Math.PI) / 180;
+          const dx = Math.cos(rad), dy = Math.sin(rad);
+          // só rebate se estiver indo em direção à borda que está tocando
+          if ((s.x + r >= STAGE_W / 2 && dx > 0) || (s.x - r <= -STAGE_W / 2 && dx < 0)) s.direction = normDir(-s.direction);
+          if ((s.y + r >= STAGE_H / 2 && dy > 0) || (s.y - r <= -STAGE_H / 2 && dy < 0)) s.direction = normDir(180 - s.direction);
           break;
         }
         case "looks_say": this.say(this.eval(a.MESSAGE)); break;
@@ -206,6 +225,14 @@ export class Runtime {
             yield* this.run(st.substack ?? []);
             yield;
           }
+        case "control_repeat_until": {
+          let guard = 0;
+          while (!this.truthy(a.CONDITION) && guard++ < 100000) {
+            yield* this.run(st.substack ?? []);
+            yield;
+          }
+          break;
+        }
         case "control_if":
           if (this.truthy(a.CONDITION)) yield* this.run(st.substack ?? []);
           break;

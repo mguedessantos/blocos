@@ -68,6 +68,46 @@ Lembre: girar **90 graus** é virar uma esquina. Qual lado: ↻ ou ↺?`,
             ],
           },
         },
+        {
+          slug: "pule-para-o-canto",
+          title: "Pule para o canto",
+          type: "EXERCICIO",
+          content: `## Missão: teletransporte!
+
+O palco é como um mapa com **coordenadas**:
+
+- **x** é a posição na horizontal: -240 (esquerda) até 240 (direita).
+- **y** é a posição na vertical: -180 (embaixo) até 180 (em cima).
+- O centro do palco é **x: 0, y: 0**.
+
+Use o bloco **ir para x: y:** e leve o Bloquinho até **x: 150, y: 100** de uma vez só.`,
+          allowedBlocks: [...MOVE, "motion_gotoxy", "motion_changexby", "motion_changeyby"],
+          startWithFlag: true,
+          checks: {
+            checks: [
+              { type: "usesBlock", opcode: "motion_gotoxy" },
+              { type: "finalPosition", x: 150, y: 100 },
+            ],
+          },
+        },
+        {
+          slug: "passeio-com-pausa",
+          title: "Um passeio com pausa",
+          type: "EXERCICIO",
+          content: `## Missão: respire fundo
+
+O computador é rápido demais: às vezes nem dá para ver o que aconteceu!
+
+Faça o Bloquinho andar **50 passos**, **esperar 1 segundo** e andar mais **50 passos**.`,
+          allowedBlocks: [...MOVE, "control_wait"],
+          startWithFlag: true,
+          checks: {
+            checks: [
+              { type: "usesBlock", opcode: "control_wait" },
+              { type: "finalPosition", x: 100, y: 0 },
+            ],
+          },
+        },
       ],
     },
     {

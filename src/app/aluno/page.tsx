@@ -89,7 +89,7 @@ export default async function AlunoPage() {
                         {t.done ? "Continuar" : "Começar"} <ArrowRight aria-hidden className="h-4 w-4" />
                       </Link>
                     )}
-                    <Link href={`/aluno/trilhas/${t.id}`} className={buttonClass("secondary")}>Ver trilha</Link>
+                    <Link href={`/aluno/trilhas/${t.id}`} className={buttonClass("secondary")} aria-label={`Ver trilha ${t.title}`}>Ver trilha</Link>
                   </div>
                 </div>
               </article>

@@ -2,13 +2,14 @@
 // assim uma mesma especificação de verificação serve para o editor e para arquivos .sb3.
 // Este arquivo é só dados: pode ser importado no servidor (sem Blockly).
 
-export type Category = "eventos" | "movimento" | "aparencia" | "controle" | "operadores" | "variaveis" | "caneta";
+export type Category = "eventos" | "movimento" | "aparencia" | "controle" | "sensores" | "operadores" | "variaveis" | "caneta";
 
 export const CATEGORIES: Record<Category, { name: string; colour: string }> = {
   eventos: { name: "Eventos", colour: "#FFBF00" },
   movimento: { name: "Movimento", colour: "#4C97FF" },
   aparencia: { name: "Aparência", colour: "#9966FF" },
   controle: { name: "Controle", colour: "#FFAB19" },
+  sensores: { name: "Sensores", colour: "#5CB1D6" },
   operadores: { name: "Operadores", colour: "#59C059" },
   variaveis: { name: "Variáveis", colour: "#FF8C1A" },
   caneta: { name: "Caneta", colour: "#0FBD8C" },
@@ -87,10 +88,16 @@ export const BLOCKS: BlockDef[] = [
     help: "Repete os blocos de dentro várias vezes. Em vez de colocar o mesmo bloco 4 vezes, use repita 4!" },
   { opcode: "control_forever", category: "controle", shape: "c", text: "sempre|%1", args: [stack("SUBSTACK")],
     help: "Repete os blocos de dentro para sempre (até você parar o programa)." },
+  { opcode: "control_repeat_until", category: "controle", shape: "c", text: "repita até que %1|%2", args: [bool("CONDITION"), stack("SUBSTACK")],
+    help: "Repete os blocos de dentro até a condição ficar verdadeira. Aí o programa segue em frente." },
   { opcode: "control_if", category: "controle", shape: "c", text: "se %1 então|%2", args: [bool("CONDITION"), stack("SUBSTACK")],
     help: "Só executa os blocos de dentro se a condição for verdadeira." },
   { opcode: "control_if_else", category: "controle", shape: "c", text: "se %1 então|%2|senão|%3", args: [bool("CONDITION"), stack("SUBSTACK"), stack("SUBSTACK2")],
     help: "Se a condição for verdadeira, faz a primeira parte; se não, faz a parte do “senão”." },
+
+  // Sensores
+  { opcode: "sensing_touchingobject", category: "sensores", shape: "boolean", text: "tocando na borda?",
+    help: "Verdadeiro quando o personagem encosta na borda do palco." },
 
   // Operadores
   { opcode: "operator_add", category: "operadores", shape: "reporter", text: "%1 + %2", args: [num("NUM1"), num("NUM2")], defaults: { NUM1: "", NUM2: "" }, help: "Soma dois números." },
@@ -102,6 +109,12 @@ export const BLOCKS: BlockDef[] = [
   { opcode: "operator_gt", category: "operadores", shape: "boolean", text: "%1 > %2", args: [num("OPERAND1"), num("OPERAND2")], defaults: { OPERAND1: "", OPERAND2: 50 }, help: "Verdadeiro se o primeiro for maior que o segundo." },
   { opcode: "operator_lt", category: "operadores", shape: "boolean", text: "%1 < %2", args: [num("OPERAND1"), num("OPERAND2")], defaults: { OPERAND1: "", OPERAND2: 50 }, help: "Verdadeiro se o primeiro for menor que o segundo." },
   { opcode: "operator_equals", category: "operadores", shape: "boolean", text: "%1 = %2", args: [num("OPERAND1"), num("OPERAND2")], defaults: { OPERAND1: "", OPERAND2: 50 }, help: "Verdadeiro se os dois forem iguais." },
+  { opcode: "operator_and", category: "operadores", shape: "boolean", text: "%1 e %2", args: [bool("OPERAND1"), bool("OPERAND2")], help: "Verdadeiro só se as DUAS condições forem verdadeiras." },
+  { opcode: "operator_or", category: "operadores", shape: "boolean", text: "%1 ou %2", args: [bool("OPERAND1"), bool("OPERAND2")], help: "Verdadeiro se PELO MENOS UMA das condições for verdadeira." },
+  { opcode: "operator_not", category: "operadores", shape: "boolean", text: "não %1", args: [bool("OPERAND")], help: "Inverte a condição: o que era verdadeiro vira falso." },
+  { opcode: "operator_mod", category: "operadores", shape: "reporter", text: "resto de %1 ÷ %2", args: [num("NUM1"), num("NUM2")], defaults: { NUM1: "", NUM2: 2 },
+    help: "O que sobra numa divisão. Resto de um número ÷ 2 é 0 para pares e 1 para ímpares!" },
+  { opcode: "operator_round", category: "operadores", shape: "reporter", text: "arredondar %1", args: [num("NUM")], defaults: { NUM: "" }, help: "Arredonda para o número inteiro mais próximo." },
   { opcode: "operator_join", category: "operadores", shape: "reporter", text: "junte %1 com %2", args: [num("STRING1"), num("STRING2")], defaults: { STRING1: "maçã ", STRING2: "banana" },
     help: "Junta dois textos num só." },
 

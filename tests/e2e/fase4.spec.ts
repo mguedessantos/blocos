@@ -51,7 +51,7 @@ test("aluno faz a trilha: teoria, erra, acerta, ganha XP e libera a próxima", a
   await kid.getByLabel("Sua senha").fill(cred.password);
   await kid.getByRole("button", { name: /Vamos lá/ }).click();
   await kid.waitForURL(`${ESCOLA}/aluno`);
-  await expect(kid.getByText("0 de 5 lições")).toBeVisible();
+  await expect(kid.getByText("0 de 7 lições")).toBeVisible();
 
   // a 2ª lição começa trancada
   await kid.getByRole("link", { name: "Ver trilha" }).click();
@@ -72,13 +72,13 @@ test("aluno faz a trilha: teoria, erra, acerta, ganha XP e libera a próxima", a
   await openWithProgram(kid, program(move(100)));
   await kid.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(kid.getByRole("status", { name: "Resultado da verificação" })).toContainText("Perfeito");
-  await expect(kid.getByLabel("3 de 3 estrelas")).toBeVisible();
+  await expect(kid.getByRole("status", { name: "Resultado da verificação" }).getByLabel("3 de 3 estrelas")).toBeVisible();
   await expect(kid.getByText("+10 XP!")).toBeVisible();
   await kid.getByRole("link", { name: "Próxima lição" }).click();
   await expect(kid.getByRole("heading", { name: "Virando a esquina" })).toBeVisible();
 
   await kid.goto(`${ESCOLA}/aluno`);
-  await expect(kid.getByText("2 de 5 lições")).toBeVisible();
+  await expect(kid.getByText("2 de 7 lições")).toBeVisible();
   await expect(kid.getByText("15 XP", { exact: true })).toBeVisible();
   await ctx.close();
 });
@@ -101,7 +101,7 @@ test("arrastar um bloco de verdade e executar move o personagem", async ({ page 
   await page.getByLabel("Sua senha").fill("gato123");
   await page.getByRole("button", { name: /Vamos lá/ }).click();
   await page.waitForURL(`${ESCOLA}/aluno`);
-  await page.getByRole("link", { name: "Ver trilha" }).click();
+  await page.getByRole("link", { name: "Ver trilha Primeiros Passos" }).click();
   // garante a 1ª lição concluída para liberar a 2ª
   await expect(page.getByRole("link", { name: /Conheça o Bloquinho/ })).toBeVisible();
   const ande = page.getByRole("link", { name: /Ande 100 passos/ });
@@ -137,7 +137,7 @@ test("fechar a categoria esconde a gaveta de blocos e a barra de rolagem", async
   await page.getByLabel("Sua senha").fill("gato123");
   await page.getByRole("button", { name: /Vamos lá/ }).click();
   await page.waitForURL(`${ESCOLA}/aluno`);
-  await page.getByRole("link", { name: "Ver trilha" }).click();
+  await page.getByRole("link", { name: "Ver trilha Primeiros Passos" }).click();
   await page.getByRole("link", { name: /Ande 100 passos/ }).click();
   await expect(page.locator(".blocklyBlockCanvas .blocklyDraggable", { hasText: "quando" }).first()).toBeVisible();
 
