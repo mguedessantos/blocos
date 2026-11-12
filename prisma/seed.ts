@@ -15,7 +15,9 @@ const DAY = 24 * 60 * 60 * 1000;
 
 async function main() {
   const hash = (p: string) => bcrypt.hash(p, 10);
-  const demo = process.env.SEED_DEMO !== "false";
+  // SEED_DEMO: (vazio) = demonstração completa (dev/testes) · "minimal" = 1 conta de teste por papel · "false" = nenhuma
+  const mode = process.env.SEED_DEMO ?? "full";
+  const demo = mode !== "false" && mode !== "minimal";
 
   // Planos
   // Preços provisórios (centavos, BRL/mês). Ajuste aqui e rode `npm run stripe:setup`.
@@ -46,6 +48,38 @@ async function main() {
   }
 
   let turma: { id: string } | null = null;
+
+  // Produção: UMA conta de teste por papel numa escola de demonstração (senha em DEMO_PASSWORD).
+  if (mode === "minimal") {
+    const pw = process.env.DEMO_PASSWORD;
+    if (!pw || pw.length < 10) throw new Error("SEED_DEMO=minimal precisa de DEMO_PASSWORD com pelo menos 10 caracteres.");
+    const passwordHash = await hash(pw);
+    const org = await db.organization.upsert({
+      where: { slug: "demo" },
+      update: {},
+      create: {
+        name: "Escola Demonstração", slug: "demo", type: "ESCOLA", city: "São Paulo", state: "SP",
+        subscription: { create: { planId: "escola_plus", status: "ACTIVE", seats: 50, currentPeriodEnd: new Date(Date.now() + 3650 * DAY) } },
+      },
+    });
+    const staff = [
+      { role: "ORG_ADMIN" as const, name: "Coordenação Teste", email: "coordenacao@demo.blocos" },
+      { role: "TEACHER" as const, name: "Professor Teste", email: "professor@demo.blocos" },
+    ];
+    const ids: Record<string, string> = {};
+    for (const u of staff) {
+      ids[u.role] = (await db.user.upsert({ where: { email: u.email }, update: {}, create: { ...u, passwordHash, organizationId: org.id } })).id;
+    }
+    turma = await db.class.upsert({ where: { code: "TESTE1" }, update: {}, create: { name: "Turma de Teste", code: "TESTE1", organizationId: org.id, teacherId: ids.TEACHER } });
+    const aluno = await db.user.upsert({
+      where: { organizationId_username: { organizationId: org.id, username: "aluno" } },
+      update: {},
+      create: { role: "STUDENT", name: "Aluno Teste", username: "aluno", passwordHash, organizationId: org.id },
+    });
+    await db.enrollment.upsert({ where: { classId_userId: { classId: turma.id, userId: aluno.id } }, update: {}, create: { classId: turma.id, userId: aluno.id } });
+    console.log("Contas de teste: coordenacao@demo.blocos, professor@demo.blocos, aluno (turma TESTE1) — senha em DEMO_PASSWORD");
+  }
+
   if (demo) {
     // Super admin
     await db.user.upsert({
