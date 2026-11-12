@@ -56,7 +56,7 @@ export function Sb3Upload({ lessonId, nextHref }: { lessonId: string; nextHref: 
         </ol>
         <p className="flex items-start gap-2 rounded-2xl bg-brand-soft px-4 py-3 text-sm font-bold text-brand-shadow">
           <Save aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-          Mudou alguma coisa? Salve de novo antes de enviar — senão vai o arquivo antigo!
+          Mudou alguma coisa? Salve de novo antes de enviar. Senão, vai o arquivo antigo!
         </p>
       </div>
 
