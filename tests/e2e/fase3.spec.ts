@@ -117,6 +117,7 @@ test("professor não vê turma de outro professor nem de outra escola", async ({
 });
 
 test("plano Professor bloqueia a 4ª turma", async ({ page }) => {
+  test.skip(process.env.BILLING_ENABLED !== "true", "limites de plano só valem com a cobrança ligada");
   await page.goto("/cadastro");
   await page.getByText("🍎 Professor(a)").click();
   await page.getByLabel(/Nome da sua conta/).fill(`Limite ${run}`);
@@ -124,7 +125,7 @@ test("plano Professor bloqueia a 4ª turma", async ({ page }) => {
   await page.getByLabel("Seu email").fill(`limite-${run}@teste.dev`);
   await page.getByLabel(/Crie uma senha/).fill("senhaforte123");
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: /Começar teste grátis/ }).click();
+  await page.getByRole("button", { name: /Começar teste grátis|Criar conta/ }).click();
   await page.waitForURL(/\/escola/);
 
   for (let i = 1; i <= 4; i++) {

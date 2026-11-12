@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { checkCanAddClass, checkCanAddStudents, isSubscriptionUsable } from "../billing/entitlements";
+import { billingEnabled, checkCanAddClass, checkCanAddStudents, isSubscriptionUsable } from "../billing/entitlements";
 import { confirmCheckoutSession } from "../billing/service";
 import { isStripeConfigured } from "../billing/stripe";
 import { db } from "../db";
@@ -52,7 +52,7 @@ export async function saveStripeCustomerId(user: CurrentUser, stripeCustomerId: 
 
 /** Status resumido para o aviso no topo (equipe da organização). */
 export async function getSubscriptionBanner(user: CurrentUser) {
-  if (!user.organizationId || user.role === "STUDENT") return null;
+  if (!billingEnabled() || !user.organizationId || user.role === "STUDENT") return null;
   const sub = await getOrgSubscription(user.organizationId);
   if (!sub) return { kind: "sem-plano" as const };
   if (!isSubscriptionUsable(sub)) return { kind: "bloqueado" as const };

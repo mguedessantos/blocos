@@ -1,49 +1,60 @@
+import { CircleAlert, Clock, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/(auth)/actions";
 import { BrandLogo, PoweredBy } from "@/components/brand-logo";
+import { NavLinks, type NavItem } from "@/components/nav-links";
 import { getBrand } from "@/lib/branding";
 import type { CurrentUser } from "@/lib/dal/auth";
 import { getSubscriptionBanner } from "@/lib/dal/billing";
 import { ROLE_LABEL } from "@/lib/roles";
 
-export type NavItem = { href: string; label: string };
+export type { NavItem };
 
 export async function AppShell({ user, nav, children }: { user: CurrentUser; nav: NavItem[]; children: ReactNode }) {
   const [brand, banner] = await Promise.all([getBrand(), getSubscriptionBanner(user)]);
+  const initial = user.name.trim().charAt(0).toUpperCase();
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between gap-4 border-b border-black/5 bg-white px-6 py-3">
-        <div className="flex items-center gap-6">
-          <Link href="/"><BrandLogo brand={brand} /></Link>
-          <nav className="hidden gap-4 text-sm font-semibold sm:flex">
-            {nav.map((n) => (
-              <Link key={n.href} href={n.href} className="text-black/70 hover:text-brand">{n.label}</Link>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <div className="text-right leading-tight">
-            <p className="font-bold">{user.name}</p>
-            <p className="text-black/50">{ROLE_LABEL[user.role]}{brand.orgName ? ` · ${brand.orgName}` : ""}</p>
+      <header className="no-print sticky top-0 z-30 border-b-2 border-line bg-white/90 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-6">
+            <Link href="/" className="shrink-0 rounded-xl"><BrandLogo brand={brand} /></Link>
+            <div className="hidden md:block"><NavLinks items={nav} /></div>
           </div>
-          <form action={logout}>
-            <button className="rounded-lg px-3 py-2 font-semibold text-black/60 hover:bg-black/5">Sair</button>
-          </form>
+          <div className="flex items-center gap-3 text-sm">
+            <div className="hidden text-right leading-tight sm:block">
+              <p className="font-extrabold">{user.name}</p>
+              <p className="text-xs font-semibold text-muted">{ROLE_LABEL[user.role]}{brand.orgName ? ` · ${brand.orgName}` : ""}</p>
+            </div>
+            <span aria-hidden className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-2 font-display text-lg font-extrabold text-foreground shadow-[0_3px_0_rgb(15_23_42/0.15)]">
+              {initial}
+            </span>
+            <form action={logout}>
+              <button className="btn btn-secondary btn-sm" aria-label="Sair">
+                <LogOut aria-hidden className="h-4 w-4" />
+                <span className="hidden sm:inline">Sair</span>
+              </button>
+            </form>
+          </div>
         </div>
+        {nav.length > 1 && <div className="border-t border-line px-3 py-1.5 md:hidden"><NavLinks items={nav} /></div>}
       </header>
       {banner && <SubscriptionBanner banner={banner} canManage={user.role === "ORG_ADMIN"} />}
-      <main className="mx-auto w-full max-w-6xl flex-1 p-6">{children}</main>
-      <footer className="flex justify-center p-4"><PoweredBy brand={brand} /></footer>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+      <footer className="no-print flex justify-center p-4"><PoweredBy brand={brand} /></footer>
     </div>
   );
 }
 
-export function Stat({ label, value }: { label: string; value: ReactNode }) {
+export function Stat({ label, value, icon }: { label: string; value: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      <p className="text-sm font-semibold text-black/50">{label}</p>
-      <p className="mt-1 text-3xl font-extrabold">{value}</p>
+    <div className="clay p-5">
+      <p className="flex items-center gap-2 text-sm font-bold text-muted">
+        {icon && <span aria-hidden className="text-brand">{icon}</span>}
+        {label}
+      </p>
+      <p className="mt-1 font-display text-3xl font-extrabold">{value}</p>
     </div>
   );
 }
@@ -58,11 +69,13 @@ function SubscriptionBanner({ banner, canManage }: { banner: Banner; canManage: 
     "sem-plano": "Conta sem plano.",
   }[banner.kind];
   const urgent = banner.kind !== "trial";
+  const Icon = urgent ? CircleAlert : Clock;
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-3 px-6 py-2 text-sm font-semibold ${urgent ? "bg-red-50 text-red-800" : "bg-brand-2/20"}`}>
+    <div role={urgent ? "alert" : "status"} className={`no-print flex flex-wrap items-center justify-center gap-3 px-6 py-2 text-sm font-bold ${urgent ? "bg-red-50 text-red-800" : "bg-amber-50 text-amber-900"}`}>
+      <Icon aria-hidden className="h-4 w-4" />
       <span>{text}</span>
       {canManage ? (
-        <Link href="/escola/assinatura" className="underline">{banner.kind === "trial" ? "Assinar agora" : "Resolver"}</Link>
+        <Link href="/escola/assinatura" className="underline underline-offset-2">{banner.kind === "trial" ? "Assinar agora" : "Resolver"}</Link>
       ) : (
         urgent && <span>Avise a coordenação da escola.</span>
       )}

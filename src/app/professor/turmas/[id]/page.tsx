@@ -4,8 +4,9 @@ import { Card } from "@/components/ui";
 import { getBrand } from "@/lib/branding";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError, getClassDetail } from "@/lib/dal/classes";
+import { listAssignableTracks } from "@/lib/dal/lessons";
 import { getStudentLoginUrl } from "@/lib/dal/org";
-import { archiveClassAction } from "../../actions";
+import { archiveClassAction, setTrackAssignmentAction } from "../../actions";
 import { AddStudentsForm, RenameClassForm, StudentsTable } from "./class-forms";
 
 export const metadata = { title: "Turma" };
@@ -17,7 +18,7 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
     if (err instanceof AccessError) notFound();
     throw err;
   });
-  const [brand, loginUrl] = await Promise.all([getBrand(), getStudentLoginUrl(user)]);
+  const [brand, loginUrl, tracks] = await Promise.all([getBrand(), getStudentLoginUrl(user), listAssignableTracks(user, klass.id)]);
   const card = { brandName: brand.name, logoUrl: brand.logoUrl, loginUrl, classCode: klass.code, className: klass.name };
   const students = klass.enrollments.map((e) => e.user);
 
@@ -27,18 +28,39 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
         <div>
           <Link href="/professor" className="text-sm font-semibold text-brand">← Minhas turmas</Link>
           <h1 className="text-3xl font-extrabold">{klass.name}</h1>
-          <p className="text-sm text-black/60">Prof. {klass.teacher.name} · {students.length} alunos</p>
+          <p className="text-sm text-muted">Prof. {klass.teacher.name} · {students.length} alunos</p>
         </div>
-        <div className="rounded-2xl bg-white p-4 text-center shadow-sm ring-1 ring-black/5">
-          <p className="text-xs font-semibold text-black/50">Código da turma</p>
+        <div className="clay p-4 text-center">
+          <p className="text-xs font-semibold text-muted">Código da turma</p>
           <p className="font-mono text-3xl font-extrabold tracking-widest text-brand">{klass.code}</p>
-          <p className="text-xs text-black/50">{loginUrl.replace(/^https?:\/\//, "")}</p>
+          <p className="text-xs text-muted">{loginUrl.replace(/^https?:\/\//, "")}</p>
         </div>
       </div>
 
       <Card>
         <h2 className="no-print mb-3 text-lg font-bold">Alunos</h2>
         <StudentsTable classId={klass.id} students={students} card={card} />
+      </Card>
+
+      <Card className="no-print">
+        <h2 className="mb-1 text-lg font-bold">Trilhas da turma</h2>
+        <p className="mb-3 text-sm text-muted">Os alunos só veem as trilhas liberadas aqui.</p>
+        <ul className="space-y-2">
+          {tracks.map((t) => (
+            <li key={t.id} className="flex items-center justify-between gap-4 rounded-2xl border-2 border-line p-3">
+              <span>
+                <strong>{t.title}</strong>
+                <span className="block text-sm text-muted">{t.description}</span>
+              </span>
+              <form action={setTrackAssignmentAction.bind(null, klass.id, t.id, !t.assigned)}>
+                <button className={`btn btn-sm shrink-0 ${t.assigned ? "btn-secondary" : ""}`}>
+                  {t.assigned ? "✓ Liberada (remover)" : "Liberar para a turma"}
+                </button>
+              </form>
+            </li>
+          ))}
+          {tracks.length === 0 && <li className="text-sm text-muted">Nenhuma trilha publicada ainda.</li>}
+        </ul>
       </Card>
 
       <Card className="no-print">

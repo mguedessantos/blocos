@@ -11,7 +11,7 @@ const TYPES = [
   { value: "PROFESSOR_INDEPENDENTE", label: "🍎 Professor(a)", hint: "Aulas particulares ou cursos" },
 ] as const;
 
-export function SignupForm({ rootDomain }: { rootDomain: string }) {
+export function SignupForm({ rootDomain, billing }: { rootDomain: string; billing: boolean }) {
   const [state, action, pending] = useActionState(signup, undefined);
   const [type, setType] = useState<(typeof TYPES)[number]["value"]>("ESCOLA");
   const [orgName, setOrgName] = useState("");
@@ -36,7 +36,7 @@ export function SignupForm({ rootDomain }: { rootDomain: string }) {
               className="sr-only"
             />
             <span className="block font-bold">{t.label}</span>
-            <span className="text-black/50">{t.hint}</span>
+            <span className="text-muted">{t.hint}</span>
           </label>
         ))}
       </fieldset>
@@ -62,7 +62,7 @@ export function SignupForm({ rootDomain }: { rootDomain: string }) {
           }}
           required
         />
-        <p className="mt-1 text-xs text-black/50">
+        <p className="mt-1 text-xs text-muted">
           Seus alunos vão entrar por <strong>{slug || "seu-endereco"}.{rootDomain}</strong>
         </p>
       </div>
@@ -88,8 +88,8 @@ export function SignupForm({ rootDomain }: { rootDomain: string }) {
       </label>
 
       {state?.error && <Alert>{state.error}</Alert>}
-      <Button disabled={pending}>{pending ? "Criando conta..." : "Começar teste grátis de 14 dias"}</Button>
-      <p className="text-center text-xs text-black/50">Sem cartão de crédito para testar.</p>
+      <Button disabled={pending}>{pending ? "Criando conta..." : billing ? "Começar teste grátis de 14 dias" : "Criar conta"}</Button>
+      <p className="text-center text-xs text-muted">Sem cartão de crédito para testar.</p>
     </form>
   );
 }

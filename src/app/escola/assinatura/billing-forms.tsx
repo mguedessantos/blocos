@@ -28,16 +28,16 @@ export function PlanCard({ plan, defaultSeats, disabled }: { plan: PlanOption; d
   const total = plan.perSeat ? plan.priceCents * seats : plan.priceCents;
 
   return (
-    <form action={action} className={`flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-sm ring-2 ${plan.current ? "ring-brand" : "ring-black/5"}`}>
+    <form action={action} className={`clay flex flex-col gap-3 p-6 ${plan.current ? "!border-brand" : ""}`}>
       <input type="hidden" name="planId" value={plan.id} />
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-extrabold">{plan.name}</h3>
         {plan.current && <span className="rounded-full bg-brand px-3 py-1 text-xs font-bold text-brand-text">Atual</span>}
       </div>
-      <p className="text-sm text-black/60">{plan.description}</p>
+      <p className="text-sm text-muted">{plan.description}</p>
       <p className="text-2xl font-extrabold">
         {formatBRL(plan.priceCents)}
-        <span className="text-sm font-semibold text-black/50">{plan.perSeat ? " por aluno/mês" : " /mês"}</span>
+        <span className="text-sm font-semibold text-muted">{plan.perSeat ? " por aluno/mês" : " /mês"}</span>
       </p>
       {plan.features.length > 0 && (
         <ul className="text-sm">
@@ -57,7 +57,7 @@ export function PlanCard({ plan, defaultSeats, disabled }: { plan: PlanOption; d
           />
         </label>
       )}
-      {plan.perSeat && <p className="text-sm text-black/60">Total: <strong>{formatBRL(total)}/mês</strong></p>}
+      {plan.perSeat && <p className="text-sm text-muted">Total: <strong>{formatBRL(total)}/mês</strong></p>}
       {state?.error && <Alert>{state.error}</Alert>}
       <Button disabled={disabled || pending}>{pending ? "Abrindo pagamento..." : "Assinar"}</Button>
     </form>

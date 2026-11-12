@@ -1,6 +1,7 @@
+import { notFound } from "next/navigation";
 import { Stat } from "@/components/app-shell";
 import { Card } from "@/components/ui";
-import { isSubscriptionUsable, studentLimit } from "@/lib/billing/entitlements";
+import { billingEnabled, isSubscriptionUsable, studentLimit } from "@/lib/billing/entitlements";
 import { isStripeConfigured } from "@/lib/billing/stripe";
 import { requireUser } from "@/lib/dal/auth";
 import { confirmCheckoutForUser, getBillingOverview } from "@/lib/dal/billing";
@@ -19,6 +20,7 @@ const STATUS_LABEL = {
 
 export default async function AssinaturaPage(props: PageProps<"/escola/assinatura">) {
   const user = await requireUser(["ORG_ADMIN"]);
+  if (!billingEnabled()) notFound();
   const { status, session_id: sessionId } = await props.searchParams;
   // Volta do Checkout: confirma direto no Stripe antes de ler o status (não espera o webhook).
   if (status === "sucesso" && typeof sessionId === "string") await confirmCheckoutForUser(user, sessionId);
@@ -95,7 +97,7 @@ export default async function AssinaturaPage(props: PageProps<"/escola/assinatur
               />
             ))}
           </div>
-          <p className="text-xs text-black/50">
+          <p className="text-xs text-muted">
             Pagamento seguro pelo Stripe. Escolas que preferem boleto/fatura anual: fale com o suporte.
           </p>
         </section>

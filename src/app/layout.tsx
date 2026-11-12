@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
-import { Nunito } from "next/font/google";
+import { Baloo_2, Nunito } from "next/font/google";
 import { getBrand } from "@/lib/branding";
 import "./globals.css";
 
@@ -8,6 +8,7 @@ import "./globals.css";
 export const instant = false;
 
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"] });
+const baloo = Baloo_2({ variable: "--font-baloo", subsets: ["latin"], weight: ["600", "700", "800"] });
 
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await getBrand();
@@ -27,7 +28,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   } as CSSProperties;
 
   return (
-    <html lang="pt-BR" style={style} className={`${nunito.variable} h-full antialiased`}>
+    <html lang="pt-BR" style={style} className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

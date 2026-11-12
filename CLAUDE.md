@@ -29,3 +29,15 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Coordenação: coord@aurora.dev / senha123 · Professor: prof@aurora.dev / senha123
 - Alunos: turma ROBO42, usuários ana | bruno | clara, senha gato123
 - Professora independente: marina@prof.dev / senha123 (turma GATO77)
+
+## Editor de blocos e verificador (fase 4)
+- `src/lib/blocks/catalog.ts`: blocos com opcodes do Scratch, texto pt-BR e ajuda para crianças. Só dados (importável no servidor).
+- `src/lib/blocks/program.ts`: estado JSON do Blockly → `Program` neutro (o `.sb3` vai gerar o mesmo formato). Entrada do navegador é não confiável: o conversor valida tudo.
+- `src/lib/blocks/interpreter.ts`: interpretador determinístico (sem eval), 30 quadros/s com tempo virtual; o mesmo código anima no navegador e verifica no servidor.
+- `src/lib/checker`: especificações de verificação (zod) → 0–3 estrelas. A verificação que vale é sempre a do SERVIDOR (`submitAttempt`).
+- Conteúdo: `content/trilhas/*.ts` → `npx prisma db seed` (idempotente, não apaga progresso). Toda lição de exercício precisa de solução de referência em `tests/unit/content.test.ts`.
+- O estado do editor vai para a server action como string JSON (objetos do Blockly não serializam).
+
+## Cobrança desligada por padrão
+- `BILLING_ENABLED="false"` (padrão): sem preços, assinatura, banner de teste, bloqueio somente-leitura nem limites de plano; webhook do Stripe responde 404. White-label continua seguindo o plano da organização.
+- Para ligar: `BILLING_ENABLED="true"` no `.env` (testes de cobrança do Playwright só rodam assim; os unitários sempre ligam).

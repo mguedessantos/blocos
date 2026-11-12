@@ -55,7 +55,7 @@ export function AddStudentsForm({ classId, card }: { classId: string; card: Card
         </button>
         <input ref={fileRef} type="file" accept=".csv,.txt,text/csv,text/plain" className="hidden" aria-label="Arquivo CSV" onChange={(e) => loadFile(e.target.files?.[0])} />
       </div>
-      <p className="text-xs text-black/50">CSV: uma coluna &quot;nome&quot; (outras colunas são ignoradas). Não inclua email, telefone ou documentos dos alunos.</p>
+      <p className="text-xs text-muted">CSV: uma coluna &quot;nome&quot; (outras colunas são ignoradas). Não inclua email, telefone ou documentos dos alunos.</p>
       {state?.error && <Alert>{state.error}</Alert>}
     </form>
   );
@@ -74,14 +74,14 @@ export function StudentsTable({ classId, students, card }: { classId: string; st
       return n;
     });
 
-  if (students.length === 0) return <p className="text-black/60">Nenhum aluno ainda. Adicione abaixo. 👇</p>;
+  if (students.length === 0) return <p className="text-muted">Nenhum aluno ainda. Adicione abaixo. 👇</p>;
 
   return (
     <div className="space-y-4">
       <form action={action} className="no-print space-y-3">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-black/50">
+            <thead className="text-muted">
               <tr>
                 <th className="w-8 py-2">
                   <input

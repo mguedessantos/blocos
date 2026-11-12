@@ -1,8 +1,10 @@
 import { handleStripeEvent } from "@/lib/billing/service";
+import { billingEnabled } from "@/lib/billing/entitlements";
 import { getStripe, isStripeConfigured } from "@/lib/billing/stripe";
 
 // Webhook do Stripe: autenticado pela assinatura do evento (não por sessão de usuário).
 export async function POST(request: Request) {
+  if (!billingEnabled()) return Response.json({ error: "Cobrança desativada" }, { status: 404 });
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!isStripeConfigured() || !secret) {
     return Response.json({ error: "Stripe não configurado" }, { status: 503 });

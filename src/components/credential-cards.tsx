@@ -20,7 +20,7 @@ export function CredentialCards({ credentials, brandName, logoUrl, loginUrl, cla
           <strong>Anote ou imprima agora:</strong> por segurança, as senhas não ficam guardadas e não aparecem de novo.
           Se perder, gere novas senhas.
         </p>
-        <button onClick={() => window.print()} className="rounded-xl bg-brand px-4 py-2 font-bold text-brand-text">
+        <button onClick={() => window.print()} className="btn">
           🖨️ Imprimir cartões
         </button>
       </div>
@@ -31,14 +31,14 @@ export function CredentialCards({ credentials, brandName, logoUrl, loginUrl, cla
               {/* eslint-disable-next-line @next/next/no-img-element -- logo do cliente */}
               {logoUrl && <img src={logoUrl} alt="" className="h-6 w-auto" />}
               <span className="font-extrabold">{brandName}</span>
-              <span className="ml-auto text-xs text-black/50">{className}</span>
+              <span className="ml-auto text-xs text-muted">{className}</span>
             </div>
             <p className="text-lg font-extrabold">Oi, {c.name}! 👋</p>
-            <p className="text-xs text-black/60">Entre em: <strong>{loginUrl.replace(/^https?:\/\//, "")}</strong></p>
+            <p className="text-xs text-muted">Entre em: <strong>{loginUrl.replace(/^https?:\/\//, "")}</strong></p>
             <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 font-mono text-base">
-              <dt className="font-sans text-sm text-black/60">🏫 Turma</dt><dd className="font-bold">{classCode}</dd>
-              <dt className="font-sans text-sm text-black/60">🙂 Usuário</dt><dd className="font-bold">{c.username}</dd>
-              <dt className="font-sans text-sm text-black/60">🔑 Senha</dt><dd className="font-bold">{c.password}</dd>
+              <dt className="font-sans text-sm text-muted">🏫 Turma</dt><dd className="font-bold">{classCode}</dd>
+              <dt className="font-sans text-sm text-muted">🙂 Usuário</dt><dd className="font-bold">{c.username}</dd>
+              <dt className="font-sans text-sm text-muted">🔑 Senha</dt><dd className="font-bold">{c.password}</dd>
             </dl>
           </div>
         ))}

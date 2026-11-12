@@ -2,7 +2,8 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client";
+import { FLAG_STARTER, OFFICIAL_TRACKS } from "../content/trilhas";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 const DAY = 24 * 60 * 60 * 1000;
@@ -99,6 +100,40 @@ async function main() {
     update: {},
     create: { name: "Turma de sábado", code: "GATO77", organizationId: indep.id, teacherId: marina.id },
   });
+
+  // Trilhas oficiais (conteúdo em content/trilhas). Idempotente: atualiza sem apagar progresso.
+  for (const t of OFFICIAL_TRACKS) {
+    const data = { title: t.title, description: t.description, level: t.level, order: t.order, published: true };
+    const existing = await db.track.findFirst({ where: { organizationId: null, slug: t.slug } });
+    const track = existing
+      ? await db.track.update({ where: { id: existing.id }, data })
+      : await db.track.create({ data: { ...data, slug: t.slug } });
+    for (const [mi, m] of t.modules.entries()) {
+      const mod =
+        (await db.module.findFirst({ where: { trackId: track.id, order: mi } })) ??
+        (await db.module.create({ data: { trackId: track.id, title: m.title, order: mi } }));
+      if (mod.title !== m.title) await db.module.update({ where: { id: mod.id }, data: { title: m.title } });
+      for (const [li, l] of m.lessons.entries()) {
+        const lesson = {
+          title: l.title, type: l.type, order: li, content: l.content, xp: l.xp ?? 10,
+          allowedBlocks: l.allowedBlocks ?? [],
+          starterWorkspace: l.startWithFlag ? FLAG_STARTER : Prisma.DbNull,
+          checks: l.checks ?? Prisma.DbNull,
+        };
+        await db.lesson.upsert({
+          where: { moduleId_slug: { moduleId: mod.id, slug: l.slug } },
+          update: lesson,
+          create: { ...lesson, slug: l.slug, moduleId: mod.id },
+        });
+      }
+    }
+    // Turma demo já começa com a trilha liberada
+    await db.trackAssignment.upsert({
+      where: { classId_trackId: { classId: turma.id, trackId: track.id } },
+      update: {},
+      create: { classId: turma.id, trackId: track.id },
+    });
+  }
 
   console.log("Seed concluído ✔");
 }

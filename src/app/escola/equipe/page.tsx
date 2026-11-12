@@ -33,8 +33,8 @@ export default async function EquipePage() {
             {team.invites.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span className="font-semibold">{i.email}</span>
-                <span className="text-black/50">expira em {formatDate(i.expiresAt)}</span>
-                <code className="max-w-full truncate text-xs text-black/50">{`${tenantUrl(team.org.slug)}/convite/${i.token}`}</code>
+                <span className="text-muted">expira em {formatDate(i.expiresAt)}</span>
+                <code className="max-w-full truncate text-xs text-muted">{`${tenantUrl(team.org.slug)}/convite/${i.token}`}</code>
                 <form action={revokeInviteAction.bind(null, i.id)}>
                   <button className="font-semibold text-red-700 underline">Cancelar</button>
                 </form>
@@ -47,7 +47,7 @@ export default async function EquipePage() {
       <Card>
         <h2 className="mb-3 text-lg font-bold">Professores e coordenação</h2>
         <table className="w-full text-left text-sm">
-          <thead className="text-black/50">
+          <thead className="text-muted">
             <tr><th className="py-2">Nome</th><th>Email</th><th>Papel</th><th>Turmas</th><th>Último acesso</th><th /></tr>
           </thead>
           <tbody>

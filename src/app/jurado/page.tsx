@@ -8,7 +8,7 @@ export default async function JuradoPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-extrabold">Game Jams para avaliar</h1>
-      <Card><p className="text-black/60">Nenhuma jam atribuída a você ainda.</p></Card>
+      <Card><p className="text-muted">Nenhuma jam atribuída a você ainda.</p></Card>
     </div>
   );
 }

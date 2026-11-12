@@ -19,7 +19,7 @@ export default async function PlataformaPage() {
       <Card>
         <h2 className="mb-3 text-lg font-bold">Clientes</h2>
         <table className="w-full text-left text-sm">
-          <thead className="text-black/50">
+          <thead className="text-muted">
             <tr><th className="py-2">Nome</th><th>Tipo</th><th>Plano</th><th>Status</th><th>Domínios</th><th>Usuários</th></tr>
           </thead>
           <tbody>

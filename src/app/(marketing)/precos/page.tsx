@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { billingEnabled } from "@/lib/billing/entitlements";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listPublicPlans } from "@/lib/dal/public";
@@ -13,6 +15,7 @@ const FEATURE_LABEL: Record<string, string> = {
 };
 
 export default async function PrecosPage() {
+  if (!billingEnabled()) notFound();
   if (await getTenant()) redirect("/"); // preços só no site principal
   const plans = await listPublicPlans();
 
@@ -20,21 +23,21 @@ export default async function PrecosPage() {
     <div className="space-y-8 py-6">
       <div className="space-y-2 text-center">
         <h1 className="text-4xl font-extrabold">Planos e preços</h1>
-        <p className="text-black/60">Teste grátis por 14 dias, sem cartão. Cancele quando quiser.</p>
+        <p className="text-muted">Teste grátis por 14 dias, sem cartão. Cancele quando quiser.</p>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         {plans.map((p) => (
-          <div key={p.id} className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-md ring-1 ring-black/5">
+          <div key={p.id} className="clay clay-hover flex flex-col gap-4 p-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-black/40">
                 {p.orgType === "ESCOLA" ? "Para escolas" : "Para professores"}
               </p>
               <h2 className="text-2xl font-extrabold">{p.name}</h2>
-              <p className="text-sm text-black/60">{p.description}</p>
+              <p className="text-sm text-muted">{p.description}</p>
             </div>
             <p className="text-3xl font-extrabold">
               {formatBRL(p.priceCents)}
-              <span className="text-sm font-semibold text-black/50">{p.perSeat ? " por aluno/mês" : " /mês"}</span>
+              <span className="text-sm font-semibold text-muted">{p.perSeat ? " por aluno/mês" : " /mês"}</span>
             </p>
             <ul className="flex-1 space-y-1 text-sm">
               <li>✓ Todas as trilhas de programação em blocos</li>
@@ -44,7 +47,7 @@ export default async function PrecosPage() {
               <li>✓ {p.maxClasses ? `Até ${p.maxClasses} turmas` : "Turmas e professores ilimitados"}</li>
               {p.features.map((f) => <li key={f}>✓ {FEATURE_LABEL[f] ?? f}</li>)}
             </ul>
-            <Link href="/cadastro" className="rounded-xl bg-brand px-5 py-3 text-center font-bold text-brand-text">
+            <Link href="/cadastro" className="btn">
               Começar teste grátis
             </Link>
           </div>
