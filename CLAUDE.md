@@ -67,7 +67,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Certificados: `/certificados/<trilha>` (aluno) e `?aluno=<id>` (professor/coordenação); só sai com todas as lições obrigatórias concluídas. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).
 
 ## Produção (Vercel + Supabase)
-- Site: https://blocos-two.vercel.app (projeto Vercel `blocos`, região gru1). Banco e arquivos: projeto Supabase `blocos` (São Paulo), bucket privado `blocos-arquivos`.
+- Site: https://blocos-two.vercel.app (projeto Vercel `blocos`, região gru1 = São Paulo). Banco e arquivos: projeto Supabase em sa-east-1 (São Paulo), bucket privado `blocos-arquivos`. Site e banco PRECISAM ficar na mesma região (cada página faz várias consultas).
 - Segredos de produção ficam SÓ em `.env.prod` (ignorado pelo git) e nas variáveis da Vercel. Nunca exibir valores.
 - Comandos contra produção usam `DOTENV_CONFIG_PATH=.env.prod`:
   - migrações: `DOTENV_CONFIG_PATH=.env.prod npx prisma migrate deploy` (o build da Vercel também roda `prisma migrate deploy`)
