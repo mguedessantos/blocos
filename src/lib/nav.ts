@@ -17,6 +17,7 @@ export function navFor(user: CurrentUser): NavItem[] {
         { href: "/professor", label: "Turmas", icon: "turmas" },
         { href: "/professor/trilhas", label: "Currículo", icon: "licoes" },
         { href: "/escola/equipe", label: "Equipe", icon: "equipe" },
+        { href: "/escola/marca", label: "Marca", icon: "marca" },
         JAM,
         ...(billingEnabled() ? [{ href: "/escola/assinatura", label: "Assinatura", icon: "assinatura" as const }] : []),
       ];

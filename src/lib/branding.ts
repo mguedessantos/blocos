@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { connection } from "next/server";
 import { hasFeature } from "./billing/entitlements";
-import { isAcceptableBrandColor, readableTextOn } from "./color";
+import { isAcceptableBrandColor, isAcceptablePrimaryColor, readableTextOn } from "./color";
 import { getTenant, type Tenant } from "./tenant";
 
 export type Brand = {
@@ -41,7 +41,7 @@ export function brandFor(tenant: Tenant | null): Brand {
 
   // White-label sem personalização ainda: usa o nome da escola com as cores padrão.
   const b = tenant.branding;
-  const primary = b?.primaryColor && isAcceptableBrandColor(b.primaryColor) ? b.primaryColor : base.primary;
+  const primary = b?.primaryColor && isAcceptablePrimaryColor(b.primaryColor) ? b.primaryColor : base.primary;
   const secondary = b?.secondaryColor && isAcceptableBrandColor(b.secondaryColor) ? b.secondaryColor : base.secondary;
   return {
     name: b?.displayName || tenant.name,

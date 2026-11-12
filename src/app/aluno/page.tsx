@@ -1,4 +1,4 @@
-import { ArrowRight, Map as MapIcon, Rocket, Star, Trophy } from "lucide-react";
+import { ArrowRight, Award, Map as MapIcon, Rocket, Star, Trophy } from "lucide-react";
 import Link from "next/link";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
@@ -125,6 +125,11 @@ export default async function AlunoPage() {
                       </Link>
                     )}
                     <Link href={`/aluno/trilhas/${t.id}`} className={buttonClass("secondary")} aria-label={`Ver trilha ${t.title}`}>Ver trilha</Link>
+                    {t.total > 0 && t.done >= t.total && (
+                      <a href={`/certificados/${t.id}`} target="_blank" className={buttonClass("success")} aria-label={`Certificado da trilha ${t.title}`}>
+                        <Award aria-hidden className="h-4 w-4" /> Certificado
+                      </a>
+                    )}
                   </div>
                 </div>
               </article>

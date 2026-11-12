@@ -57,3 +57,11 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Quem cria jams: SUPER_ADMIN ou usuário com `canOrganizeJams` (o dono concede na página da escola em /plataforma).
 - Categorias por ano escolar (2º–9º, `JamCategory`): na inscrição cada aluno tem `schoolYear`; a equipe precisa caber numa faixa (`categoryFor`). Ranking e prêmios são por categoria; a categoria aparece ao jurado (não identifica a escola).
 - O e2e `fase8.spec.ts` move as datas da jam direto no banco para passar pelas fases.
+
+## White-label (fase 10)
+- `/escola/marca` (só ORG_ADMIN, recurso `white_label` do plano): nome, cores, logo/favicon, remetente e email de suporte, esconder “com tecnologia”. Prévia ao vivo.
+- Cores: a principal precisa de 3:1 contra o branco (`isAcceptablePrimaryColor`); a de destaque só precisa de texto legível sobre ela. As cores dos blocos (Scratch) nunca mudam.
+- Imagens de marca: só PNG/JPG (checados pelos bytes; SVG proibido), até 1 MB, servidas em `/marca/arquivo/<uuid>` com `Content-Security-Policy: default-src 'none'`.
+- Domínio próprio: `src/lib/domain-rules.ts` (validação) + `src/lib/domains.ts` (Vercel API se configurada, senão checagem de DNS). Em dev, domínios `.test`/`.localhost` verificam sem DNS.
+- Emails: `src/lib/email.ts` (`sendEmail` + `emailBrandFor`), modelo puro em `email-template.ts`. Sem `RESEND_API_KEY` em dev → `.data/outbox/*.json`.
+- Certificados: `/certificados/<trilha>` (aluno) e `?aluno=<id>` (professor/coordenação); só sai com todas as lições obrigatórias concluídas. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).

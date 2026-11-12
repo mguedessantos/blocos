@@ -68,7 +68,12 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
                     </td>
                   );
                 })}
-                <td className="px-2 text-right font-bold tabular-nums">{s.done}/{s.total}</td>
+                <td className="px-2 text-right font-bold tabular-nums">
+                  {s.done}/{s.total}
+                  {s.total > 0 && s.done >= s.total && (
+                    <a href={`/certificados/${data.track!.id}?aluno=${s.id}`} target="_blank" className="ml-2 text-brand underline" aria-label={`Certificado de ${s.name}`} title="Certificado">🎓</a>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

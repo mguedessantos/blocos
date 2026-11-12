@@ -3,8 +3,22 @@ import { db } from "../db";
 import { BADGE_BY_ID, BADGES, earnedBadges, levelFor, statsFrom } from "../gamification";
 import type { CurrentUser } from "./auth";
 
+// O catálogo de trilhas quase nunca muda: guardamos por 60 s para não refazer a consulta a cada lição.
+const TRACKS_TTL = 60_000;
+const tracksCache = new Map<string, { at: number; value: Promise<{ id: string; level: number; required: number }[]> }>();
+
+function badgeTracks(organizationId: string | null) {
+  const key = organizationId ?? "-";
+  const hit = tracksCache.get(key);
+  if (hit && Date.now() - hit.at < TRACKS_TTL) return hit.value;
+  const value = loadBadgeTracks(organizationId);
+  tracksCache.set(key, { at: Date.now(), value });
+  value.catch(() => tracksCache.delete(key));
+  return value;
+}
+
 /** Trilhas oficiais/da escola que contam para as medalhas de nível (cursos publicados, não "em breve"). */
-async function badgeTracks(organizationId: string | null) {
+async function loadBadgeTracks(organizationId: string | null) {
   const tracks = await db.track.findMany({
     where: { published: true, course: { published: true, comingSoon: false }, OR: [{ organizationId: null }, ...(organizationId ? [{ organizationId }] : [])] },
     select: { id: true, level: true, modules: { select: { _count: { select: { lessons: { where: { draft: false, optional: false } } } } } } },

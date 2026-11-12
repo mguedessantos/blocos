@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CreditCard, Gavel, LayoutDashboard, Map, Megaphone, Trash2, Users, UsersRound, type LucideIcon } from "lucide-react";
+import { BookOpen, CreditCard, Gavel, LayoutDashboard, Map, Megaphone, Palette, Trash2, Users, UsersRound, type LucideIcon } from "lucide-react";
 
-export const NAV_ICONS = { trilhas: Map, painel: LayoutDashboard, turmas: UsersRound, equipe: Users, assinatura: CreditCard, jams: Gavel, licoes: BookOpen, avisos: Megaphone, lixeira: Trash2 } satisfies Record<string, LucideIcon>;
+export const NAV_ICONS = { trilhas: Map, painel: LayoutDashboard, turmas: UsersRound, equipe: Users, assinatura: CreditCard, jams: Gavel, licoes: BookOpen, avisos: Megaphone, lixeira: Trash2, marca: Palette } satisfies Record<string, LucideIcon>;
 export type NavItem = { href: string; label: string; icon?: keyof typeof NAV_ICONS };
 
 export function NavLinks({ items }: { items: NavItem[] }) {

@@ -16,7 +16,7 @@ function fileOf(key: string) {
 }
 
 /** Grava e devolve a chave (ex.: "jams/2b0c…"). */
-export async function putFile(folder: "jams", bytes: Uint8Array) {
+export async function putFile(folder: "jams" | "marca", bytes: Uint8Array) {
   const key = `${folder}/${randomUUID()}`;
   const file = fileOf(key);
   await mkdir(path.dirname(file), { recursive: true });

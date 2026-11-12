@@ -28,3 +28,11 @@ export function readableTextOn(bg: string) {
 export function isAcceptableBrandColor(hex: string) {
   return isHexColor(hex) && contrastRatio(hex, readableTextOn(hex)) >= 3;
 }
+
+/**
+ * A cor PRINCIPAL também vira texto de links, bordas e botões sobre o fundo branco:
+ * precisa de 3:1 contra o branco (WCAG 1.4.11, componentes de interface).
+ */
+export function isAcceptablePrimaryColor(hex: string) {
+  return isAcceptableBrandColor(hex) && contrastRatio(hex, "#ffffff") >= 3;
+}
