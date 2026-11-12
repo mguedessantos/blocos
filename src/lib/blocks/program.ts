@@ -4,17 +4,19 @@
 export type Expr =
   | { kind: "lit"; value: string | number }
   | { kind: "var"; name: string }
-  | { kind: "op"; opcode: string; args: Record<string, Expr> };
+  | { kind: "op"; opcode: string; args: Record<string, Expr>; fields: Record<string, string> };
 
 export type Stmt = {
   opcode: string;
   args: Record<string, Expr>;
+  /** Campos de menu (tecla, mensagem, ator, fantasia, som...). */
+  fields: Record<string, string>;
   variable?: string;
   substack?: Stmt[];
   substack2?: Stmt[];
 };
 
-export type Script = { hat: string; body: Stmt[] };
+export type Script = { hat: string; fields: Record<string, string>; body: Stmt[] };
 
 export type Program = {
   scripts: Script[];
@@ -39,13 +41,28 @@ export type BlocklyState = {
 };
 
 const SHADOW_TYPES = new Set(["math_number", "text"]);
+export const HATS = new Set([
+  "event_whenflagclicked", "event_whenkeypressed", "event_whenthisspriteclicked", "event_whenbroadcastreceived", "control_start_as_clone",
+]);
+
+/** Campos de menu como texto simples (ignora VARIABLE, que vira `variable`). */
+function menuFields(fields: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!fields || typeof fields !== "object" || Array.isArray(fields)) return out;
+  for (const [k, v] of Object.entries(fields as Record<string, unknown>)) {
+    if (k === "VARIABLE") continue;
+    if (typeof v === "string" || typeof v === "number") out[k] = String(v).slice(0, 60);
+  }
+  return out;
+}
 const MAX_DEPTH = 200;
 const MAX_BLOCKS = 2000;
 
-export function programFromBlockly(state: BlocklyState): Program {
+/** `globals`: variáveis do projeto (compartilhadas por todos os atores), por id. */
+export function programFromBlockly(state: BlocklyState, globals?: { id: string; name: string }[]): Program {
   // A entrada vem do navegador: tudo é conferido antes de usar.
   const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
-  const vars = Array.isArray(state?.variables) ? state.variables.filter(isObj) : [];
+  const vars = [...(globals ?? []), ...(Array.isArray(state?.variables) ? state.variables : [])].filter(isObj);
   const varNames = new Map(vars.map((v) => [String(v.id), String(v.name).slice(0, 50)]));
   const opcodeCounts: Record<string, number> = Object.create(null); // sem protótipo: nomes vêm do usuário
   let blockCount = 0;
@@ -71,7 +88,7 @@ export function programFromBlockly(state: BlocklyState): Program {
     if (b.type === "data_variable") return { kind: "var", name: varName(b.fields?.VARIABLE) };
     const args: Record<string, Expr> = {};
     for (const [name, inp] of Object.entries(isObj(b.inputs) ? b.inputs : {})) args[name] = expr(inp, depth + 1);
-    return { kind: "op", opcode: b.type, args };
+    return { kind: "op", opcode: b.type, args, fields: menuFields(b.fields) };
   }
 
   function chain(first: BlocklyBlock | undefined, depth: number): Stmt[] {
@@ -79,7 +96,7 @@ export function programFromBlockly(state: BlocklyState): Program {
     let b = first;
     while (isObj(b) && typeof b.type === "string" && depth <= MAX_DEPTH && blockCount < MAX_BLOCKS) {
       count(b.type);
-      const stmt: Stmt = { opcode: b.type, args: {} };
+      const stmt: Stmt = { opcode: b.type, args: {}, fields: menuFields(b.fields) };
       for (const [name, inp] of Object.entries(isObj(b.inputs) ? b.inputs : {})) {
         if (name === "SUBSTACK") stmt.substack = chain(inp?.block, depth + 1);
         else if (name === "SUBSTACK2") stmt.substack2 = chain(inp?.block, depth + 1);
@@ -97,7 +114,7 @@ export function programFromBlockly(state: BlocklyState): Program {
   for (const top of tops) {
     const [hat, ...body] = chain(top, 0);
     // Blocos soltos (sem bloco de evento no topo) contam no total, mas não executam.
-    if (hat?.opcode.startsWith("event_when")) scripts.push({ hat: hat.opcode, body });
+    if (hat && HATS.has(hat.opcode)) scripts.push({ hat: hat.opcode, fields: hat.fields, body });
   }
   return { scripts, opcodeCounts, blockCount };
 }

@@ -41,3 +41,11 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 ## Cobrança desligada por padrão
 - `BILLING_ENABLED="false"` (padrão): sem preços, assinatura, banner de teste, bloqueio somente-leitura nem limites de plano; webhook do Stripe responde 404. White-label continua seguindo o plano da organização.
 - Para ligar: `BILLING_ENABLED="true"` no `.env` (testes de cobrança do Playwright só rodam assim; os unitários sempre ligam).
+
+## Currículo (o site vem primeiro)
+- 10 mundos em 3 níveis (`content/trilhas/{basico,intermediario,avancado}.ts`). Toda habilidade é ensinada e verificada NO EDITOR DO SITE; o PictoBlox aparece só em missões `optional: true` (“Leve para o PictoBlox”), que nunca bloqueiam a trilha.
+- Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).
+- Projetos do editor: `src/lib/blocks/project.ts` (vários atores + palco + variáveis globais); motor em `interpreter.ts` (`World`: teclas, cliques, mensagens, clones, sons). Biblioteca original de personagens/cenários/sons em `library.ts` + desenhos em `components/editor/art.ts`.
+- Lições de jogos usam `starter: game({...})` (de `src/lib/blocks/build.ts`) e podem simular teclas/cliques na verificação (`checks.inputs`).
+- `tests/unit/content.test.ts` exige: guia do professor em toda lição, solução de referência com 3 estrelas e que o projeto inicial NÃO passe sem o aluno fazer nada.
+- Depois de mudar o schema do Prisma, REINICIE o `npm run dev` (ele mantém o client antigo em memória).

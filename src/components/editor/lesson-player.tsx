@@ -1,16 +1,19 @@
 "use client";
 
+import { ArrowRight, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { ArrowRight, CircleCheck, CircleX, Flag, Lightbulb, Puzzle, RotateCcw, Square } from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Stars } from "@/components/lesson-icon";
 import { buttonClass } from "@/components/ui";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { BLOCKS, CATEGORIES } from "@/lib/blocks/catalog";
-import { FPS, initialState, Runtime, type StageState } from "@/lib/blocks/interpreter";
-import { programFromBlockly, type BlocklyState } from "@/lib/blocks/program";
+import { FPS, World, type WorldState } from "@/lib/blocks/interpreter";
+import { BACKDROPS, CHARACTERS, type BackdropId, type CharacterId } from "@/lib/blocks/library";
+import type { BlocklyState } from "@/lib/blocks/program";
+import { compileProject, MAX_SPRITES, newSprite, normalizeProject, type ProjectState } from "@/lib/blocks/project";
 import type { CheckItem } from "@/lib/checker";
-import type { BlockEditorHandle } from "./block-editor";
+import { drawBackdrop, drawCharacter, playSound } from "./art";
+import type { BlockEditorHandle, EditorContext } from "./block-editor";
 import { Stage } from "./stage";
 
 const BlockEditor = dynamic(() => import("./block-editor"), {
@@ -25,38 +28,150 @@ export type VerifyOutcome =
 type Props = {
   lessonId: string;
   allowedBlocks: string[];
-  starterState: BlocklyState | null;
-  savedState: BlocklyState | null;
+  starter: unknown;
+  saved: unknown;
+  /** Mostra o painel de atores e cenários (lições de jogos). */
+  showSprites: boolean;
   nextHref: string | null;
-  /** Recebe o estado do editor como JSON (texto). */
-  verify: (workspaceJson: string) => Promise<VerifyOutcome>;
+  /** Recebe o projeto como JSON (texto). */
+  verify: (projectJson: string) => Promise<VerifyOutcome>;
 };
 
-const MAX_RUN_SECONDS = 60;
-const snapshot = (s: StageState): StageState => ({ ...s, lines: s.lines.slice() });
+const MAX_RUN_SECONDS = 600;
+const STAGE_ID = "__palco__";
 
-function readDraft(key: string): BlocklyState | null {
+const KEY_NAMES: Record<string, string> = { " ": "space", ArrowUp: "up arrow", ArrowDown: "down arrow", ArrowLeft: "left arrow", ArrowRight: "right arrow" };
+const toScratchKey = (e: KeyboardEvent) => KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toLowerCase() : null);
+
+function readDraft(key: string): unknown {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as BlocklyState) : null;
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState, nextHref, verify }: Props) {
+const snapshot = (s: WorldState): WorldState => ({ ...s, targets: s.targets.map((t) => ({ ...t })), lines: s.lines.slice(), vars: { ...s.vars } });
+
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSprites, nextHref, verify }: Props) {
+  const draftKey = `blocos:licao:${lessonId}`;
+  const starterProject = useMemo(() => normalizeProject(starter), [starter]);
+  const [project, setProject] = useState<ProjectState>(() =>
+    normalizeProject((typeof window === "undefined" ? null : readDraft(draftKey)) ?? saved ?? starter),
+  );
+  const projectRef = useRef(project);
+  const [selected, setSelected] = useState<string>(project.sprites[0].id);
   const editor = useRef<BlockEditorHandle>(null);
+  const world = useRef<World | null>(null);
   const frame = useRef<number | null>(null);
-  const [stage, setStage] = useState<StageState>(initialState);
+  const [stage, setStage] = useState<WorldState>(() => new World(compileProject(project)).state);
   const [running, setRunning] = useState(false);
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [pending, startTransition] = useTransition();
-  const draftKey = `blocos:licao:${lessonId}`;
-  const [initial] = useState(() => (typeof window === "undefined" ? null : readDraft(draftKey)) ?? savedState);
+  const [picker, setPicker] = useState<"sprite" | "backdrop" | null>(null);
+  const dragging = useRef<string | null>(null);
+
+  const commit = useCallback((next: ProjectState, preview = true) => {
+    projectRef.current = next;
+    setProject(next);
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    } catch {
+      /* sem armazenamento local: tudo bem */
+    }
+    if (preview && !world.current) setStage(new World(compileProject(next)).state);
+  }, [draftKey]);
+
+  const contextFor = useCallback((p: ProjectState, id: string): EditorContext => {
+    const sprite = p.sprites.find((s) => s.id === id);
+    return {
+      sprites: p.sprites.map((s) => s.name),
+      self: sprite?.name ?? "",
+      costumes: sprite ? CHARACTERS[sprite.character].costumes : [],
+      backdrops: p.stage.backdrops.map((b) => [BACKDROPS[b], b]),
+      isStage: id === STAGE_ID,
+    };
+  }, []);
+
+  const workspaceOf = (p: ProjectState, id: string): BlocklyState => {
+    const ws = id === STAGE_ID ? p.stage.workspace : p.sprites.find((s) => s.id === id)?.workspace ?? {};
+    return { ...ws, variables: p.variables };
+  };
+
+  // ───────────── edição ─────────────
+
+  const onBlocksChange = (state: BlocklyState) => {
+    const p = projectRef.current;
+    const blocks = { blocks: state.blocks };
+    const variables = (state.variables ?? p.variables).map((v) => ({ id: v.id, name: v.name }));
+    const next: ProjectState =
+      selected === STAGE_ID
+        ? { ...p, variables, stage: { ...p.stage, workspace: blocks } }
+        : { ...p, variables, sprites: p.sprites.map((s) => (s.id === selected ? { ...s, workspace: blocks } : s)) };
+    commit(next, false);
+  };
+
+  const select = (id: string) => {
+    if (id === selected) return;
+    setSelected(id);
+    editor.current?.load(workspaceOf(projectRef.current, id), contextFor(projectRef.current, id));
+  };
+
+  const addSprite = (character: CharacterId) => {
+    const p = project;
+    if (p.sprites.length >= MAX_SPRITES) return;
+    let name = CHARACTERS[character].name;
+    for (let k = 2; p.sprites.some((s) => s.name === name); k++) name = `${CHARACTERS[character].name} ${k}`;
+    // cada ator novo aparece num lugar diferente (o aluno arrasta para onde quiser)
+    const slot = p.sprites.length;
+    const s = newSprite(character, name, { x: ((slot * 70) % 320) - 160, y: slot % 2 ? 60 : -60 });
+    const next = { ...p, sprites: [...p.sprites, s] };
+    commit(next);
+    setPicker(null);
+    setSelected(s.id);
+    editor.current?.load(workspaceOf(next, s.id), contextFor(next, s.id));
+  };
+
+  const onPickSprite = (e: React.MouseEvent<HTMLButtonElement>) => addSprite(e.currentTarget.dataset.item as CharacterId);
+  const onPickBackdrop = (e: React.MouseEvent<HTMLButtonElement>) => addBackdrop(e.currentTarget.dataset.item as BackdropId);
+
+  const renameSprite = (id: string) => {
+    const p = projectRef.current;
+    const s = p.sprites.find((x) => x.id === id);
+    const name = s && prompt("Novo nome do ator:", s.name)?.trim().slice(0, 30);
+    if (!s || !name || p.sprites.some((x) => x.name === name && x.id !== id)) return;
+    commit({ ...p, sprites: p.sprites.map((x) => (x.id === id ? { ...x, name } : x)) });
+  };
+
+  const removeSprite = (id: string) => {
+    const p = projectRef.current;
+    if (p.sprites.length <= 1 || !confirm("Apagar este ator e todos os blocos dele?")) return;
+    const next = { ...p, sprites: p.sprites.filter((s) => s.id !== id) };
+    commit(next);
+    const first = next.sprites[0].id;
+    setSelected(first);
+    editor.current?.load(workspaceOf(next, first), contextFor(next, first));
+  };
+
+  const addBackdrop = (id: BackdropId) => {
+    const p = project;
+    setPicker(null);
+    if (p.stage.backdrops.includes(id) || p.stage.backdrops.length >= 10) return;
+    commit({ ...p, stage: { ...p.stage, backdrops: [...p.stage.backdrops, id] } });
+  };
+  const removeBackdrop = (id: BackdropId) => {
+    const p = projectRef.current;
+    if (p.stage.backdrops.length <= 1) return;
+    commit({ ...p, stage: { ...p.stage, backdrops: p.stage.backdrops.filter((b) => b !== id) } });
+  };
+
+  // ───────────── execução ─────────────
 
   const stop = useCallback(() => {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
     frame.current = null;
+    world.current = null;
     setRunning(false);
   }, []);
 
@@ -64,22 +179,27 @@ export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState
 
   const run = useCallback(() => {
     stop();
-    const rt = new Runtime(programFromBlockly(editor.current?.getState() ?? {}));
-    rt.start();
-    setStage(snapshot(rt.state));
+    const w = new World(compileProject(projectRef.current), Date.now() % 100000);
+    w.onSound = playSound;
+    w.start();
+    world.current = w;
+    setStage(snapshot(w.state));
     setRunning(true);
     let last = performance.now();
     let acc = 0;
     const loop = (now: number) => {
+      if (world.current !== w) return;
       acc += Math.min(now - last, 250);
       last = now;
-      while (acc >= 1000 / FPS && !rt.done) {
-        rt.tick();
+      while (acc >= 1000 / FPS && !w.state.stopped) {
+        w.tick();
         acc -= 1000 / FPS;
       }
-      setStage(snapshot(rt.state));
-      if (rt.done || rt.state.time >= MAX_RUN_SECONDS) {
+      setStage(snapshot(w.state));
+      // jogos com teclado ou clique continuam “vivos” esperando o jogador
+      if (w.state.stopped || (w.done && !w.interactive) || w.state.time >= MAX_RUN_SECONDS) {
         frame.current = null;
+        world.current = null;
         setRunning(false);
         return;
       }
@@ -88,50 +208,99 @@ export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState
     frame.current = requestAnimationFrame(loop);
   }, [stop]);
 
+  // teclado durante o jogo
+  useEffect(() => {
+    if (!running) return;
+    const typing = (e: KeyboardEvent) => e.target instanceof HTMLElement && (e.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName));
+    const down = (e: KeyboardEvent) => {
+      if (typing(e)) return;
+      const k = toScratchKey(e);
+      if (!k || !world.current) return;
+      if (k === "space" || k.endsWith("arrow")) e.preventDefault();
+      world.current.keyDown(k);
+    };
+    const up = (e: KeyboardEvent) => {
+      const k = toScratchKey(e);
+      if (k && world.current) world.current.keyUp(k);
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, [running]);
+
+  const onMouse = (m: { x: number; y: number; down?: boolean }) => {
+    if (world.current) {
+      world.current.mouse = { x: m.x, y: m.y, down: m.down ?? world.current.mouse.down };
+      return;
+    }
+    if (!showSprites) return;
+    // parado: arrastar atores define a posição inicial
+    const p = projectRef.current;
+    if (m.down === true) {
+      const hit = [...p.sprites].reverse().find((s) => Math.hypot(s.x - m.x, s.y - m.y) <= CHARACTERS[s.character].radius * (s.size / 100) + 6);
+      dragging.current = hit?.id ?? null;
+      if (hit) select(hit.id);
+    } else if (m.down === false) {
+      dragging.current = null;
+    } else if (dragging.current) {
+      const x = Math.max(-240, Math.min(240, m.x)), y = Math.max(-180, Math.min(180, m.y));
+      commit({ ...p, sprites: p.sprites.map((s) => (s.id === dragging.current ? { ...s, x, y } : s)) });
+    }
+  };
+
   const onVerify = () => {
-    const state = editor.current?.getState() ?? {};
+    const json = JSON.stringify(projectRef.current);
     run();
     startTransition(async () => {
       try {
-        setOutcome(await verify(JSON.stringify(state)));
+        setOutcome(await verify(json));
       } catch {
         setOutcome({ ok: false, error: "Não foi possível verificar agora. Tente de novo." });
       }
     });
   };
 
-  const saveDraft = (state: BlocklyState) => {
-    try {
-      localStorage.setItem(draftKey, JSON.stringify(state));
-    } catch {
-      /* sem armazenamento local: tudo bem */
-    }
-  };
-
   const restart = () => {
     if (!confirm("Apagar seus blocos e começar de novo?")) return;
-    editor.current?.reset();
     stop();
-    setStage(initialState());
+    commit(starterProject);
+    const first = starterProject.sprites[0].id;
+    setSelected(first);
+    editor.current?.load(workspaceOf(starterProject, first), contextFor(starterProject, first));
     setOutcome(null);
   };
 
   const allowed = allowedBlocks.length ? BLOCKS.filter((b) => allowedBlocks.includes(b.opcode)) : BLOCKS;
+  const selectedName = selected === STAGE_ID ? "Palco" : project.sprites.find((s) => s.id === selected)?.name;
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
       <div className="clay blocos-editor flex flex-col overflow-hidden">
+        {showSprites && (
+          <div className="flex items-center gap-2 border-b-2 border-line px-4 py-2 text-sm font-extrabold">
+            <Puzzle aria-hidden className="h-4 w-4 text-brand" /> Blocos de: <span className="text-brand-shadow">{selectedName}</span>
+          </div>
+        )}
         <div className="h-full min-h-[560px]">
-          <BlockEditor handle={editor} allowedBlocks={allowedBlocks} initialState={initial} starterState={starterState} onChange={saveDraft} />
+          <BlockEditor
+            handle={editor}
+            allowedBlocks={allowedBlocks}
+            initialState={workspaceOf(project, selected)}
+            initialContext={contextFor(project, selected)}
+            onChange={onBlocksChange}
+          />
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="clay overflow-hidden p-2">
-          <Stage state={stage} />
-          <p className="flex justify-between px-2 pt-2 font-mono text-xs font-bold text-muted" aria-hidden>
-            <span>x: {Math.round(stage.x)} · y: {Math.round(stage.y)}</span>
-            <span>direção: {Math.round(stage.direction)}°</span>
+          <Stage state={stage} onMouse={onMouse} onStageClick={(x, y) => world.current?.click(x, y)} />
+          <p className="flex justify-between gap-2 px-2 pt-2 text-xs font-bold text-muted">
+            <span>{running ? "Jogando! Use o teclado e o mouse no palco." : showSprites ? "Arraste os atores para mudar onde eles começam." : ""}</span>
+            {stage.targets[0] && <span className="font-mono">x: {Math.round(stage.targets[0].x)} · y: {Math.round(stage.targets[0].y)}</span>}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -151,6 +320,90 @@ export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState
 
         {outcome && <Result outcome={outcome} nextHref={nextHref} />}
 
+        {showSprites && (
+          <div className="clay space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold">Atores e palco</h3>
+              <div className="flex gap-1">
+                <button onClick={() => setPicker(picker === "sprite" ? null : "sprite")} className={buttonClass("secondary", "sm")} disabled={project.sprites.length >= MAX_SPRITES}>
+                  <Plus aria-hidden className="h-4 w-4" /> Ator
+                </button>
+                <button onClick={() => setPicker(picker === "backdrop" ? null : "backdrop")} className={buttonClass("secondary", "sm")}>
+                  <ImageIcon aria-hidden className="h-4 w-4" /> Cenário
+                </button>
+              </div>
+            </div>
+
+            {picker && (
+              <div className="grid grid-cols-4 gap-2 rounded-2xl bg-brand-soft p-2" aria-label={picker === "sprite" ? "Escolha um ator" : "Escolha um cenário"}>
+                {picker === "sprite"
+                  ? (Object.keys(CHARACTERS) as CharacterId[]).map((c) => (
+                      <button key={c} data-item={c} onClick={onPickSprite} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold hover:ring-2 hover:ring-brand">
+                        <Thumb character={c} /> {CHARACTERS[c].name}
+                      </button>
+                    ))
+                  : (Object.keys(BACKDROPS) as BackdropId[]).map((b) => (
+                      <button key={b} data-item={b} onClick={onPickBackdrop} disabled={project.stage.backdrops.includes(b)} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold hover:ring-2 hover:ring-brand disabled:opacity-40">
+                        <Thumb backdrop={b} /> {BACKDROPS[b]}
+                      </button>
+                    ))}
+              </div>
+            )}
+
+            <ul className="grid grid-cols-3 gap-2">
+              <li>
+                <button
+                  onClick={() => select(STAGE_ID)}
+                  aria-pressed={selected === STAGE_ID}
+                  className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 p-1.5 text-xs font-extrabold ${selected === STAGE_ID ? "border-brand bg-brand-soft" : "border-line"}`}
+                >
+                  <Thumb backdrop={project.stage.backdrops[0]} /> Palco
+                </button>
+              </li>
+              {project.sprites.map((s) => (
+                <li key={s.id} className="relative">
+                  <button
+                    onClick={() => select(s.id)}
+                    aria-pressed={selected === s.id}
+                    className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 p-1.5 text-xs font-extrabold ${selected === s.id ? "border-brand bg-brand-soft" : "border-line"}`}
+                  >
+                    <Thumb character={s.character} /> <span className="max-w-full truncate">{s.name}</span>
+                  </button>
+                  {selected === s.id && (
+                    <span className="absolute -top-2 -right-1 flex gap-0.5">
+                      <button onClick={() => renameSprite(s.id)} aria-label={`Renomear ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white shadow ring-1 ring-line">
+                        <Pencil aria-hidden className="h-3.5 w-3.5" />
+                      </button>
+                      {project.sprites.length > 1 && (
+                        <button onClick={() => removeSprite(s.id)} aria-label={`Apagar ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 shadow ring-1 ring-line">
+                          <Trash2 aria-hidden className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {selected === STAGE_ID && (
+              <div className="space-y-1">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Cenários do palco</p>
+                <ul className="flex flex-wrap gap-2">
+                  {project.stage.backdrops.map((b) => (
+                    <li key={b} className="flex items-center gap-1 rounded-full bg-black/5 py-1 pr-1 pl-3 text-xs font-bold">
+                      {BACKDROPS[b]}
+                      {project.stage.backdrops.length > 1 && (
+                        <button onClick={() => removeBackdrop(b)} aria-label={`Remover cenário ${BACKDROPS[b]}`} className="grid h-6 w-6 place-items-center rounded-full hover:bg-black/10">
+                          <Trash2 aria-hidden className="h-3 w-3" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
         <details className="clay group p-4">
           <summary className="flex min-h-8 cursor-pointer list-none items-center gap-2 font-extrabold">
             <Puzzle aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco
@@ -159,10 +412,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState
           <ul className="mt-3 space-y-2.5 text-sm">
             {allowed.map((b) => (
               <li key={b.opcode} className="flex flex-col gap-1">
-                <span
-                  className="w-fit rounded-lg px-2.5 py-1 text-xs font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]"
-                  style={{ background: CATEGORIES[b.category].colour }}
-                >
+                <span className="w-fit rounded-lg px-2.5 py-1 text-xs font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
                   {b.text.split("|")[0].replace(/%\d/g, "▢")}
                 </span>
                 <span className="font-semibold text-muted">{b.help}</span>
@@ -175,14 +425,35 @@ export function LessonPlayer({ lessonId, allowedBlocks, starterState, savedState
   );
 }
 
-function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref: string | null }) {
+/** Miniatura de personagem ou cenário. */
+function Thumb({ character, backdrop }: { character?: CharacterId; backdrop?: BackdropId }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const ctx = ref.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 96, 72);
+    if (backdrop) {
+      ctx.save();
+      ctx.scale(96 / 480, 72 / 360);
+      drawBackdrop(ctx, backdrop, 480, 360);
+      ctx.restore();
+    } else if (character) {
+      ctx.save();
+      ctx.translate(48, 38);
+      const k = Math.min(1.2, 26 / CHARACTERS[character].radius);
+      ctx.scale(k, k);
+      ctx.strokeStyle = "#111827";
+      drawCharacter(ctx, character, 0);
+      ctx.restore();
+    }
+  }, [character, backdrop]);
+  return <canvas ref={ref} width={96} height={72} className="h-12 w-16 rounded-lg bg-slate-50" aria-hidden />;
+}
+
+export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref: string | null }) {
   if (!outcome.ok) return <p role="alert" className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{outcome.error}</p>;
   return (
-    <div
-      role="status"
-      aria-label="Resultado da verificação"
-      className={`space-y-3 rounded-3xl border-2 p-5 ${outcome.passed ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}
-    >
+    <div role="status" aria-label="Resultado da verificação" className={`space-y-3 rounded-3xl border-2 p-5 ${outcome.passed ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
       <div className="flex items-center justify-between gap-3">
         <Stars value={outcome.stars} size="lg" />
         {outcome.xpGained > 0 && <span className="rounded-full bg-brand-2 px-3 py-1 font-display font-extrabold">+{outcome.xpGained} XP!</span>}

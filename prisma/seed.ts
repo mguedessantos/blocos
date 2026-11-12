@@ -3,7 +3,8 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient } from "../src/generated/prisma/client";
-import { FLAG_STARTER, OFFICIAL_TRACKS } from "../content/trilhas";
+import { OFFICIAL_COURSES } from "../content/cursos";
+import { FLAG_STARTER, OFFICIAL_TRACKS, guideMarkdown } from "../content/trilhas";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 const DAY = 24 * 60 * 60 * 1000;
@@ -102,12 +103,35 @@ async function main() {
   });
 
   // Trilhas oficiais (conteúdo em content/trilhas). Idempotente: atualiza sem apagar progresso.
+  // Trilhas oficiais que saíram do currículo ficam despublicadas (o progresso dos alunos é mantido).
+  await db.track.updateMany({
+    where: { organizationId: null, slug: { notIn: OFFICIAL_TRACKS.map((t) => t.slug) } },
+    data: { published: false },
+  });
+  // Cursos oficiais: o professor libera o curso inteiro para a turma.
+  const courseOf = new Map<string, string>();
+  for (const c of OFFICIAL_COURSES) {
+    const data = { title: c.title, description: c.description, order: c.order, published: true, comingSoon: c.comingSoon ?? false };
+    const existing = await db.course.findFirst({ where: { organizationId: null, slug: c.slug } });
+    const course = existing ? await db.course.update({ where: { id: existing.id }, data }) : await db.course.create({ data: { ...data, slug: c.slug } });
+    for (const t of c.tracks) courseOf.set(t.slug, course.id);
+    // Turma demo já começa com o curso liberado (cursos “em breve” não podem ser liberados)
+    if (!c.comingSoon) {
+      await db.courseAssignment.upsert({
+        where: { classId_courseId: { classId: turma.id, courseId: course.id } },
+        update: {},
+        create: { classId: turma.id, courseId: course.id },
+      });
+    }
+  }
+
   for (const t of OFFICIAL_TRACKS) {
-    const data = { title: t.title, description: t.description, level: t.level, order: t.order, published: true };
+    const data = { title: t.title, description: t.description, story: t.story ?? null, level: t.level, order: t.order, published: true, courseId: courseOf.get(t.slug) ?? null };
     const existing = await db.track.findFirst({ where: { organizationId: null, slug: t.slug } });
     const track = existing
       ? await db.track.update({ where: { id: existing.id }, data })
       : await db.track.create({ data: { ...data, slug: t.slug } });
+    const kept: string[] = [];
     for (const [mi, m] of t.modules.entries()) {
       const mod =
         (await db.module.findFirst({ where: { trackId: track.id, order: mi } })) ??
@@ -115,24 +139,25 @@ async function main() {
       if (mod.title !== m.title) await db.module.update({ where: { id: mod.id }, data: { title: m.title } });
       for (const [li, l] of m.lessons.entries()) {
         const lesson = {
-          title: l.title, type: l.type, order: li, content: l.content, xp: l.xp ?? 10,
+          title: l.title, type: l.type, mode: l.mode ?? "EDITOR", order: li, content: l.content, xp: l.xp ?? 10,
+          teacherGuide: l.guide ? guideMarkdown(l.guide) : null,
+          extra: l.extra ?? null,
           allowedBlocks: l.allowedBlocks ?? [],
-          starterWorkspace: l.startWithFlag ? FLAG_STARTER : Prisma.DbNull,
+          starterWorkspace: l.starter ?? (l.startWithFlag ? FLAG_STARTER : Prisma.DbNull),
+          optional: l.optional ?? false,
           checks: l.checks ?? Prisma.DbNull,
+          draft: false,
         };
-        await db.lesson.upsert({
+        const saved = await db.lesson.upsert({
           where: { moduleId_slug: { moduleId: mod.id, slug: l.slug } },
           update: lesson,
           create: { ...lesson, slug: l.slug, moduleId: mod.id },
         });
+        kept.push(saved.id);
       }
     }
-    // Turma demo já começa com a trilha liberada
-    await db.trackAssignment.upsert({
-      where: { classId_trackId: { classId: turma.id, trackId: track.id } },
-      update: {},
-      create: { classId: turma.id, trackId: track.id },
-    });
+    // Lições que saíram do currículo ficam ocultas (draft), sem apagar o progresso dos alunos.
+    await db.lesson.updateMany({ where: { module: { trackId: track.id }, id: { notIn: kept } }, data: { draft: true } });
   }
 
   console.log("Seed concluído ✔");

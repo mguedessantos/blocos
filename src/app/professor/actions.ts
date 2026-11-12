@@ -16,7 +16,7 @@ import {
   setStudentActive,
   type IssuedCredential,
 } from "@/lib/dal/classes";
-import { setTrackAssignment } from "@/lib/dal/lessons";
+import { setCourseAssignment } from "@/lib/dal/lessons";
 
 const STAFF = ["TEACHER", "ORG_ADMIN"] as const;
 const className = z.string().trim().min(2, "Dê um nome para a turma.").max(60);
@@ -102,8 +102,8 @@ export async function deleteStudentAction(classId: string, studentId: string) {
   revalidatePath(`/professor/turmas/${classId}`);
 }
 
-export async function setTrackAssignmentAction(classId: string, trackId: string, assigned: boolean) {
+export async function setCourseAssignmentAction(classId: string, courseId: string, assigned: boolean) {
   const user = await requireUser([...STAFF]);
-  await setTrackAssignment(user, classId, trackId, assigned);
+  await setCourseAssignment(user, classId, courseId, assigned);
   revalidatePath(`/professor/turmas/${classId}`);
 }

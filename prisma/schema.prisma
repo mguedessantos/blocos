@@ -32,6 +32,7 @@ model Organization {
   subscription  Subscription?
   classes       Class[]
   tracks        Track[]
+  courses       Course[]
   jams          GameJam[]
   consents      ConsentRecord[]
   auditLogs     AuditLog[]
@@ -221,7 +222,7 @@ model Class {
   createdAt      DateTime     @default(now())
 
   enrollments Enrollment[]
-  assignments TrackAssignment[]
+  courses     CourseAssignment[]
   jams        GameJam[]
 }
 
@@ -241,13 +242,15 @@ model Track {
   slug           String
   title          String
   description    String
-  level          Int           @default(1)
+  story          String? // texto de abertura do “mundo” (narrativa)
+  level          Int           @default(1) // 1 básico, 2 intermediário, 3 avançado
   order          Int           @default(0)
   published      Boolean       @default(false)
   organizationId String? // null = trilha oficial da plataforma
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  courseId       String?
+  course         Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
   modules        Module[]
-  assignments    TrackAssignment[]
 
   @@unique([organizationId, slug])
 }
@@ -284,6 +287,9 @@ model Lesson {
   mode              LessonMode @default(EDITOR)
   order             Int        @default(0)
   content           String // markdown
+  teacherGuide      String? // markdown, só para professores
+  extra             String? // desafio extra opcional (alunos mais velhos/rápidos)
+  optional          Boolean    @default(false) // missão extra (ex.: levar ao PictoBlox): não bloqueia a trilha
   starterWorkspace  Json?
   allowedBlocks     String[] // opcodes Scratch liberados na caixa de blocos
   checks            Json? // especificação de verificação
@@ -297,15 +303,32 @@ model Lesson {
   @@unique([moduleId, slug])
 }
 
-model TrackAssignment {
+/// Curso = conjunto de trilhas. O professor libera o CURSO inteiro para a turma.
+model Course {
+  id             String        @id @default(cuid())
+  slug           String
+  title          String
+  description    String
+  order          Int           @default(0)
+  published      Boolean       @default(false)
+  comingSoon     Boolean       @default(false) // aparece como “em breve” e não pode ser liberado
+  organizationId String? // null = curso oficial da plataforma
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tracks         Track[]
+  assignments    CourseAssignment[]
+
+  @@unique([organizationId, slug])
+}
+
+model CourseAssignment {
   id        String   @id @default(cuid())
   classId   String
   class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  trackId   String
-  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@unique([classId, trackId])
+  @@unique([classId, courseId])
 }
 
 enum ProgressStatus {

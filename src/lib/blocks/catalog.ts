@@ -2,12 +2,13 @@
 // assim uma mesma especificação de verificação serve para o editor e para arquivos .sb3.
 // Este arquivo é só dados: pode ser importado no servidor (sem Blockly).
 
-export type Category = "eventos" | "movimento" | "aparencia" | "controle" | "sensores" | "operadores" | "variaveis" | "caneta";
+export type Category = "eventos" | "movimento" | "aparencia" | "som" | "controle" | "sensores" | "operadores" | "variaveis" | "caneta";
 
 export const CATEGORIES: Record<Category, { name: string; colour: string }> = {
   eventos: { name: "Eventos", colour: "#FFBF00" },
   movimento: { name: "Movimento", colour: "#4C97FF" },
   aparencia: { name: "Aparência", colour: "#9966FF" },
+  som: { name: "Som", colour: "#CF63CF" },
   controle: { name: "Controle", colour: "#FFAB19" },
   sensores: { name: "Sensores", colour: "#5CB1D6" },
   operadores: { name: "Operadores", colour: "#59C059" },
@@ -15,10 +16,15 @@ export const CATEGORIES: Record<Category, { name: string; colour: string }> = {
   caneta: { name: "Caneta", colour: "#0FBD8C" },
 };
 
+/** Menus que dependem do projeto (atores, fantasias, cenários) são preenchidos pelo editor. */
+export type DynamicMenu = "keys" | "sprites" | "touching" | "distance" | "towards" | "goto" | "clone" | "costumes" | "backdrops" | "sounds";
+
 type Arg =
   | { type: "input_value"; name: string; check?: string }
   | { type: "input_statement"; name: string }
-  | { type: "field_variable"; name: string; variable: string };
+  | { type: "field_variable"; name: string; variable: string }
+  | { type: "field_dropdown"; name: string; menu: DynamicMenu | [label: string, value: string][] }
+  | { type: "field_input"; name: string; text: string };
 
 export type BlockDef = {
   opcode: string;
@@ -26,7 +32,7 @@ export type BlockDef = {
   /** Texto do bloco; %1, %2... são as entradas, na ordem de `args`. "|" quebra em linhas (para C-blocks). */
   text: string;
   args?: Arg[];
-  shape: "hat" | "stack" | "c" | "reporter" | "boolean";
+  shape: "hat" | "stack" | "c" | "cap" | "reporter" | "boolean";
   /** Valores padrão das entradas numéricas/texto (viram "sombras" editáveis). */
   defaults?: Record<string, number | string>;
   /** Explicação para crianças, usada no painel "Como funciona este bloco". */
@@ -37,11 +43,23 @@ const num = (name: string): Arg => ({ type: "input_value", name });
 const bool = (name: string): Arg => ({ type: "input_value", name, check: "Boolean" });
 const stack = (name: string): Arg => ({ type: "input_statement", name });
 const variable: Arg = { type: "field_variable", name: "VARIABLE", variable: "pontos" };
+const menu = (name: string, m: DynamicMenu | [string, string][]): Arg => ({ type: "field_dropdown", name, menu: m });
+const message: Arg = { type: "field_input", name: "BROADCAST_OPTION", text: "começar" };
 
 export const BLOCKS: BlockDef[] = [
   // Eventos
   { opcode: "event_whenflagclicked", category: "eventos", shape: "hat", text: "quando 🏁 for clicado",
     help: "Começa o programa quando você clica na bandeira verde. Todo programa precisa de um bloco de início!" },
+  { opcode: "event_whenkeypressed", category: "eventos", shape: "hat", text: "quando a tecla %1 for pressionada", args: [menu("KEY_OPTION", "keys")],
+    help: "Começa este script toda vez que o jogador aperta a tecla escolhida." },
+  { opcode: "event_whenthisspriteclicked", category: "eventos", shape: "hat", text: "quando este ator for clicado",
+    help: "Começa este script quando o jogador clica no ator. Ótimo para botões!" },
+  { opcode: "event_whenbroadcastreceived", category: "eventos", shape: "hat", text: "quando eu receber %1", args: [message],
+    help: "Começa este script quando alguém transmite esta mensagem." },
+  { opcode: "event_broadcast", category: "eventos", shape: "stack", text: "transmita %1", args: [message],
+    help: "Manda um recado para todos os atores. Quem tiver “quando eu receber” com o mesmo nome começa a agir." },
+  { opcode: "event_broadcastandwait", category: "eventos", shape: "stack", text: "transmita %1 e espere", args: [message],
+    help: "Manda o recado e espera todo mundo terminar de responder antes de continuar." },
 
   // Movimento
   { opcode: "motion_movesteps", category: "movimento", shape: "stack", text: "mover %1 passos", args: [num("STEPS")], defaults: { STEPS: 10 },
@@ -64,10 +82,20 @@ export const BLOCKS: BlockDef[] = [
     help: "Vira para uma direção: 90 = direita, -90 = esquerda, 0 = cima, 180 = baixo." },
   { opcode: "motion_ifonedgebounce", category: "movimento", shape: "stack", text: "se tocar na borda, volte",
     help: "Se o personagem encostar na borda do palco, ele vira e volta, como uma bola quicando." },
+  { opcode: "motion_goto", category: "movimento", shape: "stack", text: "vá para %1", args: [menu("TO", "goto")],
+    help: "Pula para um lugar sorteado, para o ponteiro do mouse ou para onde está outro ator." },
+  { opcode: "motion_glidesecstoxy", category: "movimento", shape: "stack", text: "deslize em %1 seg. até x: %2 y: %3", args: [num("SECS"), num("X"), num("Y")], defaults: { SECS: 1, X: 0, Y: 0 },
+    help: "Vai até o ponto escolhido devagarinho, levando o tempo que você escolher." },
+  { opcode: "motion_pointtowards", category: "movimento", shape: "stack", text: "aponte para %1", args: [menu("TOWARDS", "towards")],
+    help: "Vira o ator na direção do mouse ou de outro ator. Use com “mover” para perseguir!" },
+  { opcode: "motion_setrotationstyle", category: "movimento", shape: "stack", text: "mude o estilo de rotação para %1",
+    args: [menu("STYLE", [["esquerda-direita", "left-right"], ["não girar", "don't rotate"], ["girar em todas as direções", "all around"]])],
+    help: "Com “esquerda-direita”, o ator só olha para os lados e nunca fica de cabeça para baixo." },
   { opcode: "motion_xposition", category: "movimento", shape: "reporter", text: "posição x",
     help: "Diz onde o personagem está na horizontal." },
   { opcode: "motion_yposition", category: "movimento", shape: "reporter", text: "posição y",
     help: "Diz onde o personagem está na vertical." },
+  { opcode: "motion_direction", category: "movimento", shape: "reporter", text: "direção", help: "Diz para onde o personagem está olhando (90 = direita)." },
 
   // Aparência
   { opcode: "looks_sayforsecs", category: "aparencia", shape: "stack", text: "diga %1 por %2 segundos", args: [num("MESSAGE"), num("SECS")], defaults: { MESSAGE: "Olá!", SECS: 2 },
@@ -76,10 +104,28 @@ export const BLOCKS: BlockDef[] = [
     help: "Mostra um balão de fala que fica na tela." },
   { opcode: "looks_show", category: "aparencia", shape: "stack", text: "mostre", help: "Faz o personagem aparecer." },
   { opcode: "looks_hide", category: "aparencia", shape: "stack", text: "esconda", help: "Faz o personagem sumir (ele continua lá, só não aparece)." },
+  { opcode: "looks_nextcostume", category: "aparencia", shape: "stack", text: "próxima fantasia",
+    help: "Troca para a próxima imagem do ator. Trocando rápido, parece que ele está andando!" },
+  { opcode: "looks_switchcostumeto", category: "aparencia", shape: "stack", text: "mude para a fantasia %1", args: [menu("COSTUME", "costumes")],
+    help: "Troca para uma fantasia específica." },
+  { opcode: "looks_switchbackdropto", category: "aparencia", shape: "stack", text: "mude para o cenário %1", args: [menu("BACKDROP", "backdrops")],
+    help: "Troca o fundo do palco. Use para telas de início, fases e fim de jogo." },
+  { opcode: "looks_nextbackdrop", category: "aparencia", shape: "stack", text: "próximo cenário", help: "Troca para o próximo cenário do palco." },
+  { opcode: "looks_changeeffectby", category: "aparencia", shape: "stack", text: "mude o efeito %1 em %2", args: [menu("EFFECT", [["cor", "color"], ["fantasma", "ghost"]]), num("CHANGE")], defaults: { CHANGE: 25 },
+    help: "Muda a cor do ator ou deixa ele transparente (fantasma)." },
+  { opcode: "looks_seteffectto", category: "aparencia", shape: "stack", text: "defina o efeito %1 como %2", args: [menu("EFFECT", [["cor", "color"], ["fantasma", "ghost"]]), num("VALUE")], defaults: { VALUE: 0 },
+    help: "Define o valor exato de um efeito. Fantasma 100 = invisível." },
+  { opcode: "looks_cleargraphiceffects", category: "aparencia", shape: "stack", text: "remova os efeitos gráficos", help: "Volta o ator ao normal." },
   { opcode: "looks_changesizeby", category: "aparencia", shape: "stack", text: "mudar tamanho em %1", args: [num("CHANGE")], defaults: { CHANGE: 10 },
     help: "Deixa o personagem maior (positivo) ou menor (negativo)." },
   { opcode: "looks_setsizeto", category: "aparencia", shape: "stack", text: "mudar tamanho para %1 %", args: [num("SIZE")], defaults: { SIZE: 100 },
     help: "Define o tamanho exato. 100% é o tamanho normal." },
+
+  // Som
+  { opcode: "sound_play", category: "som", shape: "stack", text: "toque o som %1", args: [menu("SOUND_MENU", "sounds")],
+    help: "Toca um som e já continua o programa." },
+  { opcode: "sound_playuntildone", category: "som", shape: "stack", text: "toque o som %1 até o fim", args: [menu("SOUND_MENU", "sounds")],
+    help: "Toca um som e espera ele terminar antes de continuar." },
 
   // Controle
   { opcode: "control_wait", category: "controle", shape: "stack", text: "espere %1 segundos", args: [num("DURATION")], defaults: { DURATION: 1 },
@@ -90,14 +136,33 @@ export const BLOCKS: BlockDef[] = [
     help: "Repete os blocos de dentro para sempre (até você parar o programa)." },
   { opcode: "control_repeat_until", category: "controle", shape: "c", text: "repita até que %1|%2", args: [bool("CONDITION"), stack("SUBSTACK")],
     help: "Repete os blocos de dentro até a condição ficar verdadeira. Aí o programa segue em frente." },
+  { opcode: "control_wait_until", category: "controle", shape: "stack", text: "espere até que %1", args: [bool("CONDITION")],
+    help: "Pausa o script até a condição ficar verdadeira." },
+  { opcode: "control_stop", category: "controle", shape: "cap", text: "pare %1", args: [menu("STOP_OPTION", [["tudo", "all"], ["este script", "this script"]])],
+    help: "Para o jogo inteiro (tudo) ou só este script." },
+  { opcode: "control_start_as_clone", category: "controle", shape: "hat", text: "quando eu começar como clone",
+    help: "Começa o script de cada clone (cópia) assim que ele é criado." },
+  { opcode: "control_create_clone_of", category: "controle", shape: "stack", text: "crie clone de %1", args: [menu("CLONE_OPTION", "clone")],
+    help: "Cria uma cópia de um ator. Perfeito para tiros, inimigos e moedas!" },
+  { opcode: "control_delete_this_clone", category: "controle", shape: "cap", text: "apague este clone",
+    help: "Faz o clone sumir de vez. Apague os clones que não servem mais para o jogo não ficar lento." },
   { opcode: "control_if", category: "controle", shape: "c", text: "se %1 então|%2", args: [bool("CONDITION"), stack("SUBSTACK")],
     help: "Só executa os blocos de dentro se a condição for verdadeira." },
   { opcode: "control_if_else", category: "controle", shape: "c", text: "se %1 então|%2|senão|%3", args: [bool("CONDITION"), stack("SUBSTACK"), stack("SUBSTACK2")],
     help: "Se a condição for verdadeira, faz a primeira parte; se não, faz a parte do “senão”." },
 
   // Sensores
-  { opcode: "sensing_touchingobject", category: "sensores", shape: "boolean", text: "tocando na borda?",
-    help: "Verdadeiro quando o personagem encosta na borda do palco." },
+  { opcode: "sensing_touchingobject", category: "sensores", shape: "boolean", text: "tocando em %1 ?", args: [menu("TOUCHINGOBJECTMENU", "touching")],
+    help: "Verdadeiro quando o ator encosta na borda, no mouse ou em outro ator." },
+  { opcode: "sensing_keypressed", category: "sensores", shape: "boolean", text: "tecla %1 pressionada?", args: [menu("KEY_OPTION", "keys")],
+    help: "Verdadeiro enquanto o jogador segura a tecla. Dentro de um “sempre”, deixa o movimento suave." },
+  { opcode: "sensing_mousedown", category: "sensores", shape: "boolean", text: "mouse pressionado?", help: "Verdadeiro enquanto o botão do mouse está apertado." },
+  { opcode: "sensing_distanceto", category: "sensores", shape: "reporter", text: "distância até %1", args: [menu("DISTANCETOMENU", "distance")],
+    help: "Diz quão longe está o mouse ou outro ator." },
+  { opcode: "sensing_mousex", category: "sensores", shape: "reporter", text: "posição x do mouse", help: "Onde está o mouse na horizontal." },
+  { opcode: "sensing_mousey", category: "sensores", shape: "reporter", text: "posição y do mouse", help: "Onde está o mouse na vertical." },
+  { opcode: "sensing_timer", category: "sensores", shape: "reporter", text: "cronômetro", help: "Quantos segundos passaram desde o início (ou desde que foi zerado)." },
+  { opcode: "sensing_resettimer", category: "sensores", shape: "stack", text: "zere o cronômetro", help: "Volta o cronômetro para zero." },
 
   // Operadores
   { opcode: "operator_add", category: "operadores", shape: "reporter", text: "%1 + %2", args: [num("NUM1"), num("NUM2")], defaults: { NUM1: "", NUM2: "" }, help: "Soma dois números." },

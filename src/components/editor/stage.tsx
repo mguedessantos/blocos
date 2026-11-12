@@ -1,60 +1,33 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { STAGE_H, STAGE_W, type StageState } from "@/lib/blocks/interpreter";
+import { STAGE_H, STAGE_W, type TargetState, type WorldState } from "@/lib/blocks/interpreter";
+import { drawBackdrop, drawCharacter } from "./art";
 
 // Palco 480×360 com coordenadas do Scratch (0,0 no centro, y para cima).
-// O personagem é o “Bloquinho”, um robozinho desenhado em código (sem arte de terceiros).
 
-function drawBloquinho(ctx: CanvasRenderingContext2D, s: StageState) {
-  const scale = s.size / 100;
+function drawTarget(ctx: CanvasRenderingContext2D, t: TargetState) {
+  if (!t.visible || t.ghost >= 100) return;
   ctx.save();
-  ctx.translate(STAGE_W / 2 + s.x, STAGE_H / 2 - s.y);
-  ctx.rotate(((s.direction - 90) * Math.PI) / 180);
-  ctx.scale(scale, scale);
-  // corpo
-  ctx.fillStyle = "#ff8a3d";
-  ctx.strokeStyle = "#7c2d12";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.roundRect(-22, -20, 44, 40, 10);
-  ctx.fill();
-  ctx.stroke();
-  // antena
-  ctx.beginPath();
-  ctx.moveTo(0, -20);
-  ctx.lineTo(0, -30);
-  ctx.stroke();
-  ctx.fillStyle = "#facc15";
-  ctx.beginPath();
-  ctx.arc(0, -32, 4, 0, Math.PI * 2);
-  ctx.fill();
-  // olhos (olhando para a frente = direita, na direção do movimento)
-  ctx.fillStyle = "#fff";
-  for (const ey of [-7, 7]) {
-    ctx.beginPath();
-    ctx.arc(8, ey, 6, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = "#111827";
-  for (const ey of [-7, 7]) {
-    ctx.beginPath();
-    ctx.arc(11, ey, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.translate(STAGE_W / 2 + t.x, STAGE_H / 2 - t.y);
+  if (t.rotationStyle === "all around") ctx.rotate(((t.direction - 90) * Math.PI) / 180);
+  else if (t.rotationStyle === "left-right" && t.direction < 0) ctx.scale(-1, 1);
+  ctx.scale(t.size / 100, t.size / 100);
+  ctx.globalAlpha = 1 - t.ghost / 100;
+  if (t.color) ctx.filter = `hue-rotate(${Math.round(t.color * 1.8)}deg)`;
+  ctx.strokeStyle = "#111827";
+  drawCharacter(ctx, t.character, t.costume);
   ctx.restore();
 }
 
-function drawBubble(ctx: CanvasRenderingContext2D, s: StageState) {
-  if (!s.bubble || !s.visible) return;
+function drawBubble(ctx: CanvasRenderingContext2D, t: TargetState) {
+  if (!t.bubble || !t.visible) return;
   ctx.font = "bold 14px system-ui, sans-serif";
-  const text = s.bubble.length > 40 ? s.bubble.slice(0, 39) + "…" : s.bubble;
+  const text = t.bubble.length > 40 ? t.bubble.slice(0, 39) + "…" : t.bubble;
   const w = Math.max(40, ctx.measureText(text).width + 20);
   const h = 32;
-  let bx = STAGE_W / 2 + s.x + 20;
-  let by = STAGE_H / 2 - s.y - 40 - h;
-  bx = Math.max(4, Math.min(STAGE_W - w - 4, bx));
-  by = Math.max(4, by);
+  const bx = Math.max(4, Math.min(STAGE_W - w - 4, STAGE_W / 2 + t.x + 18));
+  const by = Math.max(4, STAGE_H / 2 - t.y - 40 - h);
   ctx.fillStyle = "#fff";
   ctx.strokeStyle = "#9ca3af";
   ctx.lineWidth = 2;
@@ -66,25 +39,41 @@ function drawBubble(ctx: CanvasRenderingContext2D, s: StageState) {
   ctx.fillText(text, bx + 10, by + 21);
 }
 
-export function Stage({ state }: { state: StageState }) {
+function drawMonitors(ctx: CanvasRenderingContext2D, vars: WorldState["vars"]) {
+  let y = 6;
+  ctx.font = "bold 13px system-ui, sans-serif";
+  for (const [name, value] of Object.entries(vars)) {
+    const label = `${name}: ${value}`;
+    const w = ctx.measureText(label).width + 16;
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.strokeStyle = "#FF8C1A";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(6, y, w, 22, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#7c2d12";
+    ctx.fillText(label, 14, y + 16);
+    y += 28;
+  }
+}
+
+type Props = {
+  state: WorldState;
+  /** Coordenadas do Scratch. */
+  onMouse?: (m: { x: number; y: number; down?: boolean }) => void;
+  onStageClick?: (x: number, y: number) => void;
+  label?: string;
+};
+
+export function Stage({ state, onMouse, onStageClick, label }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, STAGE_W, STAGE_H);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, STAGE_W, STAGE_H);
-    // eixos discretos para ajudar com x/y
-    ctx.strokeStyle = "#f1f5f9";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(STAGE_W / 2, 0);
-    ctx.lineTo(STAGE_W / 2, STAGE_H);
-    ctx.moveTo(0, STAGE_H / 2);
-    ctx.lineTo(STAGE_W, STAGE_H / 2);
-    ctx.stroke();
-    // desenhos da caneta
+    drawBackdrop(ctx, state.backdrops[state.backdrop] ?? "branco", STAGE_W, STAGE_H);
     ctx.strokeStyle = "#2563eb";
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
@@ -94,18 +83,36 @@ export function Stage({ state }: { state: StageState }) {
       ctx.lineTo(STAGE_W / 2 + x2, STAGE_H / 2 - y2);
     }
     ctx.stroke();
-    if (state.visible) drawBloquinho(ctx, state);
-    drawBubble(ctx, state);
+    for (const t of state.targets) drawTarget(ctx, t);
+    for (const t of state.targets) drawBubble(ctx, t);
+    drawMonitors(ctx, state.vars);
   }, [state]);
 
+  const toStage = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return {
+      x: Math.round(((e.clientX - r.left) / r.width) * STAGE_W - STAGE_W / 2),
+      y: Math.round(STAGE_H / 2 - ((e.clientY - r.top) / r.height) * STAGE_H),
+    };
+  };
+
+  const first = state.targets.find((t) => !t.isClone);
   return (
     <canvas
       ref={canvas}
       width={STAGE_W}
       height={STAGE_H}
-      className="aspect-[4/3] w-full rounded-xl bg-white ring-2 ring-black/10"
+      tabIndex={0}
+      className="aspect-[4/3] w-full rounded-xl bg-white ring-2 ring-black/10 focus-visible:ring-4 focus-visible:ring-brand"
       role="img"
-      aria-label={`Palco: personagem em x ${Math.round(state.x)}, y ${Math.round(state.y)}${state.bubble ? `, dizendo ${state.bubble}` : ""}`}
+      aria-label={label ?? `Palco: ${first ? `${first.name} em x ${Math.round(first.x)}, y ${Math.round(first.y)}` : "vazio"}${first?.bubble ? `, dizendo ${first.bubble}` : ""}`}
+      onMouseMove={(e) => onMouse?.(toStage(e))}
+      onMouseDown={(e) => onMouse?.({ ...toStage(e), down: true })}
+      onMouseUp={(e) => onMouse?.({ ...toStage(e), down: false })}
+      onClick={(e) => {
+        const p = toStage(e);
+        onStageClick?.(p.x, p.y);
+      }}
     />
   );
 }

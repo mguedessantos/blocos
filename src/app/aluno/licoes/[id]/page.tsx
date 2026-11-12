@@ -1,11 +1,11 @@
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, Rocket, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LessonPlayer } from "@/components/editor/lesson-player";
+import { Sb3Upload } from "@/components/editor/sb3-upload";
 import { Markdown } from "@/components/markdown";
 import { LESSON_KIND, Stars } from "@/components/lesson-icon";
 import { buttonClass, Card } from "@/components/ui";
-import type { BlocklyState } from "@/lib/blocks/program";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getStudentLesson } from "@/lib/dal/lessons";
@@ -13,6 +13,11 @@ import { verifyLessonAction } from "./actions";
 import { TheoryDone } from "./theory-done";
 
 export const metadata = { title: "Lição" };
+
+/** Lições de jogos mostram o painel de atores e cenários (definido no projeto inicial da lição). */
+function showSprites(starter: unknown) {
+  return !!starter && typeof starter === "object" && "ui" in starter && (starter as { ui?: { sprites?: boolean } }).ui?.sprites === true;
+}
 
 
 export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) {
@@ -52,6 +57,10 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
           </span>
           <h1 className="text-3xl font-extrabold sm:text-4xl">{lesson.title}</h1>
           <span className="rounded-full border-2 px-3 py-0.5 text-sm font-extrabold text-foreground" style={{ borderColor: kind.color, background: `color-mix(in oklab, ${kind.color} 18%, white)` }}>{kind.label}</span>
+          {lesson.optional && <span className="rounded-full border-2 border-dashed border-line px-3 py-0.5 text-sm font-extrabold text-muted">Extra opcional</span>}
+          {lesson.mode === "SB3" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-3 py-0.5 text-sm font-extrabold text-white"><Rocket aria-hidden className="h-3.5 w-3.5" /> PictoBlox</span>
+          )}
           {done && <Stars value={stars} />}
         </div>
         <div className="flex items-center gap-3 text-sm font-bold text-muted">
@@ -69,15 +78,27 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
         {isTheory && <TheoryDone lessonId={lesson.id} done={done} />}
       </Card>
 
-      {!isTheory && (
+      {!isTheory && lesson.mode === "SB3" && <Sb3Upload lessonId={lesson.id} nextHref={nextHref} />}
+
+      {!isTheory && lesson.mode !== "SB3" && (
         <LessonPlayer
           lessonId={lesson.id}
           allowedBlocks={lesson.allowedBlocks}
-          starterState={(lesson.starterWorkspace as BlocklyState | null) ?? null}
-          savedState={(data.savedWorkspace as BlocklyState | null) ?? null}
+          starter={lesson.starterWorkspace}
+          saved={data.savedWorkspace}
+          showSprites={showSprites(lesson.starterWorkspace)}
           nextHref={nextHref}
           verify={verifyLessonAction.bind(null, lesson.id)}
         />
+      )}
+      {lesson.extra && (
+        <details className="clay group p-5">
+          <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
+            <Sparkles aria-hidden className="h-5 w-5 text-amber-500" /> Desafio extra (opcional)
+            <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
+          </summary>
+          <div className="mt-3"><Markdown source={lesson.extra} /></div>
+        </details>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import type { TrackContent } from "./types";
+import type { TrackContent } from "../trilhas/types";
 
 const MOVE = ["event_whenflagclicked", "motion_movesteps", "motion_turnright", "motion_turnleft"];
 

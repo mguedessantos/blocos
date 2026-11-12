@@ -27,6 +27,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
     <div className="space-y-8">
       <Link href="/aluno" className="inline-flex items-center gap-1 text-sm font-extrabold text-brand"><ArrowLeft aria-hidden className="h-4 w-4" /> Minhas trilhas</Link>
       <PageHeader icon={<MapIcon className="h-7 w-7" />} title={track.title} subtitle={track.description} />
+      {track.story && <p className="clay border-l-8 !border-l-brand-2 p-5 font-semibold italic text-muted">{track.story}</p>}
 
       {modules.map((m, mi) => (
         <section key={m.id} className="clay p-6">
@@ -50,7 +51,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
                     <Icon className="h-7 w-7" strokeWidth={2.5} />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-xs font-extrabold uppercase tracking-wide text-muted">{kind.label}</span>
+                    <span className="block text-xs font-extrabold uppercase tracking-wide text-muted">{l.optional ? "Extra opcional" : kind.label}{l.mode === "SB3" ? " · PictoBlox 🚀" : ""}</span>
                     <span className="block text-lg font-extrabold leading-tight">{l.title}</span>
                     <span className="mt-0.5 block text-sm font-bold text-muted">
                       {l.done ? <Stars value={l.stars} /> : l.locked ? "Trancada" : `${l.xp} XP`}
@@ -58,7 +59,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
                   </span>
                 </>
               );
-              const cls = `flex w-full items-center gap-4 rounded-3xl p-3 sm:w-fit sm:pr-8 ${offset}`;
+              const cls = `flex w-full items-center gap-4 rounded-3xl p-3 sm:w-fit sm:pr-8 ${offset} ${l.optional ? "border-2 border-dashed border-line" : ""}`;
               return (
                 <li key={l.id}>
                   {l.locked ? (

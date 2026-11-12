@@ -2,7 +2,7 @@ import { ArrowRight, Map as MapIcon, Rocket, Star, Trophy } from "lucide-react";
 import Link from "next/link";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
-import { listStudentTracks } from "@/lib/dal/lessons";
+import { listStudentCourses } from "@/lib/dal/lessons";
 import { listStudentClasses } from "@/lib/dal/org";
 
 export const metadata = { title: "Minhas trilhas" };
@@ -11,8 +11,8 @@ const TRACK_COLORS = ["#4C97FF", "#9966FF", "#FFAB19", "#59C059", "#FF8C1A", "#0
 
 export default async function AlunoPage() {
   const user = await requireUser(["STUDENT"]);
-  const [tracks, classes] = await Promise.all([listStudentTracks(user), listStudentClasses(user)]);
-  const done = tracks.reduce((a, t) => a + t.done, 0);
+  const [courses, classes] = await Promise.all([listStudentCourses(user), listStudentClasses(user)]);
+  const done = courses.flatMap((c) => c.tracks).reduce((a, t) => a + t.done, 0);
 
   return (
     <div className="space-y-8">
@@ -45,17 +45,21 @@ export default async function AlunoPage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="flex items-center gap-2 text-2xl font-extrabold">
-          <MapIcon aria-hidden className="h-6 w-6 text-brand" /> Minhas trilhas
-        </h2>
-        {tracks.length === 0 && (
-          <Card>
-            <p className="font-semibold text-muted">Seu professor ainda não liberou nenhuma trilha. Logo, logo vai ter novidade!</p>
-          </Card>
-        )}
+      {courses.length === 0 && (
+        <Card>
+          <p className="font-semibold text-muted">Seu professor ainda não liberou nenhum curso. Logo, logo vai ter novidade!</p>
+        </Card>
+      )}
+      {courses.map((course) => (
+      <section key={course.id} className="space-y-4">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Curso</p>
+          <h2 className="flex items-center gap-2 text-2xl font-extrabold">
+            <MapIcon aria-hidden className="h-6 w-6 text-brand" /> {course.title}
+          </h2>
+        </div>
         <div className="grid gap-5 md:grid-cols-2">
-          {tracks.map((t, i) => {
+          {course.tracks.map((t, i) => {
             const pct = t.total ? Math.round((100 * t.done) / t.total) : 0;
             const color = TRACK_COLORS[i % TRACK_COLORS.length];
             return (
@@ -73,7 +77,7 @@ export default async function AlunoPage() {
                   <p className="font-semibold text-muted">{t.description}</p>
                   <div>
                     <div className="flex justify-between text-sm font-extrabold">
-                      <span>{t.done} de {t.total} lições</span>
+                      <span>{t.done} de {t.total} lições{t.extras ? ` · +${t.extras} extra${t.extras > 1 ? "s" : ""}` : ""}</span>
                       <span>{pct}%</span>
                     </div>
                     <div
@@ -97,6 +101,7 @@ export default async function AlunoPage() {
           })}
         </div>
       </section>
+      ))}
     </div>
   );
 }

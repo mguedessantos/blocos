@@ -1,4 +1,4 @@
-import type { TrackContent } from "./types";
+import type { TrackContent } from "../trilhas/types";
 
 const BASE = ["event_whenflagclicked", "motion_movesteps", "motion_turnright", "motion_turnleft", "control_repeat"];
 const PEN = ["pen_penDown", "pen_penUp", "pen_clear"];

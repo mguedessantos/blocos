@@ -1,129 +1,316 @@
 import { describe, expect, it } from "vitest";
 import { OFFICIAL_TRACKS, type LessonContent } from "../../content/trilhas";
+import {
+  b, backdrop, broadcast, c, changeVar, changeX, changeY, createClone, deleteClone, distanceTo, effect, eq, flag, forever, getVar, goTo, gotoXY,
+  gt, hide, iff, ifElse, join, keyPressed, left, lt, move, n, nextCostume, pen, playUntilDone, pointTowards, project, r, random, repeat,
+  resetTimer, right, roundOf, say, sayFor, setVar, show, sound, stopAll, t, timer, touching, wait, whenClicked, whenClone, whenKey,
+  whenReceive, xpos, ypos, type GameSpec,
+} from "@/lib/blocks/build";
 import { BLOCKS_BY_OPCODE } from "@/lib/blocks/catalog";
-import { programFromBlockly, type BlocklyBlock, type BlocklyState } from "@/lib/blocks/program";
-import { check, checksSchema } from "@/lib/checker";
+import { compileProject, normalizeProject } from "@/lib/blocks/project";
+import { checkModel, checkProject, checksSchema, needsRuntime } from "@/lib/checker";
+import { modelFromProjectJson } from "@/lib/sb3/project";
+import { projectJson, type Node, type ProjectSpec } from "./sb3-builder";
 
-// ───────────── Mini-construtor do JSON do Blockly ─────────────
-type In = Record<string, unknown>;
-const n = (v: number) => ({ shadow: { type: "math_number", fields: { NUM: v } } });
-const t = (v: string) => ({ shadow: { type: "text", fields: { TEXT: v } } });
-const r = (block: BlocklyBlock) => ({ block }); // repórter encaixado
-const V = { VARIABLE: { id: "v" } };
-const VARIABLES = [{ id: "v", name: "pontos" }];
+// ───────────── Soluções de referência das lições do SITE ─────────────
+const one = (...body: ReturnType<typeof b>[]): GameSpec => ({ variables: ["pontos"], sprites: [{ name: "Bloquinho", code: [[flag(), ...body]] }] });
+const heroControls = () => [flag(), forever(iff(keyPressed("right arrow"), changeX(6)), iff(keyPressed("left arrow"), changeX(-6)))];
+const heroControls4 = () => [flag(), forever(
+  iff(keyPressed("right arrow"), changeX(5)), iff(keyPressed("left arrow"), changeX(-5)),
+  iff(keyPressed("up arrow"), changeY(5)), iff(keyPressed("down arrow"), changeY(-5)),
+)];
+const touchingHero = () => touching("Bloquinho");
+const coinBottom = (...extra: ReturnType<typeof b>[]) => iff(lt(r(ypos()), n(-170)), ...extra, gotoXY(random(-200, 200), 170));
 
-function chain(...blocks: BlocklyBlock[]): BlocklyBlock | undefined {
-  const copy = blocks.map((b) => ({ ...b }));
-  for (let i = copy.length - 2; i >= 0; i--) copy[i].next = { block: copy[i + 1] };
-  return copy[0];
-}
-const b = (type: string, inputs: In = {}, fields?: Record<string, unknown>): BlocklyBlock => ({ type, inputs: inputs as BlocklyBlock["inputs"], fields });
-const c = (type: string, inputs: In, body: BlocklyBlock[], body2?: BlocklyBlock[]): BlocklyBlock =>
-  b(type, { ...inputs, SUBSTACK: { block: chain(...body) }, ...(body2 ? { SUBSTACK2: { block: chain(...body2) } } : {}) });
-const flag = (...body: BlocklyBlock[]): BlocklyState => ({ variables: VARIABLES, blocks: { blocks: [chain(b("event_whenflagclicked"), ...body)!] } });
-
-const move = (s: number) => b("motion_movesteps", { STEPS: n(s) });
-const right = (d: number) => b("motion_turnright", { DEGREES: n(d) });
-const left = (d: number) => b("motion_turnleft", { DEGREES: n(d) });
-const repeat = (times: number, ...body: BlocklyBlock[]) => c("control_repeat", { TIMES: n(times) }, body);
-const say = (msg: In[string]) => b("looks_say", { MESSAGE: msg });
-const pen = b("pen_penDown");
-const xpos = b("motion_xposition");
-const ypos = b("motion_yposition");
-const gt = (a: In[string], z: In[string]) => b("operator_gt", { OPERAND1: a, OPERAND2: z });
-const edge = b("sensing_touchingobject");
-const setVar = (v: In[string]) => b("data_setvariableto", { VALUE: v }, V);
-const changeVar = (v: In[string]) => b("data_changevariableby", { VALUE: v }, V);
-const pontos = b("data_variable", {}, V);
-
-// Solução de referência de cada exercício: garante que toda lição pode ser resolvida com 3 estrelas.
-const SOLUTIONS: Record<string, BlocklyState> = {
-  // Trilha 1
-  "primeiros-passos": flag(move(100)),
-  "virando-a-esquina": flag(move(100), left(90), move(100)),
-  "pule-para-o-canto": flag(b("motion_gotoxy", { X: n(150), Y: n(100) })),
-  "passeio-com-pausa": flag(move(50), b("control_wait", { DURATION: n(1) }), move(50)),
-  "diga-ola": flag(b("looks_sayforsecs", { MESSAGE: t("Olá!"), SECS: n(2) }), move(50)),
-  "quadrado-magico": flag(pen, repeat(4, move(100), left(90))),
-  // Trilha 2
-  "dez-passinhos": flag(repeat(10, move(10))),
-  triangulo: flag(pen, repeat(3, move(100), left(120))),
-  escada: flag(repeat(4, move(30), left(90), move(30), right(90))),
-  "flor-de-quadrados": flag(pen, repeat(4, repeat(4, move(50), right(90)), right(90))),
-  estrela: flag(pen, repeat(5, move(100), right(144))),
-  "para-sempre": flag(b("motion_pointindirection", { DIRECTION: n(45) }), c("control_forever", {}, [move(5), b("motion_ifonedgebounce")])),
-  // Trilha 3
-  "bate-e-volta": flag(repeat(30, move(10), c("control_if", { CONDITION: r(edge) }, [right(180)]))),
-  "direita-ou-esquerda": flag(
-    b("motion_setx", { X: n(150) }),
-    c("control_if_else", { CONDITION: r(gt(r(xpos), n(0))) }, [say(t("Direita!"))], [say(t("Esquerda!"))]),
-  ),
-  "volta-ao-mundo": flag(repeat(20, b("motion_changexby", { DX: n(15) }), c("control_if", { CONDITION: r(gt(r(xpos), n(150))) }, [b("motion_setx", { X: n(-150) })]))),
-  "e-ou-nao": flag(
-    b("motion_gotoxy", { X: n(80), Y: n(60) }),
-    c("control_if", { CONDITION: r(b("operator_and", { OPERAND1: r(gt(r(xpos), n(0))), OPERAND2: r(gt(r(ypos), n(0))) })) }, [say(t("Canto de cima!"))]),
-  ),
-  "ate-a-borda": flag(c("control_repeat_until", { CONDITION: r(edge) }, [move(5)]), say(t("Cheguei!"))),
-  "robo-aspirador": flag(c("control_forever", {}, [move(10), c("control_if", { CONDITION: r(edge) }, [right(135), move(10)])])),
-  // Trilha 4
-  placar: flag(setVar(n(0)), repeat(3, changeVar(n(10)))),
-  "contando-passos": flag(setVar(n(0)), repeat(5, move(20), changeVar(n(1))), say(r(pontos))),
-  calculadora: flag(say(r(b("operator_multiply", { NUM1: n(7), NUM2: n(8) })))),
-  "juntando-palavras": flag(say(r(b("operator_join", { STRING1: t("Olá, "), STRING2: t("mundo!") })))),
-  espiral: flag(pen, setVar(n(10)), repeat(5, b("motion_movesteps", { STEPS: r(pontos) }), right(90), changeVar(n(10)))),
-  "tabuada-do-3": flag(setVar(n(0)), repeat(10, changeVar(n(3)), b("looks_sayforsecs", { MESSAGE: r(pontos), SECS: n(0.5) }))),
+const SOLUTIONS: Record<string, GameSpec> = {
+  // Mundo 1
+  "primeiros-passos": one(move(100)),
+  "virando-a-esquina": one(move(100), left(90), move(100)),
+  "pule-para-o-canto": one(gotoXY(150, 100)),
+  "passeio-com-pausa": one(move(50), wait(1), move(50)),
+  "diga-ola": one(sayFor("Olá!", 2), move(50)),
+  apresentacao: one(sayFor("Oi, eu sou o Bloquinho!"), move(60), wait(1), sayFor("Tchau!")),
+  // Mundo 2
+  "quadrado-magico": one(pen(), repeat(4, move(100), left(90))),
+  "dez-passinhos": one(repeat(10, move(10))),
+  triangulo: one(pen(), repeat(3, move(100), left(120))),
+  escada: one(repeat(4, move(30), left(90), move(30), right(90))),
+  "flor-de-quadrados": one(pen(), repeat(4, repeat(4, move(50), right(90)), right(90))),
+  estrela: one(pen(), repeat(5, move(100), right(144))),
+  "para-sempre": one(b("motion_pointindirection", { DIRECTION: n(45) }), forever(move(5), b("motion_ifonedgebounce"))),
+  "arte-com-repeticao": one(pen(), repeat(4, repeat(4, move(50), right(90)), right(90))),
+  // Mundo 3
+  "um-amigo-no-palco": { sprites: [
+    { name: "Bloquinho", x: -100, code: [[flag(), sayFor("Oi, tudo bem?", 2)]] },
+    { name: "Estrela", character: "estrela", x: 100, code: [[flag(), wait(2), sayFor("Tudo ótimo!", 2)]] },
+  ] },
+  "animacao-de-caminhada": { sprites: [{ name: "Bloquinho", x: -180, code: [[flag(), repeat(10, move(10), nextCostume(), wait(0.2))]] }] },
+  "troque-o-cenario": { backdrops: ["branco", "floresta"], sprites: [{ name: "Bloquinho", code: [[flag(), sayFor("Vamos passear!", 2), backdrop("floresta")]] }] },
+  "sons-no-palco": { sprites: [{ name: "Bloquinho", code: [[flag(), sound("pulo"), move(50), playUntilDone("vitoria")]] }] },
+  "show-de-talentos": { backdrops: ["branco", "cidade"], sprites: [
+    { name: "Bloquinho", code: [[flag(), backdrop("cidade"), repeat(4, nextCostume(), right(90), wait(0.2)), sound("vitoria"), sayFor("Obrigado!")]] },
+    { name: "Estrela", character: "estrela", x: 120 },
+  ] },
+  // Mundo 4
+  "bate-e-volta": one(repeat(30, move(10), iff(b("sensing_touchingobject"), right(180)))),
+  "direita-ou-esquerda": one(b("motion_setx", { X: n(150) }), ifElse(gt(r(xpos()), n(0)), [say(t("Direita!"))], [say(t("Esquerda!"))])),
+  "volta-ao-mundo": one(repeat(20, changeX(15), iff(gt(r(xpos()), n(150)), b("motion_setx", { X: n(-150) })))),
+  "e-ou-nao": one(gotoXY(80, 60), iff(b("operator_and", { OPERAND1: r(gt(r(xpos()), n(0))), OPERAND2: r(gt(r(ypos()), n(0))) }), say(t("Canto de cima!")))),
+  "ate-a-borda": one(c("control_repeat_until", { CONDITION: r(b("sensing_touchingobject")) }, [move(5)]), say(t("Cheguei!"))),
+  "robo-aspirador": one(forever(move(10), iff(b("sensing_touchingobject"), right(135), move(10)))),
+  // Mundo 5
+  "setas-do-teclado": { sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(-10)]] }] },
+  "voo-em-4-direcoes": { sprites: [{ name: "Bloquinho", code: [
+    [whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(-10)], [whenKey("up arrow"), changeY(10)], [whenKey("down arrow"), changeY(-10)],
+  ] }] },
+  "clique-em-mim": { sprites: [{ name: "Bloquinho", code: [[whenClicked(), sayFor("Ai, que cócegas!", 1)]] }] },
+  "controle-suave": { sprites: [{ name: "Bloquinho", x: -150, code: [[flag(), forever(iff(keyPressed("right arrow"), changeX(5)), iff(keyPressed("left arrow"), changeX(-5)))]] }] },
+  "pegue-a-estrela": { sprites: [
+    { name: "Bloquinho", x: -150, code: [[flag(), forever(iff(keyPressed("right arrow"), changeX(5)), iff(keyPressed("left arrow"), changeX(-5)), iff(touching("Estrela"), say(t("Peguei!")), sound("moeda")))]] },
+    { name: "Estrela", character: "estrela", x: 150 },
+  ] },
+  // Mundo 6
+  bati: { sprites: [
+    { name: "Bloquinho", x: -150, code: [[flag(), forever(move(5), iff(touching("Parede"), say(t("Bati!")), stopAll()))]] },
+    { name: "Parede", character: "parede", x: 120 },
+  ] },
+  radar: { sprites: [
+    { name: "Bloquinho", x: -50 },
+    { name: "Glitch", character: "glitch", x: 50, code: [[flag(), forever(ifElse(lt(r(distanceTo("Bloquinho")), n(120)), [say(t("Te vi!"))], [say(t(""))]))]] },
+  ] },
+  "siga-o-mouse": { sprites: [{ name: "Bloquinho", x: 150, y: 100, code: [[flag(), forever(pointTowards("_mouse_"), move(3))]] }] },
+  cronometro: { sprites: [{ name: "Bloquinho", code: [[flag(), resetTimer(), wait(2), say(r(roundOf(timer())))]] }] },
+  "fuja-do-glitch": { backdrops: ["castelo"], sprites: [
+    { name: "Bloquinho", x: -150, code: [heroControls4()] },
+    { name: "Glitch", character: "glitch", x: 150, code: [[flag(), forever(pointTowards("Bloquinho"), move(3), iff(touchingHero(), say(t("Peguei você!")), stopAll()))]] },
+  ] },
+  // Mundo 7
+  placar: { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(0)), repeat(3, changeVar("pontos", n(10)))]] }] },
+  "contando-passos": { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(0)), repeat(5, move(20), changeVar("pontos", n(1))), say(r(getVar("pontos")))]] }] },
+  calculadora: one(say(r(b("operator_multiply", { NUM1: n(7), NUM2: n(8) })))),
+  "juntando-palavras": one(say(r(join(t("Olá, "), t("mundo!"))))),
+  espiral: { variables: ["pontos"], sprites: [{ code: [[flag(), pen(), setVar("pontos", n(10)), repeat(5, b("motion_movesteps", { STEPS: r(getVar("pontos")) }), right(90), changeVar("pontos", n(10)))]] }] },
+  "tabuada-do-3": { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(0)), repeat(10, changeVar("pontos", n(3)), b("looks_sayforsecs", { MESSAGE: r(getVar("pontos")), SECS: n(0.5) }))]] }] },
+  "placar-do-jogo": { variables: ["pontos"], sprites: [
+    { name: "Bloquinho", x: -150, code: [[flag(), forever(changeX(4), b("motion_ifonedgebounce"))]] },
+    { name: "Moeda", character: "moeda", x: 40, code: [[flag(), setVar("pontos", n(0)), forever(iff(touchingHero(), changeVar("pontos", n(1)), sound("moeda"), goTo("_random_")))]] },
+  ] },
+  // Mundo 8
+  invisibilidade: { backdrops: ["castelo"], sprites: [{ name: "Bloquinho", code: [[flag(), repeat(5, hide(), wait(0.3), show(), wait(0.3))]] }] },
+  teleporte: { sprites: [{ name: "Bloquinho", code: [[whenClicked(), goTo("_random_"), sound("pop")]] }] },
+  mensagens: { sprites: [
+    { name: "Botão", character: "botao", y: -110, code: [[whenClicked(), broadcast("começar")]] },
+    { name: "Bloquinho", y: 40, code: [[whenReceive("começar"), sayFor("Vamos!", 2)]] },
+  ] },
+  "exercito-de-clones": { backdrops: ["espaco"], sprites: [{ name: "Meteoro", character: "meteoro", y: 170, code: [
+    [flag(), hide(), repeat(5, createClone(), wait(0.5))],
+    [whenClone(), show(), gotoXY(random(-200, 200), 170), repeat(35, changeY(-10)), deleteClone()],
+  ] }] },
+  "telas-do-jogo": { backdrops: ["inicio", "floresta", "fim"], sprites: [
+    { name: "Botão", character: "botao", y: -60, code: [[flag(), backdrop("inicio"), show()], [whenClicked(), backdrop("floresta"), broadcast("começar"), hide()]] },
+    { name: "Bloquinho", x: -150, y: -120, code: [[whenReceive("começar"), say(t("O jogo começou!"))]] },
+  ] },
+  "chuva-de-meteoros": { backdrops: ["espaco"], variables: ["desvios"], sprites: [
+    { name: "Bloquinho", y: -140, code: [[flag(), setVar("desvios", n(0)), forever(iff(keyPressed("right arrow"), changeX(6)), iff(keyPressed("left arrow"), changeX(-6)))], [whenReceive("fim"), say(t("Fim de jogo!")), stopAll()]] },
+    { name: "Meteoro", character: "meteoro", y: 170, visible: false, code: [
+      [flag(), forever(createClone(), wait(1))],
+      [whenClone(), gotoXY(random(-200, 200), 170), show(), repeat(35, changeY(-10), iff(touchingHero(), broadcast("fim"))), changeVar("desvios", n(1)), deleteClone()],
+    ] },
+  ] },
+  // Mundo 9
+  "moedas-1-cenario": { backdrops: ["branco", "floresta"], sprites: [{ name: "Bloquinho", code: [[flag(), backdrop("floresta")]] }, { name: "Moeda", character: "moeda", y: 150 }] },
+  "moedas-2-heroi": { backdrops: ["floresta"], sprites: [{ name: "Bloquinho", y: -140, code: [heroControls()] }, { name: "Moeda", character: "moeda", y: 170 }] },
+  "moedas-3-queda": { backdrops: ["floresta"], sprites: [
+    { name: "Bloquinho", y: -140, code: [heroControls()] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), gotoXY(0, 170), forever(changeY(-5), coinBottom())]] },
+  ] },
+  "moedas-4-pontos": { backdrops: ["floresta"], variables: ["pontos"], sprites: [
+    { name: "Bloquinho", y: -140, code: [heroControls()] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), setVar("pontos", n(0)), gotoXY(0, 170), forever(
+      changeY(-5), iff(touchingHero(), changeVar("pontos", n(1)), sound("moeda"), gotoXY(random(-200, 200), 170)), coinBottom(),
+    )]] },
+  ] },
+  "moedas-5-vidas": { backdrops: ["floresta"], variables: ["pontos", "vidas"], sprites: [
+    { name: "Bloquinho", y: -140, code: [heroControls(), [flag(), setVar("vidas", n(3)), forever(iff(eq(r(getVar("vidas")), n(0)), say(t("Fim de jogo!")), stopAll()))]] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), setVar("pontos", n(0)), gotoXY(0, 170), forever(
+      changeY(-5), iff(touchingHero(), changeVar("pontos", n(1)), gotoXY(random(-200, 200), 170)), coinBottom(changeVar("vidas", n(-1))),
+    )]] },
+  ] },
+  "fuga-1-arena": { backdrops: ["branco", "castelo"], sprites: [{ name: "Bloquinho", x: -150, code: [heroControls4()] }, { name: "Glitch", character: "glitch", x: 150 }] },
+  "fuga-2-perseguicao": { backdrops: ["castelo"], sprites: [
+    { name: "Bloquinho", x: -150, code: [heroControls4()] },
+    { name: "Glitch", character: "glitch", x: 150, y: 100, code: [[flag(), forever(pointTowards("Bloquinho"), move(2))]] },
+  ] },
+  "fuga-3-perigo": { backdrops: ["castelo"], sprites: [
+    { name: "Bloquinho", x: -150, code: [heroControls4(), [whenReceive("pegou"), sayFor("Ai!", 1), gotoXY(-150, 0)]] },
+    { name: "Glitch", character: "glitch", x: 150, y: 100, code: [[flag(), forever(pointTowards("Bloquinho"), move(3), iff(touchingHero(), broadcast("pegou")))]] },
+  ] },
+  "fuga-4-fim": { backdrops: ["castelo", "fim"], sprites: [
+    { name: "Bloquinho", x: -150, code: [heroControls4(), [flag(), resetTimer(), backdrop("castelo")], [whenReceive("pegou"), backdrop("fim"), say(r(join(t("Você sobreviveu "), r(roundOf(timer()))))), stopAll()]] },
+    { name: "Glitch", character: "glitch", x: 150, y: 100, code: [[flag(), forever(pointTowards("Bloquinho"), move(3), iff(touchingHero(), broadcast("pegou")))]] },
+  ] },
+  // Mundo 10
+  "sons-e-efeitos": { backdrops: ["floresta"], variables: ["pontos"], stage: [[flag(), forever(playUntilDone("vitoria"))]], sprites: [
+    { name: "Bloquinho", y: -140, code: [heroControls()] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), gotoXY(0, 170), forever(
+      changeY(-5), iff(touchingHero(), sound("moeda"), effect("color", 25), gotoXY(random(-200, 200), 170)), coinBottom(sound("derrota")),
+    )]] },
+  ] },
+  "dificuldade-crescente": { backdrops: ["floresta"], variables: ["velocidade"], sprites: [
+    { name: "Bloquinho", y: -140, code: [heroControls()] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), setVar("velocidade", n(3)), gotoXY(0, 170), forever(
+      b("motion_changeyby", { DY: r(b("operator_subtract", { NUM1: n(0), NUM2: r(getVar("velocidade")) })) }),
+      iff(touchingHero(), changeVar("velocidade", n(1)), gotoXY(random(-200, 200), 170)), coinBottom(),
+    )]] },
+  ] },
+  "projeto-final": { backdrops: ["inicio", "floresta", "fim"], variables: ["pontos"], sprites: [
+    { name: "Bloquinho", y: -140, code: [[flag(), backdrop("floresta"), forever(iff(keyPressed("right arrow"), changeX(6)), iff(keyPressed("left arrow"), changeX(-6)))], [whenReceive("pegou"), sound("moeda"), changeVar("pontos", n(1))]] },
+    { name: "Moeda", character: "moeda", y: 170, code: [[flag(), gotoXY(0, 170), forever(changeY(-5), iff(touchingHero(), broadcast("pegou"), gotoXY(random(-200, 200), 170)), coinBottom())]] },
+    { name: "Glitch", character: "glitch", x: 150, code: [[flag(), hide(), createClone()], [whenClone(), show()]] },
+  ] },
 };
 
 // Erros comuns que NÃO podem passar.
-const WRONG: [string, BlocklyState][] = [
-  ["quadrado-magico", flag(pen, move(100), left(90), move(100), left(90), move(100), left(90), move(100), left(90))],
-  ["triangulo", flag(pen, repeat(3, move(100), left(90)))],
-  ["flor-de-quadrados", flag(pen, repeat(16, move(50), right(90)))],
-  ["para-sempre", flag(c("control_forever", {}, [move(5)]))],
-  ["bate-e-volta", flag(repeat(30, move(10)))],
-  ["direita-ou-esquerda", flag(say(t("Direita!")))],
-  ["robo-aspirador", flag(c("control_forever", {}, [move(10)]))],
-  ["robo-aspirador", flag(c("control_forever", {}, [move(10), b("motion_ifonedgebounce"), c("control_if", { CONDITION: r(edge) }, [])]))],
-  ["contando-passos", flag(repeat(5, move(20)), say(t("5")))],
-  ["calculadora", flag(say(t("56")))],
-  ["tabuada-do-3", flag(say(t("30")))],
+const WRONG: [string, GameSpec][] = [
+  ["quadrado-magico", one(pen(), move(100), left(90), move(100), left(90), move(100), left(90), move(100), left(90))],
+  ["triangulo", one(pen(), repeat(3, move(100), left(90)))],
+  ["flor-de-quadrados", one(pen(), repeat(16, move(50), right(90)))],
+  ["para-sempre", one(forever(move(5)))],
+  ["bate-e-volta", one(repeat(30, move(10)))],
+  ["direita-ou-esquerda", one(say(t("Direita!")))],
+  ["robo-aspirador", one(forever(move(10)))],
+  ["contando-passos", one(repeat(5, move(20)), say(t("5")))],
+  ["calculadora", one(say(t("56")))],
+  ["setas-do-teclado", { sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(10)]] }] }],
+  ["controle-suave", { sprites: [{ name: "Bloquinho", x: -150, code: [[whenKey("right arrow"), changeX(5)], [whenKey("left arrow"), changeX(-5)]] }] }],
+  ["mensagens", { sprites: [
+    { name: "Botão", character: "botao", y: -110, code: [[whenClicked(), broadcast("começar")]] },
+    { name: "Bloquinho", y: 40, code: [[whenReceive("comecar"), sayFor("Vamos!", 2)]] },
+  ] }],
+  ["bati", { sprites: [
+    { name: "Bloquinho", x: -150, code: [[flag(), forever(move(5), iff(touching("_edge_"), say(t("Bati!")), stopAll()))]] },
+    { name: "Parede", character: "parede", x: 120 },
+  ] }],
 ];
+
+// ───────────── Soluções de referência das missões no PictoBlox (.sb3) ─────────────
+const F = "event_whenflagclicked";
+const sforever = (...sub: Node[]): Node => ({ op: "control_forever", sub });
+const siff = (cond: Node, ...sub: Node[]): Node => ({ op: "control_if", inputs: { CONDITION: cond }, sub });
+const sKey = (k: string): Node => ({ op: "sensing_keypressed", fields: { KEY_OPTION: [k, null] } });
+const sTouching: Node = { op: "sensing_touchingobject" };
+const sSay = (text: string): Node => ({ op: "looks_sayforsecs", inputs: { MESSAGE: text, SECS: 2 } });
+
+const SB3_SOLUTIONS: Record<string, ProjectSpec> = {
+  "primeiro-projeto": { sprites: [{ scripts: [[F, "motion_movesteps", sSay("Olá, mundo!")]] }] },
+  patrulha: { sprites: [{ scripts: [[F, "motion_setrotationstyle", sforever("motion_movesteps", "motion_ifonedgebounce")]] }] },
+  "disfarce-e-canto": { sprites: [{ costumes: 2, sounds: 1, scripts: [[F, "looks_nextcostume", "sound_playuntildone"]] }] },
+  "a-porta-que-decide": { sprites: [{ scripts: [[F, sforever(siff(sTouching, sSay("Abriu!")))]] }, {}] },
+  "comandos-no-pictoblox": { sprites: [{ scripts: [[F, sforever(siff(sKey("right arrow"), "motion_changexby"), siff(sKey("left arrow"), "motion_changexby"))]] }] },
+  "cor-perigosa": { sprites: [{ scripts: [[F, sforever(siff({ op: "sensing_touchingcolor" }, sSay("Ai!"), "motion_gotoxy"))]] }] },
+  "placar-no-jogo": { sprites: [{ variables: ["pontos"], scripts: [[F, "data_setvariableto", sforever(siff(sTouching, "data_changevariableby", "motion_gotoxy"))]] }, {}] },
+  "clones-no-pictoblox": { sprites: [{ scripts: [[F, "looks_hide", "control_create_clone_of"], ["control_start_as_clone", "looks_show", "control_delete_this_clone"]] }] },
+  "caca-moedas-no-pictoblox": { sprites: [
+    { variables: ["pontos", "vidas"], scripts: [[F, sforever(siff(sKey("right arrow"), "motion_changexby"), siff({ op: "operator_equals" }, "control_stop"))]] },
+    { scripts: [[F, sforever("motion_changeyby")]] },
+  ] },
+  "projeto-final-pictoblox": {
+    backdrops: 3,
+    sprites: [
+      { sounds: 1, variables: ["pontos"], scripts: [[F, "event_broadcast", sforever(siff(sKey("right arrow"), "motion_changexby"))], ["event_whenbroadcastreceived", "sound_play"]] },
+      { scripts: [[F, sforever(siff(sTouching, "data_changevariableby"))]] },
+      {},
+    ],
+  },
+};
 
 const lessons = OFFICIAL_TRACKS.flatMap((tr) => tr.modules.flatMap((m) => m.lessons));
 const bySlug = new Map(lessons.map((l) => [l.slug, l]));
 const isExercise = (l: LessonContent) => l.type === "EXERCICIO" || l.type === "DESAFIO";
+const run = (spec: GameSpec | object, l: LessonContent) => checkProject(compileProject(normalizeProject("sprites" in spec && !("v" in spec) ? project(spec as GameSpec) : spec)), checksSchema.parse(l.checks));
 
-describe("conteúdo das trilhas oficiais", () => {
-  it("tem as 4 primeiras trilhas, em ordem", () => {
-    expect(OFFICIAL_TRACKS.map((tr) => tr.order)).toEqual([1, 2, 3, 4]);
-    for (const tr of OFFICIAL_TRACKS) expect(tr.modules.flatMap((m) => m.lessons).length).toBeGreaterThanOrEqual(6);
+describe("currículo oficial", () => {
+  it("tem 10 mundos em 3 níveis, em ordem, com história, terminando no projeto final da jam", () => {
+    expect(OFFICIAL_TRACKS.map((tr) => tr.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(new Set(OFFICIAL_TRACKS.map((tr) => tr.level))).toEqual(new Set([1, 2, 3]));
+    for (const tr of OFFICIAL_TRACKS) expect(tr.story, tr.slug).toBeTruthy();
+    const required = OFFICIAL_TRACKS.at(-1)!.modules.flatMap((m) => m.lessons).filter((l) => !l.optional);
+    expect(required.at(-1)!.slug).toBe("projeto-final");
   });
 
-  it.each(lessons.map((l) => [l.slug, l] as const))("%s é válida e tem solução com 3 estrelas", (_, l) => {
+  it("o site vem primeiro: nenhuma lição obrigatória depende do PictoBlox", () => {
+    for (const l of lessons) {
+      if (l.mode === "SB3") expect(l.optional, `${l.slug} é do PictoBlox e não pode ser obrigatória`).toBe(true);
+    }
+    // e cada mundo oferece a transferência opcional para o PictoBlox
+    for (const tr of OFFICIAL_TRACKS) {
+      expect(tr.modules.flatMap((m) => m.lessons).some((l) => l.mode === "SB3" && l.optional), tr.slug).toBe(true);
+    }
+  });
+
+  it("não menciona robótica nem inteligência artificial", () => {
+    const text = JSON.stringify(OFFICIAL_TRACKS).toLowerCase();
+    for (const word of ["inteligência artificial", "aprendizado de máquina", "robótica", "detecção de rosto", "extensões"]) expect(text).not.toContain(word);
+  });
+
+  it.each(lessons.map((l) => [l.slug, l] as const))("%s: guia do professor, blocos válidos e solução com 3 estrelas", (_, l) => {
+    expect(l.guide, `${l.slug} sem guia do professor`).toBeDefined();
     for (const op of l.allowedBlocks ?? []) expect(BLOCKS_BY_OPCODE.has(op), op).toBe(true);
     if (!isExercise(l)) return;
     const checks = checksSchema.parse(l.checks);
-    // tudo o que a verificação exige precisa estar na caixa de blocos
-    for (const chk of checks.checks) {
-      if (chk.type === "usesBlock") expect(l.allowedBlocks ?? [], chk.opcode).toContain(chk.opcode);
+
+    if (l.mode === "SB3") {
+      for (const chk of checks.checks) expect(needsRuntime(chk), `${l.slug}: ${chk.type} precisa do editor`).toBe(false);
+      const solution = SB3_SOLUTIONS[l.slug];
+      expect(solution, `falta solução .sb3 de referência para ${l.slug}`).toBeDefined();
+      const res = checkModel(modelFromProjectJson(projectJson(solution)), checks);
+      expect(res.items.filter((i) => !i.ok)).toEqual([]);
+      expect(res.stars).toBe(3);
+      expect(checkModel(modelFromProjectJson(projectJson({})), checks).passed, `${l.slug} aceita projeto vazio`).toBe(false);
+      return;
     }
+
     const solution = SOLUTIONS[l.slug];
     expect(solution, `falta solução de referência para ${l.slug}`).toBeDefined();
-    for (const op of Object.keys(programFromBlockly(solution).opcodeCounts)) {
-      if (op !== "event_whenflagclicked") expect(l.allowedBlocks ?? [], `${l.slug} usa ${op}`).toContain(op);
+    // a solução só usa blocos liberados na lição
+    if (l.allowedBlocks?.length) {
+      const used = Object.keys(compileProject(project(solution)).opcodeCounts);
+      for (const op of used) if (!op.startsWith("event_whenflag")) expect(l.allowedBlocks, `${l.slug} usa ${op}`).toContain(op);
     }
-    const res = check(programFromBlockly(solution), checks);
+    const res = run(solution, l);
     expect(res.items.filter((i) => !i.ok)).toEqual([]);
     expect(res.stars).toBe(3);
+    // o projeto inicial, sem mudanças, não pode passar
+    const starter = l.starter ?? (l.startWithFlag ? { blocks: { blocks: [{ type: "event_whenflagclicked" }] } } : {});
+    expect(run(starter, l).passed, `${l.slug}: o projeto inicial já passa sem fazer nada`).toBe(false);
   });
 
   it.each(WRONG.map(([slug, prog], i) => [`${slug} #${i}`, slug, prog] as const))("rejeita solução errada: %s", (_, slug, prog) => {
-    const res = check(programFromBlockly(prog), checksSchema.parse(bySlug.get(slug)!.checks));
-    expect(res.passed).toBe(false);
+    expect(run(prog, bySlug.get(slug)!).passed).toBe(false);
   });
 
   it("slugs únicos", () => {
     expect(new Set(lessons.map((l) => l.slug)).size).toBe(lessons.length);
     expect(new Set(OFFICIAL_TRACKS.map((tr) => tr.slug)).size).toBe(OFFICIAL_TRACKS.length);
+  });
+});
+
+import { OFFICIAL_COURSES } from "../../content/cursos";
+
+describe("cursos oficiais", () => {
+  it("o primeiro curso reúne os 10 mundos; o de Arduino está “em breve” e vazio", () => {
+    const [intro, arduino] = OFFICIAL_COURSES;
+    expect(intro.title).toBe("PictoBlox e Introdução à Programação de Blocos");
+    expect(intro.tracks).toHaveLength(10);
+    expect(intro.comingSoon).toBeFalsy();
+    expect(arduino.title).toBe("Arduino e PictoBlox");
+    expect(arduino.comingSoon).toBe(true);
+    expect(arduino.tracks).toHaveLength(0);
+  });
+
+  it("cada trilha oficial pertence a exatamente um curso", () => {
+    const slugs = OFFICIAL_COURSES.flatMap((c) => c.tracks.map((t) => t.slug));
+    expect(new Set(slugs).size).toBe(slugs.length);
+    expect(slugs.sort()).toEqual(OFFICIAL_TRACKS.map((t) => t.slug).sort());
   });
 });

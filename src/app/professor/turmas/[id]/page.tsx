@@ -4,9 +4,9 @@ import { Card } from "@/components/ui";
 import { getBrand } from "@/lib/branding";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError, getClassDetail } from "@/lib/dal/classes";
-import { listAssignableTracks } from "@/lib/dal/lessons";
+import { listAssignableCourses } from "@/lib/dal/lessons";
 import { getStudentLoginUrl } from "@/lib/dal/org";
-import { archiveClassAction, setTrackAssignmentAction } from "../../actions";
+import { archiveClassAction, setCourseAssignmentAction } from "../../actions";
 import { AddStudentsForm, RenameClassForm, StudentsTable } from "./class-forms";
 
 export const metadata = { title: "Turma" };
@@ -18,7 +18,7 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
     if (err instanceof AccessError) notFound();
     throw err;
   });
-  const [brand, loginUrl, tracks] = await Promise.all([getBrand(), getStudentLoginUrl(user), listAssignableTracks(user, klass.id)]);
+  const [brand, loginUrl, tracks] = await Promise.all([getBrand(), getStudentLoginUrl(user), listAssignableCourses(user, klass.id)]);
   const card = { brandName: brand.name, logoUrl: brand.logoUrl, loginUrl, classCode: klass.code, className: klass.name };
   const students = klass.enrollments.map((e) => e.user);
 
@@ -43,23 +43,27 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
       </Card>
 
       <Card className="no-print">
-        <h2 className="mb-1 text-lg font-bold">Trilhas da turma</h2>
-        <p className="mb-3 text-sm text-muted">Os alunos só veem as trilhas liberadas aqui.</p>
+        <h2 className="mb-1 text-lg font-bold">Cursos da turma</h2>
+        <p className="mb-3 text-sm text-muted">Ao liberar um curso, a turma recebe todas as trilhas dele.</p>
         <ul className="space-y-2">
-          {tracks.map((t) => (
-            <li key={t.id} className="flex items-center justify-between gap-4 rounded-2xl border-2 border-line p-3">
+          {tracks.map((c) => (
+            <li key={c.id} className={`flex items-center justify-between gap-4 rounded-2xl border-2 p-3 ${c.comingSoon ? "border-dashed border-line opacity-70" : "border-line"}`}>
               <span>
-                <strong>{t.title}</strong>
-                <span className="block text-sm text-muted">{t.description}</span>
+                <strong>{c.title}</strong>
+                <span className="block text-sm text-muted">{c.comingSoon ? "Em breve" : `${c.tracks} trilhas · ${c.description}`}</span>
               </span>
-              <form action={setTrackAssignmentAction.bind(null, klass.id, t.id, !t.assigned)}>
-                <button className={`btn btn-sm shrink-0 ${t.assigned ? "btn-secondary" : ""}`}>
-                  {t.assigned ? "✓ Liberada (remover)" : "Liberar para a turma"}
-                </button>
-              </form>
+              {c.comingSoon ? (
+                <span className="shrink-0 rounded-full bg-black/5 px-3 py-1 text-sm font-extrabold text-muted">Em breve</span>
+              ) : (
+                <form action={setCourseAssignmentAction.bind(null, klass.id, c.id, !c.assigned)}>
+                  <button className={`btn btn-sm shrink-0 ${c.assigned ? "btn-secondary" : ""}`}>
+                    {c.assigned ? "✓ Liberado (remover)" : "Liberar curso"}
+                  </button>
+                </form>
+              )}
             </li>
           ))}
-          {tracks.length === 0 && <li className="text-sm text-muted">Nenhuma trilha publicada ainda.</li>}
+          {tracks.length === 0 && <li className="text-sm text-muted">Nenhum curso publicado ainda.</li>}
         </ul>
       </Card>
 
