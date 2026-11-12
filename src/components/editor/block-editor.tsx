@@ -225,6 +225,8 @@ export default function BlockEditor({ handle, allowedBlocks, initialState, initi
       sounds: false,
     });
     ws.current = workspace;
+    // Como na referência: a paleta de blocos já começa aberta na primeira categoria.
+    (workspace.getToolbox() as Blockly.Toolbox | null)?.selectItemByPosition(0);
     workspace.registerButtonCallback("CRIAR_VARIAVEL", (b) => Blockly.Variables.createVariableButtonHandler(b.getTargetWorkspace()));
     loadInto(workspace, initialState);
     const listener = (e: Blockly.Events.Abstract) => {

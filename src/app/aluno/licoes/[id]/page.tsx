@@ -45,6 +45,47 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
   const isTheory = lesson.type === "TEORIA" || lesson.type === "DEMO";
   const kind = LESSON_KIND[lesson.type];
   const KindIcon = kind.icon;
+
+  // Exercícios no editor: tela cheia (título na barra do topo, missão na coluna da esquerda).
+  if (!isTheory && lesson.mode !== "SB3") {
+    return (
+      <LessonPlayer
+        lessonId={lesson.id}
+        allowedBlocks={lesson.allowedBlocks}
+        starter={lesson.starterWorkspace}
+        saved={data.savedWorkspace}
+        showSprites={showSprites(lesson.starterWorkspace)}
+        nextHref={nextHref}
+        verify={verifyLessonAction.bind(null, lesson.id)}
+        header={
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            <Link href={`/aluno/trilhas/${track.id}`} className="inline-flex items-center gap-1 text-sm font-extrabold text-muted hover:text-foreground">
+              <ArrowLeft aria-hidden className="h-4 w-4" /> {track.title}
+            </Link>
+            <span aria-hidden className="hidden h-5 w-px bg-line sm:block" />
+            <span className="font-display text-sm font-extrabold text-star">Lição {position.index} de {position.total}</span>
+            <h1 className="truncate text-xl font-extrabold sm:text-2xl">{lesson.title}</h1>
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-extrabold text-night" style={{ background: kind.color }}>{kind.label}</span>
+            {lesson.optional && <span className="rounded-full border-2 border-dashed border-line px-2.5 py-0.5 text-xs font-extrabold text-muted">Extra opcional</span>}
+            {done && <Stars value={stars} />}
+          </div>
+        }
+        mission={<Markdown source={lesson.content} />}
+        extra={
+          lesson.extra && (
+            <details className="clay group p-4">
+              <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
+                <Sparkles aria-hidden className="h-5 w-5 text-star" /> Desafio extra (opcional)
+                <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
+              </summary>
+              <div className="mt-3"><Markdown source={lesson.extra} /></div>
+            </details>
+          )
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="space-y-2">
@@ -80,17 +121,6 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
 
       {!isTheory && lesson.mode === "SB3" && <Sb3Upload lessonId={lesson.id} nextHref={nextHref} />}
 
-      {!isTheory && lesson.mode !== "SB3" && (
-        <LessonPlayer
-          lessonId={lesson.id}
-          allowedBlocks={lesson.allowedBlocks}
-          starter={lesson.starterWorkspace}
-          saved={data.savedWorkspace}
-          showSprites={showSprites(lesson.starterWorkspace)}
-          nextHref={nextHref}
-          verify={verifyLessonAction.bind(null, lesson.id)}
-        />
-      )}
       {lesson.extra && (
         <details className="clay group p-5">
           <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">

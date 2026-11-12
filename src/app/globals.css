@@ -183,9 +183,12 @@ svg [display="none"] {
   color: #1f1d2b !important;
   padding: 0 !important;
 }
+/* Paleta de blocos com fundo próprio: dá para ver onde termina a paleta e começa a área de programar */
 .blocos-editor .blocklyFlyoutBackground {
-  fill: #fff;
-  fill-opacity: 0.96;
+  fill: #ebe7fb;
+  fill-opacity: 1;
+  stroke: #d6cff5;
+  stroke-width: 2px;
 }
 .blocos-editor .blocklyMainBackground {
   stroke: none;

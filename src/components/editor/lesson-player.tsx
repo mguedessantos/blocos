@@ -3,7 +3,7 @@
 import { ArrowRight, BookOpen, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { Stars } from "@/components/lesson-icon";
 import { buttonClass } from "@/components/ui";
 import { BLOCKS, CATEGORIES } from "@/lib/blocks/catalog";
@@ -35,6 +35,10 @@ type Props = {
   nextHref: string | null;
   /** Recebe o projeto como JSON (texto). */
   verify: (projectJson: string) => Promise<VerifyOutcome>;
+  /** Barra do topo (mundo, lição, título) e a missão/instruções, mostradas na coluna da esquerda. */
+  header?: ReactNode;
+  mission?: ReactNode;
+  extra?: ReactNode;
 };
 
 const MAX_RUN_SECONDS = 600;
@@ -54,7 +58,7 @@ function readDraft(key: string): unknown {
 
 const snapshot = (s: WorldState): WorldState => ({ ...s, targets: s.targets.map((t) => ({ ...t })), lines: s.lines.slice(), vars: { ...s.vars } });
 
-export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSprites, nextHref, verify }: Props) {
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSprites, nextHref, verify, header, mission, extra }: Props) {
   const draftKey = `blocos:licao:${lessonId}`;
   const starterProject = useMemo(() => normalizeProject(starter), [starter]);
   const [project, setProject] = useState<ProjectState>(() =>
@@ -281,61 +285,31 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
   const selectedName = selected === STAGE_ID ? "Palco" : project.sprites.find((s) => s.id === selected)?.name;
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[1fr_420px]">
-      {/* Altura FIXA: o resultado e os painéis ao lado não esticam o editor. */}
-      <div className="clay blocos-editor relative flex h-[min(78vh,760px)] min-h-[520px] flex-col overflow-hidden">
-        <div className="flex min-h-12 items-center gap-2 border-b-2 border-line px-3 py-1.5 text-sm font-extrabold">
-          {showSprites && (
-            <>
-              <Puzzle aria-hidden className="h-4 w-4 text-brand" /> Blocos de: <span className="text-brand-shadow">{selectedName}</span>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => setHelpOpen(!helpOpen)}
-            aria-expanded={helpOpen}
-            aria-controls="ajuda-blocos"
-            className={`ml-auto inline-flex min-h-10 items-center gap-2 rounded-xl px-3 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.15)] ${helpOpen ? "bg-brand text-brand-text" : "bg-star text-night"}`}
-          >
-            <BookOpen aria-hidden className="h-4 w-4" /> Como funciona cada bloco
-          </button>
-        </div>
-        <div className="relative min-h-0 flex-1">
-          <BlockEditor
-            handle={editor}
-            allowedBlocks={allowedBlocks}
-            initialState={workspaceOf(project, selected)}
-            initialContext={contextFor(project, selected)}
-            onChange={onBlocksChange}
-          />
-          {helpOpen && (
-            <aside
-              id="ajuda-blocos"
-              aria-label="Como funciona cada bloco"
-              className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,90%)] flex-col border-l-2 border-line bg-surface shadow-[-8px_0_24px_rgb(15_23_42/0.12)]"
-            >
-              <div className="flex items-center justify-between border-b-2 border-line px-4 py-2">
-                <h3 className="flex items-center gap-2 font-extrabold"><BookOpen aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco</h3>
-                <button type="button" onClick={() => setHelpOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl hover:bg-black/5" aria-label="Fechar ajuda dos blocos">
-                  <X aria-hidden className="h-5 w-5" />
-                </button>
-              </div>
-              <ul className="flex-1 space-y-3 overflow-y-auto p-4 text-base">
-                {allowed.map((b) => (
-                  <li key={b.opcode} className="flex flex-col gap-1">
-                    <span className="w-fit rounded-lg px-2.5 py-1 text-sm font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
-                      {b.text.split("|")[0].replace(/%\d/g, "▢")}
-                    </span>
-                    <span className="font-semibold text-muted">{b.help}</span>
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          )}
-        </div>
+    // Tela cheia (como um editor de verdade): sai da coluna centralizada do site e ocupa a largura toda.
+    <div className="relative left-1/2 -my-8 flex w-screen -translate-x-1/2 flex-col border-t-2 border-line lg:h-[calc(100dvh-66px)]">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-line bg-surface px-4 py-2">
+        <div className="min-w-0 flex-1">{header}</div>
+        <button
+          type="button"
+          onClick={() => setHelpOpen(!helpOpen)}
+          aria-expanded={helpOpen}
+          aria-controls="ajuda-blocos"
+          className={`inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 font-extrabold shadow-[0_3px_0_rgb(0_0_0/0.3)] ${helpOpen ? "bg-brand text-brand-text" : "bg-star text-night"}`}
+        >
+          <BookOpen aria-hidden className="h-4 w-4" /> Como funciona cada bloco
+        </button>
+        <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md")}>
+          <CircleCheck aria-hidden className="h-5 w-5" /> {pending ? "Verificando…" : "Verificar"}
+        </button>
+        {outcome?.ok && outcome.passed && nextHref && !resultOpen && (
+          <Link href={nextHref} className={buttonClass("primary", "md", "btn-cta")}>Próxima lição <ArrowRight aria-hidden className="h-5 w-5" /></Link>
+        )}
       </div>
 
-      <div className="space-y-4">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[clamp(340px,30vw,480px)_minmax(0,1fr)]">
+        {/* Coluna da esquerda: missão, palco e atores */}
+        <aside className="space-y-3 overflow-y-auto border-b-2 border-line p-3 lg:border-b-0 lg:border-r-2" aria-label="Missão e palco">
+          {mission && <div className="clay p-4 text-[0.95rem]">{mission}</div>}
         <div className="clay overflow-hidden p-2">
           <Stage state={stage} onMouse={onMouse} onStageClick={(x, y) => world.current?.click(x, y)} />
           <p className="flex justify-between gap-2 px-2 pt-2 text-xs font-bold text-muted">
@@ -349,9 +323,6 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
           </button>
           <button onClick={stop} disabled={!running} className={buttonClass("danger", "md", "btn-stop")}>
             <Square aria-hidden className="h-4 w-4 fill-current" /> Parar
-          </button>
-          <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md", "flex-1 sm:flex-none")}>
-            <CircleCheck aria-hidden className="h-5 w-5" /> {pending ? "Verificando…" : "Verificar"}
           </button>
           <button onClick={restart} className="ml-auto inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-muted hover:text-foreground">
             <RotateCcw aria-hidden className="h-4 w-4" /> Recomeçar
@@ -450,6 +421,51 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             )}
           </div>
         )}
+
+          {extra}
+        </aside>
+
+      {/* Área de blocos: ocupa todo o espaço que sobra */}
+      <div className="blocos-editor relative flex min-h-[560px] flex-col overflow-hidden bg-surface lg:min-h-0">
+        {showSprites && (
+          <div className="flex min-h-10 items-center gap-2 border-b-2 border-line px-3 py-1 text-sm font-extrabold">
+            <Puzzle aria-hidden className="h-4 w-4 text-star" /> Blocos de: <span className="text-star">{selectedName}</span>
+          </div>
+        )}
+        <div className="relative min-h-0 flex-1">
+          <BlockEditor
+            handle={editor}
+            allowedBlocks={allowedBlocks}
+            initialState={workspaceOf(project, selected)}
+            initialContext={contextFor(project, selected)}
+            onChange={onBlocksChange}
+          />
+          {helpOpen && (
+            <aside
+              id="ajuda-blocos"
+              aria-label="Como funciona cada bloco"
+              className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,90%)] flex-col border-l-2 border-line bg-surface shadow-[-8px_0_24px_rgb(15_23_42/0.12)]"
+            >
+              <div className="flex items-center justify-between border-b-2 border-line px-4 py-2">
+                <h3 className="flex items-center gap-2 font-extrabold"><BookOpen aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco</h3>
+                <button type="button" onClick={() => setHelpOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl hover:bg-black/5" aria-label="Fechar ajuda dos blocos">
+                  <X aria-hidden className="h-5 w-5" />
+                </button>
+              </div>
+              <ul className="flex-1 space-y-3 overflow-y-auto p-4 text-base">
+                {allowed.map((b) => (
+                  <li key={b.opcode} className="flex flex-col gap-1">
+                    <span className="w-fit rounded-lg px-2.5 py-1 text-sm font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
+                      {b.text.split("|")[0].replace(/%\d/g, "▢")}
+                    </span>
+                    <span className="font-semibold text-muted">{b.help}</span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          )}
+        </div>
+      </div>
 
       </div>
     </div>
