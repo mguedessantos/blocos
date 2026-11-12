@@ -7,12 +7,12 @@ import { getBrand } from "@/lib/branding";
 export default async function MarketingLayout({ children }: LayoutProps<"/">) {
   const brand = await getBrand();
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b-2 border-line bg-white/90 px-6 py-3 backdrop-blur">
+    <div className="tema-noite flex flex-1 flex-col">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b-2 border-line bg-[var(--nav-bg)] px-6 py-3 backdrop-blur">
         <Link href="/"><BrandLogo brand={brand} /></Link>
         <nav aria-label="Principal" className="flex items-center gap-2 text-sm font-extrabold">
-          {billingEnabled() && <Link href="/precos" className="rounded-xl px-3 py-2 hover:bg-black/5">Preços</Link>}
-          <Link href="/entrar" className="rounded-xl px-3 py-2 hover:bg-black/5">Entrar</Link>
+          {billingEnabled() && <Link href="/precos" className="rounded-xl px-3 py-2 hover:bg-white/5">Preços</Link>}
+          <Link href="/entrar" className="rounded-xl px-3 py-2 hover:bg-white/5">Entrar</Link>
           <Link href="/cadastro" className={buttonClass("primary", "sm")}>{billingEnabled() ? "Teste grátis" : "Criar conta"}</Link>
         </nav>
       </header>

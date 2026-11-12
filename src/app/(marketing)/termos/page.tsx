@@ -1,4 +1,4 @@
-// RASCUNHO — revisar com um advogado antes de vender (contratos, LGPD, CDC).
+// RASCUNHO: revisar com um advogado antes de vender (contratos, LGPD, CDC).
 export const metadata = { title: "Termos de Uso" };
 
 export default function TermosPage() {
