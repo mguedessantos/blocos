@@ -65,3 +65,13 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Domínio próprio: `src/lib/domain-rules.ts` (validação) + `src/lib/domains.ts` (Vercel API se configurada, senão checagem de DNS). Em dev, domínios `.test`/`.localhost` verificam sem DNS.
 - Emails: `src/lib/email.ts` (`sendEmail` + `emailBrandFor`), modelo puro em `email-template.ts`. Sem `RESEND_API_KEY` em dev → `.data/outbox/*.json`.
 - Certificados: `/certificados/<trilha>` (aluno) e `?aluno=<id>` (professor/coordenação); só sai com todas as lições obrigatórias concluídas. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).
+
+## Produção (Vercel + Supabase)
+- Site: https://blocos-two.vercel.app (projeto Vercel `blocos`, região gru1). Banco e arquivos: projeto Supabase `blocos` (São Paulo), bucket privado `blocos-arquivos`.
+- Segredos de produção ficam SÓ em `.env.prod` (ignorado pelo git) e nas variáveis da Vercel. Nunca exibir valores.
+- Comandos contra produção usam `DOTENV_CONFIG_PATH=.env.prod`:
+  - migrações: `DOTENV_CONFIG_PATH=.env.prod npx prisma migrate deploy` (o build da Vercel também roda `prisma migrate deploy`)
+  - currículo/contas: `DOTENV_CONFIG_PATH=.env.prod SEED_DEMO=minimal npx tsx prisma/seed.ts` (idempotente; NUNCA rodar sem SEED_DEMO em produção)
+  - variáveis na Vercel: `node .vercel/push-env.cjs` (lê o .env.prod sem mostrar)
+- Deploy: `vercel deploy --prod --yes` (ou push no master, depois de ligar o GitHub na Vercel).
+- Contas em produção: dono (ADMIN_EMAIL) + teste: coordenacao@demo.blocos, professor@demo.blocos, aluno na turma TESTE1 (senha DEMO_PASSWORD).
