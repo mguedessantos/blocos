@@ -265,3 +265,16 @@ svg [display="none"] {
 .tema-noite nav[aria-label="Principal"] a[aria-current="page"] { background: #2c2466; color: #ffd84d; }
 /* Links/textos "da marca" no escuro: violeta claro (o #7A55F5 é só para fundo de botão) */
 .tema-noite .text-brand { color: #b39cff; }
+
+/* Editor de blocos no modo escuro (botão "Modo escuro" na barra da lição).
+   Só o entorno muda; os blocos mantêm as cores, que as crianças usam para reconhecê-los. */
+.blocos-editor.editor-escuro .blocklyToolboxDiv,
+.blocos-editor.editor-escuro .blocklyToolbox { background: #16123d; border-right-color: #3a3375; }
+.blocos-editor.editor-escuro .blocklyToolboxCategory:hover { background: #2c2466 !important; }
+.blocos-editor.editor-escuro .blocklyToolboxCategoryLabel,
+.blocos-editor.editor-escuro .blocklyTreeLabel { color: #f4f1ff !important; }
+.blocos-editor.editor-escuro .blocklyToolboxSelected .blocos-cat-icone,
+.blocos-editor.editor-escuro .blocklyTreeSelected .blocos-cat-icone { box-shadow: 0 0 0 3px #16123d, 0 0 0 6px var(--cat, #8b6cff); }
+.blocos-editor.editor-escuro .blocklyFlyoutBackground { fill: #1f1a4d; stroke: #3a3375; }
+.blocos-editor.editor-escuro pattern line { stroke: #2c2660; }
+.blocos-editor.editor-escuro .blocklyZoom > image, .blocos-editor.editor-escuro .blocklyTrash > image { filter: invert(1) hue-rotate(180deg) brightness(1.4); }

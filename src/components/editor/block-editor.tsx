@@ -176,9 +176,39 @@ type Props = {
   initialState: BlocklyState | null;
   initialContext: EditorContext;
   onChange?: (state: BlocklyState) => void;
+  /** Modo escuro da área de blocos (os blocos mantêm as cores de sempre). */
+  dark?: boolean;
 };
 
-export default function BlockEditor({ handle, allowedBlocks, initialState, initialContext, onChange }: Props) {
+// Temas: só muda o "entorno" (fundo, paleta, barras). As cores dos blocos nunca mudam.
+let themes: { claro: Blockly.Theme; noite: Blockly.Theme } | null = null;
+function getThemes() {
+  if (themes) return themes;
+  themes = {
+    claro: Blockly.Theme.defineTheme("blocos-claro", {
+      name: "blocos-claro",
+      base: Blockly.Themes.Classic,
+      componentStyles: { workspaceBackgroundColour: "#ffffff", flyoutBackgroundColour: "#ebe7fb", flyoutOpacity: 1, scrollbarColour: "#c9c1ee", insertionMarkerColour: "#7a55f5" },
+    }),
+    noite: Blockly.Theme.defineTheme("blocos-noite", {
+      name: "blocos-noite",
+      base: Blockly.Themes.Classic,
+      componentStyles: {
+        workspaceBackgroundColour: "#120f35",
+        flyoutBackgroundColour: "#1f1a4d",
+        flyoutForegroundColour: "#f4f1ff",
+        flyoutOpacity: 1,
+        scrollbarColour: "#4a4290",
+        insertionMarkerColour: "#ffd84d",
+        insertionMarkerOpacity: 0.5,
+        cursorColour: "#ffd84d",
+      },
+    }),
+  };
+  return themes;
+}
+
+export default function BlockEditor({ handle, allowedBlocks, initialState, initialContext, onChange, dark = false }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const ws = useRef<Blockly.WorkspaceSvg | null>(null);
   const onChangeRef = useRef(onChange);
@@ -211,12 +241,17 @@ export default function BlockEditor({ handle, allowedBlocks, initialState, initi
   }));
 
   useEffect(() => {
+    ws.current?.setTheme(dark ? getThemes().noite : getThemes().claro);
+  }, [dark]);
+
+  useEffect(() => {
     if (!host.current) return;
     registerBlocks();
     context = initialContext;
     const workspace = Blockly.inject(host.current, {
       toolbox: toolboxFor(allowedBlocks, initialContext.isStage),
       renderer: "zelos",
+      theme: dark ? getThemes().noite : getThemes().claro,
       trashcan: true,
       // 1.1: blocos e textos grandes o bastante para as crianças lerem (antes 0.8)
       zoom: { controls: true, wheel: true, startScale: 1.1, minScale: 0.6, maxScale: 2 },

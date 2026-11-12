@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, BookOpen, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2, X } from "lucide-react";
+import { ArrowRight, BookOpen, Moon, Sun, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import { Stars } from "@/components/lesson-icon";
 import { buttonClass } from "@/components/ui";
 import { BLOCKS, CATEGORIES } from "@/lib/blocks/catalog";
@@ -42,6 +42,35 @@ type Props = {
 };
 
 const MAX_RUN_SECONDS = 600;
+
+// Preferência do modo escuro do editor (por computador). useSyncExternalStore evita diferença entre servidor e navegador.
+const DARK_KEY = "blocos:editor-escuro";
+const darkListeners = new Set<() => void>();
+function readDark() {
+  try {
+    return localStorage.getItem(DARK_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeDark(v: boolean) {
+  try {
+    localStorage.setItem(DARK_KEY, v ? "1" : "0");
+  } catch {
+    /* navegação privada: vale só nesta página */
+  }
+  darkListeners.forEach((l) => l());
+}
+function useEditorDark() {
+  return useSyncExternalStore(
+    (cb) => {
+      darkListeners.add(cb);
+      return () => darkListeners.delete(cb);
+    },
+    readDark,
+    () => false,
+  );
+}
 const STAGE_ID = "__palco__";
 
 const KEY_NAMES: Record<string, string> = { " ": "space", ArrowUp: "up arrow", ArrowDown: "down arrow", ArrowLeft: "left arrow", ArrowRight: "right arrow" };
@@ -74,6 +103,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const dark = useEditorDark();
   const [pending, startTransition] = useTransition();
   const [picker, setPicker] = useState<"sprite" | "backdrop" | null>(null);
   const dragging = useRef<string | null>(null);
@@ -291,6 +321,16 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
         <div className="min-w-0 flex-1">{header}</div>
         <button
           type="button"
+          onClick={() => writeDark(!dark)}
+          aria-pressed={dark}
+          className="inline-flex min-h-11 items-center gap-2 rounded-2xl border-2 border-line px-3 font-extrabold text-foreground hover:border-[#8b6cff]"
+          title={dark ? "Voltar a área de blocos para o modo claro" : "Deixar a área de blocos escura"}
+        >
+          {dark ? <Sun aria-hidden className="h-4 w-4 text-star" /> : <Moon aria-hidden className="h-4 w-4 text-star" />}
+          {dark ? "Modo claro" : "Modo escuro"}
+        </button>
+        <button
+          type="button"
           onClick={() => setHelpOpen(!helpOpen)}
           aria-expanded={helpOpen}
           aria-controls="ajuda-blocos"
@@ -426,7 +466,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
         </aside>
 
       {/* Área de blocos: ocupa todo o espaço que sobra */}
-      <div className="blocos-editor relative flex min-h-[560px] flex-col overflow-hidden bg-surface lg:min-h-0">
+      <div className={`blocos-editor relative flex min-h-[560px] flex-col overflow-hidden bg-surface lg:min-h-0 ${dark ? "editor-escuro" : ""}`}>
         {showSprites && (
           <div className="flex min-h-10 items-center gap-2 border-b-2 border-line px-3 py-1 text-sm font-extrabold">
             <Puzzle aria-hidden className="h-4 w-4 text-star" /> Blocos de: <span className="text-star">{selectedName}</span>
@@ -439,6 +479,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             initialState={workspaceOf(project, selected)}
             initialContext={contextFor(project, selected)}
             onChange={onBlocksChange}
+            dark={dark}
           />
           {helpOpen && (
             <aside
