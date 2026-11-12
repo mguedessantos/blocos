@@ -16,7 +16,7 @@ export default async function ConvitePage(props: PageProps<"/convite/[token]">) 
       <Card className="space-y-3 text-center">
         <h1 className="text-2xl font-extrabold">Convite inválido ou expirado</h1>
         <p className="text-sm text-muted">Peça um novo convite à coordenação da sua escola.</p>
-        <Link href="/entrar" className="font-semibold text-brand underline">Ir para o login</Link>
+        <Link href="/entrar?perfil=equipe" className="font-semibold text-brand underline">Ir para o login</Link>
       </Card>
     );
   }

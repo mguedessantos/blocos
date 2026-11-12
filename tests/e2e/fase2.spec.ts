@@ -61,7 +61,7 @@ test("escola se cadastra, começa o teste e vê a assinatura", async ({ page }) 
   }
 
   // a nova escola já funciona no próprio subdomínio
-  await page.goto(`http://${slug}.localhost:3000/entrar`);
+  await page.goto(`http://${slug}.localhost:3000/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill(`rita-${run}@teste.dev`);
   await page.getByLabel("Senha").fill("senhaforte123");
   await page.getByRole("button", { name: "Entrar" }).click();

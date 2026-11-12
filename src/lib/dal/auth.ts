@@ -37,7 +37,7 @@ export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>
 /** Use no topo de páginas, server actions e route handlers protegidos. */
 export async function requireUser(roles?: Role[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/entrar");
+  if (!user) redirect(roles && !roles.includes("STUDENT") ? "/entrar?perfil=equipe" : "/entrar");
   if (roles && !roles.includes(user.role)) redirect("/sem-acesso");
   return user;
 }

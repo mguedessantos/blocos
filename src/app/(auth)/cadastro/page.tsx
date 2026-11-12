@@ -13,7 +13,7 @@ export default async function CadastroPage() {
     <Card className="flex flex-col gap-4">
       <h1 className="text-2xl font-extrabold">Crie sua conta</h1>
       <SignupForm rootDomain={process.env.ROOT_DOMAIN ?? "localhost:3000"} billing={billingEnabled()} />
-      <Link href="/entrar" className="text-center text-sm font-semibold text-brand underline">
+      <Link href="/entrar?perfil=equipe" className="text-center text-sm font-semibold text-brand underline">
         Já tenho conta
       </Link>
     </Card>

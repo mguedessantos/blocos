@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2 } from "lucide-react";
+import { ArrowRight, BookOpen, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -68,6 +68,8 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
   const [stage, setStage] = useState<WorldState>(() => new World(compileProject(project)).state);
   const [running, setRunning] = useState(false);
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [picker, setPicker] = useState<"sprite" | "backdrop" | null>(null);
   const dragging = useRef<string | null>(null);
@@ -257,8 +259,10 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
     startTransition(async () => {
       try {
         setOutcome(await verify(json));
+        setResultOpen(true);
       } catch {
         setOutcome({ ok: false, error: "Não foi possível verificar agora. Tente de novo." });
+        setResultOpen(true);
       }
     });
   };
@@ -277,14 +281,26 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
   const selectedName = selected === STAGE_ID ? "Palco" : project.sprites.find((s) => s.id === selected)?.name;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
-      <div className="clay blocos-editor flex flex-col overflow-hidden">
-        {showSprites && (
-          <div className="flex items-center gap-2 border-b-2 border-line px-4 py-2 text-sm font-extrabold">
-            <Puzzle aria-hidden className="h-4 w-4 text-brand" /> Blocos de: <span className="text-brand-shadow">{selectedName}</span>
-          </div>
-        )}
-        <div className="h-full min-h-[560px]">
+    <div className="grid items-start gap-5 lg:grid-cols-[1fr_420px]">
+      {/* Altura FIXA: o resultado e os painéis ao lado não esticam o editor. */}
+      <div className="clay blocos-editor relative flex h-[min(78vh,760px)] min-h-[520px] flex-col overflow-hidden">
+        <div className="flex min-h-12 items-center gap-2 border-b-2 border-line px-3 py-1.5 text-sm font-extrabold">
+          {showSprites && (
+            <>
+              <Puzzle aria-hidden className="h-4 w-4 text-brand" /> Blocos de: <span className="text-brand-shadow">{selectedName}</span>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setHelpOpen(!helpOpen)}
+            aria-expanded={helpOpen}
+            aria-controls="ajuda-blocos"
+            className={`ml-auto inline-flex min-h-10 items-center gap-2 rounded-xl px-3 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.15)] ${helpOpen ? "bg-brand text-brand-text" : "bg-brand-2 text-foreground"}`}
+          >
+            <BookOpen aria-hidden className="h-4 w-4" /> Como funciona cada bloco
+          </button>
+        </div>
+        <div className="relative min-h-0 flex-1">
           <BlockEditor
             handle={editor}
             allowedBlocks={allowedBlocks}
@@ -292,6 +308,30 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             initialContext={contextFor(project, selected)}
             onChange={onBlocksChange}
           />
+          {helpOpen && (
+            <aside
+              id="ajuda-blocos"
+              aria-label="Como funciona cada bloco"
+              className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,90%)] flex-col border-l-2 border-line bg-white shadow-[-8px_0_24px_rgb(15_23_42/0.12)]"
+            >
+              <div className="flex items-center justify-between border-b-2 border-line px-4 py-2">
+                <h3 className="flex items-center gap-2 font-extrabold"><BookOpen aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco</h3>
+                <button type="button" onClick={() => setHelpOpen(false)} className="grid h-9 w-9 place-items-center rounded-xl hover:bg-black/5" aria-label="Fechar ajuda dos blocos">
+                  <X aria-hidden className="h-5 w-5" />
+                </button>
+              </div>
+              <ul className="flex-1 space-y-3 overflow-y-auto p-4 text-base">
+                {allowed.map((b) => (
+                  <li key={b.opcode} className="flex flex-col gap-1">
+                    <span className="w-fit rounded-lg px-2.5 py-1 text-sm font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
+                      {b.text.split("|")[0].replace(/%\d/g, "▢")}
+                    </span>
+                    <span className="font-semibold text-muted">{b.help}</span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          )}
         </div>
       </div>
 
@@ -318,7 +358,14 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
           </button>
         </div>
 
-        {outcome && <Result outcome={outcome} nextHref={nextHref} />}
+        {outcome && !resultOpen && (
+          <button type="button" onClick={() => setResultOpen(true)} className="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-white px-4 py-2 text-left font-extrabold hover:border-brand">
+            {outcome.ok ? <Stars value={outcome.stars} /> : <CircleX aria-hidden className="h-5 w-5 text-red-600" />}
+            <span className="flex-1 truncate">{outcome.ok ? outcome.summary : outcome.error}</span>
+            <span className="text-sm text-brand">Ver resultado</span>
+          </button>
+        )}
+        {outcome && resultOpen && <ResultDialog outcome={outcome} nextHref={nextHref} onClose={() => setResultOpen(false)} />}
 
         {showSprites && (
           <div className="clay space-y-3 p-4">
@@ -404,22 +451,6 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
           </div>
         )}
 
-        <details className="clay group p-4">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center gap-2 font-extrabold">
-            <Puzzle aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco
-            <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
-          </summary>
-          <ul className="mt-3 space-y-2.5 text-sm">
-            {allowed.map((b) => (
-              <li key={b.opcode} className="flex flex-col gap-1">
-                <span className="w-fit rounded-lg px-2.5 py-1 text-xs font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
-                  {b.text.split("|")[0].replace(/%\d/g, "▢")}
-                </span>
-                <span className="font-semibold text-muted">{b.help}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
       </div>
     </div>
   );
@@ -478,6 +509,33 @@ export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref
       {outcome.passed && nextHref && (
         <Link href={nextHref} className={buttonClass()}>Próxima lição <ArrowRight aria-hidden className="h-4 w-4" /></Link>
       )}
+    </div>
+  );
+}
+
+/** Resultado numa janela central: estrelas e "Próxima lição" sempre à vista, sem empurrar o editor. */
+function ResultDialog({ outcome, nextHref, onClose }: { outcome: VerifyOutcome; nextHref: string | null; onClose: () => void }) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Resultado"
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-hidden rounded-3xl bg-white p-3 shadow-2xl"
+      >
+        <div className="min-h-0 overflow-y-auto">
+          <Result outcome={outcome} nextHref={nextHref} />
+        </div>
+        <button type="button" onClick={onClose} className={buttonClass("secondary")} autoFocus={!(outcome.ok && outcome.passed && nextHref)}>
+          {outcome.ok && outcome.passed ? "Ficar nesta lição" : "Voltar aos blocos"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ const ESCOLA = "http://escola-demo.localhost:3000";
 const run = Date.now().toString(36);
 
 async function loginStaff(page: Page, base: string, email: string, password: string) {
-  await page.goto(`${base}/entrar`);
+  await page.goto(`${base}/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Senha").fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();

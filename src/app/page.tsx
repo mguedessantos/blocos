@@ -23,7 +23,7 @@ export default async function Home() {
         <h1 className="text-3xl font-extrabold sm:text-4xl">Quem vai programar hoje?</h1>
         <div className="grid w-full max-w-2xl gap-5 sm:grid-cols-2">
           <ChoiceCard href="/entrar-aluno" icon={Gamepad2} title="Sou aluno(a)" text="Entre com o código da turma" color="var(--brand-primary)" />
-          <ChoiceCard href="/entrar" icon={GraduationCap} title="Sou professor(a)" text="Turmas, alunos e progresso" color="#0F172A" />
+          <ChoiceCard href="/entrar?perfil=equipe" icon={GraduationCap} title="Sou professor(a)" text="Turmas, alunos e progresso" color="#0F172A" />
         </div>
         <PoweredBy brand={brand} />
       </main>

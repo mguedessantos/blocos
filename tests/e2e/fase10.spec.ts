@@ -10,7 +10,7 @@ const run = Date.now().toString(36);
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 
 async function loginStaff(page: Page, base: string, email: string, password: string) {
-  await page.goto(`${base}/entrar`);
+  await page.goto(`${base}/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Senha").fill(password);
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -33,7 +33,7 @@ test("coordenação personaliza a marca, adiciona domínio e convida com email d
   await page.getByRole("button", { name: /Começar teste grátis|Criar conta/ }).click();
   await page.waitForURL(/\/escola/);
 
-  await page.getByRole("link", { name: "Marca" }).first().click();
+  await page.getByRole("link", { name: "Marca", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Marca da escola" })).toBeVisible();
 
   // cor ilegível é avisada na hora e recusada no servidor
@@ -54,7 +54,7 @@ test("coordenação personaliza a marca, adiciona domínio e convida com email d
 
   // o site da escola já sai com a marca nova
   const visitor = await (await browser.newContext()).newPage();
-  await visitor.goto(`http://${slug}.localhost:3000/entrar`);
+  await visitor.goto(`http://${slug}.localhost:3000/entrar?perfil=equipe`);
   await expect(visitor).toHaveTitle(new RegExp(`Robôs ${run}`));
   const primary = await visitor.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--brand-primary"));
   expect(primary.trim()).toBe("#b91c1c");

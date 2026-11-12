@@ -33,7 +33,7 @@ async function loginStudent(page: Page, code: string, user: string, pass: string
 }
 
 async function teacherCreatesStudent(page: Page, className: string, studentName: string, world: string) {
-  await page.goto(`${ESCOLA}/entrar`);
+  await page.goto(`${ESCOLA}/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill("prof@aurora.dev");
   await page.getByLabel("Senha").fill("senha123");
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -222,7 +222,7 @@ test("missão opcional no PictoBlox: envio do .sb3 errado e depois certo", async
 });
 
 test("professor vê o currículo com o guia do professor; aluno não", async ({ page }) => {
-  await page.goto(`${ESCOLA}/entrar`);
+  await page.goto(`${ESCOLA}/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill("prof@aurora.dev");
   await page.getByLabel("Senha").fill("senha123");
   await page.getByRole("button", { name: "Entrar" }).click();

@@ -3,6 +3,8 @@ import { cache } from "react";
 import { connection } from "next/server";
 import { hasFeature } from "./billing/entitlements";
 import { isAcceptableBrandColor, isAcceptablePrimaryColor, readableTextOn } from "./color";
+import { getSession } from "./dal/auth";
+import { db } from "./db";
 import { getTenant, type Tenant } from "./tenant";
 
 export type Brand = {
@@ -58,5 +60,16 @@ export function brandFor(tenant: Tenant | null): Brand {
 
 export const getBrand = cache(async () => {
   await connection(); // a marca depende do domínio e da data (teste grátis/assinatura): sempre por requisição
-  return brandFor(await getTenant());
+  const tenant = await getTenant();
+  if (tenant) return brandFor(tenant);
+  // No endereço principal da plataforma: depois do login, vale a marca da escola de quem entrou.
+  const session = await getSession();
+  if (session?.orgId) {
+    const org = await db.organization.findUnique({
+      where: { id: session.orgId },
+      include: { branding: true, subscription: { include: { plan: true } } },
+    });
+    if (org && !org.deletedAt) return brandFor(org);
+  }
+  return brandFor(null);
 });

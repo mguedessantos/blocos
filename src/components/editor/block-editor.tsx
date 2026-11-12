@@ -179,7 +179,8 @@ export default function BlockEditor({ handle, allowedBlocks, initialState, initi
       toolbox: toolboxFor(allowedBlocks, initialContext.isStage),
       renderer: "zelos",
       trashcan: true,
-      zoom: { controls: true, wheel: true, startScale: 0.8 },
+      // 1.1: blocos e textos grandes o bastante para as crianças lerem (antes 0.8)
+      zoom: { controls: true, wheel: true, startScale: 1.1, minScale: 0.6, maxScale: 2 },
       move: { scrollbars: true, drag: true, wheel: false },
       grid: { spacing: 24, length: 2, colour: "#e5e7eb", snap: true },
       sounds: false,
@@ -203,5 +204,5 @@ export default function BlockEditor({ handle, allowedBlocks, initialState, initi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={host} className="h-full min-h-[420px] w-full" aria-label="Área de blocos" />;
+  return <div ref={host} className="absolute inset-0" aria-label="Área de blocos" />;
 }

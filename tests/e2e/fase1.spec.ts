@@ -34,7 +34,7 @@ test("turma de outra escola não funciona no domínio da escola", async ({ page 
 });
 
 test("professor vê suas turmas com a marca da escola (white-label)", async ({ page }) => {
-  await page.goto(`${ESCOLA}/entrar`);
+  await page.goto(`${ESCOLA}/entrar?perfil=equipe`);
   await expect(page).toHaveTitle(/Aurora Code/);
   await page.getByLabel("Email").fill("prof@aurora.dev");
   await page.getByLabel("Senha").fill("senha123");
@@ -46,7 +46,7 @@ test("professor vê suas turmas com a marca da escola (white-label)", async ({ p
 });
 
 test("professor da Aurora não entra pelo domínio de outro cliente", async ({ page }) => {
-  await page.goto(`${MARINA}/entrar`);
+  await page.goto(`${MARINA}/entrar?perfil=equipe`);
   await page.getByLabel("Email").fill("prof@aurora.dev");
   await page.getByLabel("Senha").fill("senha123");
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -65,7 +65,7 @@ test("aluno não acessa a área do professor", async ({ page }) => {
 });
 
 test("super admin vê todos os clientes na raiz", async ({ page }) => {
-  await page.goto("/entrar");
+  await page.goto("/entrar?perfil=equipe");
   await page.getByLabel("Email").fill("admin@blocos.dev");
   await page.getByLabel("Senha").fill("admin123");
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -74,4 +74,30 @@ test("super admin vê todos os clientes na raiz", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "Turmas da Marina" })).toBeVisible();
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL("/");
+});
+
+test("login mostra o aluno primeiro e troca para a equipe", async ({ page }) => {
+  await page.goto(`${ESCOLA}/entrar`);
+  await expect(page.getByLabel("Código da turma")).toBeVisible();
+  await expect(page.getByLabel("Email")).toHaveCount(0);
+  await page.getByRole("button", { name: /Sou professor\(a\), coordenação ou jurado\(a\)/ }).click();
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await page.getByRole("button", { name: "Sou aluno(a)" }).click();
+  await expect(page.getByLabel("Código da turma")).toBeVisible();
+  // vindo de uma área da equipe, abre direto o login da equipe
+  await page.goto(`${ESCOLA}/professor`);
+  await expect(page.getByLabel("Email")).toBeVisible();
+});
+
+test("no endereço principal, depois do login vale a marca da escola", async ({ page }) => {
+  await page.goto("/entrar?perfil=equipe");
+  await expect(page.getByRole("banner").or(page.locator("body"))).not.toContainText("Aurora Code");
+  await page.getByLabel("Email").fill("prof@aurora.dev");
+  await page.getByLabel("Senha").fill("senha123");
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await page.waitForURL(/\/professor/);
+  await expect(page.getByRole("banner")).toContainText("Aurora Code");
+  await expect(page).toHaveTitle(/Aurora Code/);
+  const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--brand-primary"));
+  expect(primary.trim()).toBe("#0f766e");
 });

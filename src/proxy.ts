@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
 
   const session = await decryptSession(request.cookies.get(SESSION_COOKIE)?.value);
   if (!session) {
-    const login = area === "/aluno" ? "/entrar-aluno" : "/entrar";
+    const login = area === "/aluno" ? "/entrar" : "/entrar?perfil=equipe";
     const url = new URL(login, request.url);
     url.searchParams.set("voltar", request.nextUrl.pathname);
     return NextResponse.redirect(url);
