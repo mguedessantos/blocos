@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getTenant } from "@/lib/tenant";
 import { createSession, deleteSession } from "@/lib/session";
+import { clear, clientIp, hit, LIMITS } from "@/lib/rate-limit";
 import { ROLE_HOME } from "@/lib/roles";
 
 export type LoginState = { error?: string; values?: Record<string, string> } | undefined;
@@ -33,6 +34,15 @@ export async function loginStaff(_: LoginState, formData: FormData): Promise<Log
   const parsed = staffSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message, values };
 
+  const ip = await clientIp();
+  const [byEmail, byIp] = await Promise.all([
+    hit("login-staff-email", parsed.data.email, ...LIMITS.staffPerEmail),
+    hit("login-staff-ip", ip, ...LIMITS.staffPerIp),
+  ]);
+  if (!byEmail.ok || !byIp.ok) {
+    return { error: `Muitas tentativas de entrar. Espere ${Math.max(byEmail.retryInMin, byIp.retryInMin)} minuto(s) e tente de novo.`, values };
+  }
+
   const tenant = await getTenant();
   const user = await db.user.findUnique({ where: { email: parsed.data.email }, include: { organization: { select: { deletedAt: true } } } });
   const ok = await bcrypt.compare(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
@@ -45,6 +55,7 @@ export async function loginStaff(_: LoginState, formData: FormData): Promise<Log
   }
 
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await clear("login-staff-email", parsed.data.email); // acertou: zera o contador da conta
   await createSession({ userId: user.id, role: user.role, orgId: user.organizationId });
   redirect(safeRedirectTarget(formData.get("voltar"), ROLE_HOME[user.role]));
 }
@@ -61,6 +72,16 @@ export async function loginStudent(_: LoginState, formData: FormData): Promise<L
   if (!parsed.success) return { error: parsed.error.issues[0].message, values };
   const { classCode, username, password } = parsed.data;
   const genericError = { error: "Código da turma, usuário ou senha incorretos. Peça ajuda ao seu professor!", values };
+
+  const ip = await clientIp();
+  const account = `${classCode}:${username}`;
+  const [byAccount, byIp] = await Promise.all([
+    hit("login-aluno", account, ...LIMITS.studentPerAccount),
+    hit("login-aluno-ip", ip, ...LIMITS.studentPerIp),
+  ]);
+  if (!byAccount.ok || !byIp.ok) {
+    return { error: `Muitas tentativas. Espere ${Math.max(byAccount.retryInMin, byIp.retryInMin)} minuto(s) ou peça ajuda ao seu professor.`, values };
+  }
 
   const tenant = await getTenant();
   const klass = await db.class.findUnique({ where: { code: classCode } });
@@ -79,6 +100,7 @@ export async function loginStudent(_: LoginState, formData: FormData): Promise<L
   }
 
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await clear("login-aluno", account);
   await createSession({ userId: user.id, role: user.role, orgId: user.organizationId });
   redirect("/aluno");
 }

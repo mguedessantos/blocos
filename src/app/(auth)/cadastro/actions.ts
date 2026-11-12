@@ -7,6 +7,7 @@ import { z } from "zod";
 import { TRIAL_DAYS } from "@/lib/billing/entitlements";
 import { cleanCity, isUF } from "@/lib/br";
 import { db } from "@/lib/db";
+import { clientIp, hit, LIMITS } from "@/lib/rate-limit";
 import { createSession } from "@/lib/session";
 import { slugError } from "@/lib/slug";
 import { getTenant } from "@/lib/tenant";
@@ -41,6 +42,8 @@ export async function signup(_: SignupState, formData: FormData): Promise<Signup
   const fail = (error: string, field?: string): SignupState => ({ error, field, values });
 
   if (await getTenant()) return fail("O cadastro é feito no site principal.");
+  const limited = await hit("cadastro-ip", await clientIp(), ...LIMITS.signupPerIp);
+  if (!limited.ok) return fail(`Muitos cadastros seguidos deste local. Tente de novo em ${limited.retryInMin} minuto(s).`);
 
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

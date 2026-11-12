@@ -614,3 +614,14 @@ model AnnouncementRead {
 
   @@id([announcementId, userId])
 }
+
+// ───────────────────────────── Limite de tentativas ─────────────────────────────
+
+/** Contador por janela de tempo (login, cadastro). A chave é um hash: não guarda email nem IP. */
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

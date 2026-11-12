@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
     "stripe:listen": "node scripts/stripe-listen.mjs",
-    "stripe:sync": "tsx scripts/stripe-sync.ts"
+    "stripe:sync": "tsx scripts/stripe-sync.ts",
+    "storage:setup": "tsx scripts/storage-setup.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
