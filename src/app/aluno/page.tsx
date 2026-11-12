@@ -1,143 +1,131 @@
-import { ArrowRight, Award, Map as MapIcon, Rocket, Star, Trophy } from "lucide-react";
+import { ArrowRight, Award, Lock, Star } from "lucide-react";
 import Link from "next/link";
-import { buttonClass, Card } from "@/components/ui";
+import { Island } from "@/components/island";
+import { buttonClass } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { getAchievements } from "@/lib/dal/badges";
 import { listStudentCourses } from "@/lib/dal/lessons";
 import { listStudentClasses } from "@/lib/dal/org";
 
-export const metadata = { title: "Minhas trilhas" };
-
-const TRACK_COLORS = ["#4C97FF", "#9966FF", "#FFAB19", "#59C059", "#FF8C1A", "#0FBD8C"];
+export const metadata = { title: "Meus mundos" };
 
 export default async function AlunoPage() {
   const user = await requireUser(["STUDENT"]);
   const [courses, classes, ach] = await Promise.all([listStudentCourses(user), listStudentClasses(user), getAchievements(user)]);
   const earned = ach.badges.filter((b) => b.awardedAt);
-  const done = courses.flatMap((c) => c.tracks).reduce((a, t) => a + t.done, 0);
+  const tracks = courses.flatMap((c) => c.tracks);
+  const done = tracks.reduce((a, t) => a + t.done, 0);
+  // próximo passo: o primeiro mundo que ainda tem lição para fazer
+  const nextTrack = tracks.find((t) => t.next && t.done < t.total) ?? tracks.find((t) => t.next);
 
   return (
-    <div className="space-y-8">
-      <section className="clay relative overflow-hidden p-6 sm:p-8">
-        <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-brand-2/30" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-brand/15" />
-        <div className="relative flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <h1 className="text-4xl font-extrabold sm:text-5xl">Olá, {user.name}!</h1>
-            <p className="mt-1 font-semibold text-muted">
-              Turma: {classes.map((c) => `${c.name} (Prof. ${c.teacher.name})`).join(", ")}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex items-center gap-3 rounded-2xl bg-brand-2 px-5 py-3 shadow-[0_4px_0_rgb(15_23_42/0.18)]">
-              <Star aria-hidden className="h-7 w-7 fill-white text-white" />
-              <div className="leading-tight">
-                <p className="font-display text-2xl font-extrabold">{user.xp} XP</p>
-                <p className="text-xs font-bold text-foreground/70">Nível {ach.level} · {ach.title}</p>
-              </div>
+    <div className="space-y-10">
+      {/* Faixa do aluno: quem é, nível e o botão para continuar */}
+      <section className="clay flex flex-wrap items-center gap-6 p-5 sm:p-6">
+        <span aria-hidden className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-star font-display text-3xl font-extrabold text-night shadow-[0_4px_0_rgb(0_0_0/0.35)]">
+          {ach.level}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Olá, {user.name}!</h1>
+          <p className="font-semibold text-muted">
+            {classes.map((c) => `${c.name} · Prof. ${c.teacher.name}`).join(", ")}
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-3 max-w-xs flex-1 overflow-hidden rounded-full bg-black/40" role="progressbar" aria-valuenow={ach.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso até o próximo nível">
+              <div className="h-full rounded-full bg-star" style={{ width: `${ach.pct}%` }} />
             </div>
-            <div className="hidden items-center gap-3 rounded-2xl bg-white px-5 py-3 ring-2 ring-line sm:flex">
-              <Trophy aria-hidden className="h-7 w-7 text-brand" />
-              <div className="leading-tight">
-                <p className="font-display text-2xl font-extrabold">{done}</p>
-                <p className="text-xs font-bold text-muted">lições feitas</p>
-              </div>
-            </div>
+            <span className="text-sm font-bold text-muted">{ach.next ? `faltam ${ach.next.xp - user.xp} XP` : "nível máximo!"}</span>
           </div>
         </div>
+        <dl className="flex gap-6 text-center">
+          <div>
+            <dt className="text-xs font-extrabold uppercase tracking-wider text-muted">XP</dt>
+            <dd className="flex items-center justify-center gap-1 font-display text-2xl font-extrabold"><Star aria-hidden className="h-5 w-5 fill-star text-star" /><span>{user.xp} XP</span></dd>
+          </div>
+          <div>
+            <dt className="text-xs font-extrabold uppercase tracking-wider text-muted">Lições</dt>
+            <dd className="font-display text-2xl font-extrabold">{done}</dd>
+          </div>
+        </dl>
+        {nextTrack?.next && (
+          <Link href={`/aluno/licoes/${nextTrack.next.id}`} className={buttonClass("primary", "md", "btn-cta w-full text-lg sm:w-auto")}>
+            {nextTrack.done ? "Continuar" : "Começar"} <ArrowRight aria-hidden className="h-5 w-5" />
+          </Link>
+        )}
       </section>
 
-      <section aria-labelledby="nivel" className="clay space-y-3 p-5">
+      {courses.length === 0 && (
+        <section className="clay p-8 text-center">
+          <p className="text-lg font-semibold text-muted">Seu professor ainda não liberou nenhum curso. Logo, logo vai ter novidade!</p>
+        </section>
+      )}
+
+      {/* Mapa de mundos: uma ilha por trilha */}
+      {courses.map((course) => (
+        <section key={course.id} className="space-y-6">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b-2 border-line pb-3">
+            <p className="font-display text-sm font-extrabold uppercase tracking-widest text-star">Curso</p>
+            <h2 className="text-2xl font-extrabold sm:text-3xl">{course.title}</h2>
+          </div>
+          <ol className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+            {course.tracks.map((t, i) => {
+              const complete = t.total > 0 && t.done >= t.total;
+              const current = nextTrack?.id === t.id;
+              const [label, ...rest] = t.title.split(" · ");
+              return (
+                <li key={t.id} className="relative">
+                  <Link
+                    href={`/aluno/trilhas/${t.id}`}
+                    aria-label={`Ver trilha ${t.title}`}
+                    aria-current={current ? "step" : undefined}
+                    className={`group block rounded-3xl p-2 text-center transition-colors hover:bg-white/5 ${current ? "bg-white/5 ring-2 ring-[#8b6cff]" : ""}`}
+                  >
+                    {complete && <span className="faixa absolute left-1 top-1 z-10">Concluído</span>}
+                    {current && !complete && <span className="faixa absolute left-1 top-1 z-10 !bg-cta">Você está aqui</span>}
+                    <Island index={i + 1} className={`mx-auto h-36 w-auto transition-transform duration-200 group-hover:-translate-y-1 ${i % 2 ? "flutua-2" : "flutua"}`} />
+                    <p className="font-display text-sm font-extrabold text-star">{rest.length ? label : `Mundo ${i + 1}`}</p>
+                    <p className="font-display text-lg font-extrabold leading-tight">{rest.length ? rest.join(" · ") : t.title}</p>
+                    <p className="mt-1 text-xs font-bold text-muted">
+                      {t.done} de {t.total} lições{t.extras ? ` · +${t.extras} extra${t.extras > 1 ? "s" : ""}` : ""}
+                    </p>
+                    <div className="mx-auto mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-black/40" aria-hidden>
+                      <div className="h-full rounded-full bg-star" style={{ width: `${t.total ? Math.round((100 * t.done) / t.total) : 0}%` }} />
+                    </div>
+                  </Link>
+                  {complete && (
+                    <a href={`/certificados/${t.id}`} target="_blank" className="mt-1 inline-flex w-full items-center justify-center gap-1 text-sm font-extrabold text-star underline-offset-2 hover:underline" aria-label={`Certificado da trilha ${t.title}`}>
+                      <Award aria-hidden className="h-4 w-4" /> Certificado
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
+
+      {/* Nível e medalhas */}
+      <section aria-labelledby="nivel" className="clay space-y-4 p-5 sm:p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="nivel" className="text-xl font-extrabold">Nível {ach.level}: {ach.title}</h2>
-          <p className="text-sm font-bold text-muted">
-            {ach.next ? `Faltam ${ach.next.xp - user.xp} XP para virar ${ach.next.title}` : "Você chegou ao nível máximo!"}
-          </p>
+          <p className="text-sm font-bold text-muted">{ach.next ? `Próximo: ${ach.next.title}` : "Você chegou ao nível máximo!"}</p>
         </div>
-        <div className="h-4 overflow-hidden rounded-full bg-black/[0.07]" role="progressbar" aria-valuenow={ach.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso até o próximo nível">
-          <div className="h-full rounded-full bg-brand-2" style={{ width: `${ach.pct}%` }} />
-        </div>
-        <h3 className="pt-2 font-display text-lg font-extrabold">Minhas medalhas ({earned.length}/{ach.badges.length})</h3>
+        <h3 className="font-display text-lg font-extrabold">Minhas medalhas ({earned.length}/{ach.badges.length})</h3>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {ach.badges.map((b) => (
             <li
               key={b.id}
               title={b.description}
-              className={`relative flex flex-col items-center gap-1 rounded-2xl border-2 p-3 text-center ${b.awardedAt ? "border-brand-2 bg-white" : "border-dashed border-line opacity-60 grayscale"}`}
+              className={`relative flex flex-col items-center gap-1 rounded-2xl border-2 p-3 text-center ${b.awardedAt ? "border-star bg-white/5" : "border-dashed border-line opacity-60 grayscale"}`}
             >
-              {b.isNew && (
-                <span className="absolute -right-1 -top-2 rounded-full bg-red-600 px-2 text-[11px] font-extrabold text-white">Nova!</span>
-              )}
-              <span aria-hidden className="text-3xl">{b.awardedAt ? b.icon : "🔒"}</span>
+              {b.isNew && <span className="absolute -right-1 -top-2 rounded-full bg-cta px-2 text-[11px] font-extrabold text-night">Nova!</span>}
+              {b.awardedAt ? <span aria-hidden className="text-3xl">{b.icon}</span> : <Lock aria-hidden className="h-8 w-8 text-muted" />}
               <span className="text-sm font-extrabold leading-tight">{b.name}</span>
               <span className="text-xs font-semibold text-muted">{b.awardedAt ? "Conquistada" : b.description}</span>
             </li>
           ))}
         </ul>
       </section>
-
-      {courses.length === 0 && (
-        <Card>
-          <p className="font-semibold text-muted">Seu professor ainda não liberou nenhum curso. Logo, logo vai ter novidade!</p>
-        </Card>
-      )}
-      {courses.map((course) => (
-      <section key={course.id} className="space-y-4">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-wider text-muted">Curso</p>
-          <h2 className="flex items-center gap-2 text-2xl font-extrabold">
-            <MapIcon aria-hidden className="h-6 w-6 text-brand" /> {course.title}
-          </h2>
-        </div>
-        <div className="grid gap-5 md:grid-cols-2">
-          {course.tracks.map((t, i) => {
-            const pct = t.total ? Math.round((100 * t.done) / t.total) : 0;
-            const color = TRACK_COLORS[i % TRACK_COLORS.length];
-            return (
-              <article key={t.id} className="clay flex flex-col overflow-hidden">
-                <div className="flex items-center gap-4 p-5 text-white" style={{ background: color }}>
-                  <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/25" aria-hidden>
-                    <Rocket className="h-7 w-7" />
-                  </span>
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-wider opacity-90">Nível {t.level}</p>
-                    <h3 className="text-2xl font-extrabold leading-tight">{t.title}</h3>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col gap-4 p-5">
-                  <p className="font-semibold text-muted">{t.description}</p>
-                  <div>
-                    <div className="flex justify-between text-sm font-extrabold">
-                      <span>{t.done} de {t.total} lições{t.extras ? ` · +${t.extras} extra${t.extras > 1 ? "s" : ""}` : ""}</span>
-                      <span>{pct}%</span>
-                    </div>
-                    <div
-                      className="mt-1.5 h-4 overflow-hidden rounded-full bg-black/[0.07] shadow-[inset_0_2px_0_rgb(15_23_42/0.06)]"
-                      role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso na trilha"
-                    >
-                      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: color }} />
-                    </div>
-                  </div>
-                  <div className="mt-auto flex flex-wrap gap-3">
-                    {t.next && (
-                      <Link href={`/aluno/licoes/${t.next.id}`} className={buttonClass()}>
-                        {t.done ? "Continuar" : "Começar"} <ArrowRight aria-hidden className="h-4 w-4" />
-                      </Link>
-                    )}
-                    <Link href={`/aluno/trilhas/${t.id}`} className={buttonClass("secondary")} aria-label={`Ver trilha ${t.title}`}>Ver trilha</Link>
-                    {t.total > 0 && t.done >= t.total && (
-                      <a href={`/certificados/${t.id}`} target="_blank" className={buttonClass("success")} aria-label={`Certificado da trilha ${t.title}`}>
-                        <Award aria-hidden className="h-4 w-4" /> Certificado
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-      ))}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function StudentLoginForm() {
       <Input label="🙂 Seu usuário" name="username" autoCapitalize="none" autoComplete="username" defaultValue={state?.values?.username} required />
       <Input label="🔑 Sua senha" name="password" type="password" autoComplete="current-password" required />
       {state?.error && <Alert>{state.error}</Alert>}
-      <Button disabled={pending} className="w-full text-lg">{pending ? "Entrando..." : "Vamos lá!"}</Button>
+      <Button disabled={pending} className="btn-cta w-full text-lg">{pending ? "Entrando..." : "Vamos lá!"}</Button>
     </form>
   );
 }

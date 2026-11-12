@@ -48,7 +48,7 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Link href={`/aluno/trilhas/${track.id}`} className="inline-flex items-center gap-1 text-sm font-extrabold text-brand">
+        <Link href={`/aluno/trilhas/${track.id}`} className="inline-flex items-center gap-1 text-sm font-extrabold text-muted hover:text-foreground">
           <ArrowLeft aria-hidden className="h-4 w-4" /> {track.title}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
@@ -56,10 +56,10 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
             <KindIcon className="h-6 w-6" strokeWidth={2.5} />
           </span>
           <h1 className="text-3xl font-extrabold sm:text-4xl">{lesson.title}</h1>
-          <span className="rounded-full border-2 px-3 py-0.5 text-sm font-extrabold text-foreground" style={{ borderColor: kind.color, background: `color-mix(in oklab, ${kind.color} 18%, white)` }}>{kind.label}</span>
+          <span className="rounded-full px-3 py-0.5 text-sm font-extrabold text-night" style={{ background: kind.color }}>{kind.label}</span>
           {lesson.optional && <span className="rounded-full border-2 border-dashed border-line px-3 py-0.5 text-sm font-extrabold text-muted">Extra opcional</span>}
           {lesson.mode === "SB3" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-3 py-0.5 text-sm font-extrabold text-white"><Rocket aria-hidden className="h-3.5 w-3.5" /> PictoBlox</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-star px-3 py-0.5 text-sm font-extrabold text-night"><Rocket aria-hidden className="h-3.5 w-3.5" /> PictoBlox</span>
           )}
           {done && <Stars value={stars} />}
         </div>
@@ -67,7 +67,7 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
           <span>Lição {position.index} de {position.total} · {lesson.module.title} · {lesson.xp} XP</span>
           <span className="flex gap-1" aria-hidden>
             {Array.from({ length: position.total }, (_, k) => (
-              <span key={k} className={`h-2 w-6 rounded-full ${k < position.index ? "bg-brand" : "bg-black/10"}`} />
+              <span key={k} className={`h-2 w-6 rounded-full ${k < position.index ? "bg-star" : "bg-white/15"}`} />
             ))}
           </span>
         </div>
@@ -94,7 +94,7 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
       {lesson.extra && (
         <details className="clay group p-5">
           <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
-            <Sparkles aria-hidden className="h-5 w-5 text-amber-500" /> Desafio extra (opcional)
+            <Sparkles aria-hidden className="h-5 w-5 text-star" /> Desafio extra (opcional)
             <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
           </summary>
           <div className="mt-3"><Markdown source={lesson.extra} /></div>

@@ -80,9 +80,20 @@ export async function listStudentCourses(user: CurrentUser) {
 }
 
 export async function getStudentTrack(user: CurrentUser, trackId: string) {
-  const track = await db.track.findFirst({ where: { id: trackId, ...visibleTracksWhere(user) }, select: { id: true, title: true, description: true, story: true } });
+  const track = await db.track.findFirst({
+    where: { id: trackId, ...visibleTracksWhere(user) },
+    select: { id: true, title: true, description: true, story: true, courseId: true, level: true, order: true },
+  });
   if (!track) throw new AccessError("Trilha não encontrada.");
-  return { ...track, lessons: await trackLessons(user.id, track.id) };
+  // número do mundo dentro do curso (define a ilha desenhada)
+  const before = track.courseId
+    ? await db.track.count({
+        where: { courseId: track.courseId, published: true, OR: [{ level: { lt: track.level } }, { level: track.level, order: { lt: track.order } }] },
+      })
+    : 0;
+  const { courseId: _c, level: _l, order: _o, ...rest } = track;
+  void _c; void _l; void _o;
+  return { ...rest, worldIndex: before + 1, lessons: await trackLessons(user.id, track.id) };
 }
 
 export async function getStudentLesson(user: CurrentUser, lessonId: string) {

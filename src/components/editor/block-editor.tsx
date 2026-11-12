@@ -79,7 +79,46 @@ function toBlocklyJson(def: BlockDef) {
   return json;
 }
 
+// ───────────── Categorias do menu de blocos: círculo colorido + ícone + nome embaixo ─────────────
+// Ícones originais desenhados em código (traço de 2px, viewBox 24).
+const CATEGORY_ICONS: Record<string, string> = {
+  Eventos: "M5 21V4 M5 4h11l-2 4 2 4H5",
+  Movimento: "M12 3v18 M3 12h18 M12 3l-3 3 M12 3l3 3 M12 21l-3-3 M12 21l3-3 M3 12l3-3 M3 12l3 3 M21 12l-3-3 M21 12l-3 3",
+  Aparência: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M12 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5",
+  Som: "M9 18V5l11-2v13 M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0",
+  Controle: "M17 2l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 22l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3",
+  Sensores: "M5 19a10 10 0 0 1 0-14 M19 5a10 10 0 0 1 0 14 M8 16a6 6 0 0 1 0-8 M16 8a6 6 0 0 1 0 8 M12 11a1 1 0 1 0 0 2a1 1 0 1 0 0-2",
+  Operadores: "M7 4v6 M4 7h6 M14 7h6 M4 17h6 M14 14l6 6 M20 14l-6 6",
+  Variáveis: "M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10",
+  Caneta: "M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
+};
+
+let categoryRegistered = false;
+function registerRoundCategory() {
+  if (categoryRegistered) return;
+  categoryRegistered = true;
+  class CategoriaRedonda extends Blockly.ToolboxCategory {
+    protected override createIconDom_(): Element {
+      const span = document.createElement("span");
+      span.className = "blocos-cat-icone";
+      span.setAttribute("aria-hidden", "true");
+      const d = CATEGORY_ICONS[this.name_] ?? "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16";
+      span.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+      return span;
+    }
+    protected override addColourBorder_(colour: string): void {
+      this.rowDiv_?.style.setProperty("--cat", colour);
+    }
+    override setSelected(isSelected: boolean): void {
+      super.setSelected(isSelected);
+      if (this.rowDiv_) this.rowDiv_.style.backgroundColor = ""; // o destaque é o anel no círculo (CSS)
+    }
+  }
+  Blockly.registry.register(Blockly.registry.Type.TOOLBOX_ITEM, Blockly.ToolboxCategory.registrationName, CategoriaRedonda, true);
+}
+
 function registerBlocks() {
+  registerRoundCategory();
   if (registered) return;
   Blockly.setLocale(ptBr as unknown as Record<string, string>);
   Blockly.fieldRegistry.register("field_blocos_menu", DynamicDropdown);

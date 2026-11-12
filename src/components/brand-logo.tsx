@@ -21,5 +21,5 @@ export function BrandLogo({ brand, size = "md" }: { brand: Brand; size?: "md" | 
 
 export function PoweredBy({ brand }: { brand: Brand }) {
   if (!brand.whiteLabel || !brand.showPlatformBrand) return null;
-  return <p className="text-xs text-black/40">com tecnologia {process.env.PLATFORM_NAME ?? "Blocos"}</p>;
+  return <p className="text-xs text-muted">com tecnologia {process.env.PLATFORM_NAME ?? "Blocos"}</p>;
 }

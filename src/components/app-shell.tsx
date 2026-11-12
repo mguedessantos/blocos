@@ -27,8 +27,8 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
   const unread = notices.filter((n) => !n.read);
   const initial = user.name.trim().charAt(0).toUpperCase();
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="no-print sticky top-0 z-30 border-b-2 border-line bg-white/90 backdrop-blur">
+    <div className={`flex flex-1 flex-col ${user.role === "STUDENT" ? "tema-noite" : ""}`}>
+      <header className="no-print sticky top-0 z-30 border-b-2 border-line bg-[var(--nav-bg)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
             <Link href="/" className="shrink-0 rounded-xl"><BrandLogo brand={brand} /></Link>
@@ -54,7 +54,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
               <p className="font-extrabold">{user.name}</p>
               <p className="text-xs font-semibold text-muted">{ROLE_LABEL[user.role]}{brand.orgName ? ` · ${brand.orgName}` : ""}</p>
             </div>
-            <span aria-hidden className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-2 font-display text-lg font-extrabold text-foreground shadow-[0_3px_0_rgb(15_23_42/0.15)]">
+            <span aria-hidden className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-2 font-display text-lg font-extrabold text-night shadow-[0_3px_0_rgb(15_23_42/0.15)]">
               {initial}
             </span>
             <form action={logout}>

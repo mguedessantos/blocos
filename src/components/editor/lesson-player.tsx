@@ -295,7 +295,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             onClick={() => setHelpOpen(!helpOpen)}
             aria-expanded={helpOpen}
             aria-controls="ajuda-blocos"
-            className={`ml-auto inline-flex min-h-10 items-center gap-2 rounded-xl px-3 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.15)] ${helpOpen ? "bg-brand text-brand-text" : "bg-brand-2 text-foreground"}`}
+            className={`ml-auto inline-flex min-h-10 items-center gap-2 rounded-xl px-3 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.15)] ${helpOpen ? "bg-brand text-brand-text" : "bg-star text-night"}`}
           >
             <BookOpen aria-hidden className="h-4 w-4" /> Como funciona cada bloco
           </button>
@@ -312,7 +312,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             <aside
               id="ajuda-blocos"
               aria-label="Como funciona cada bloco"
-              className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,90%)] flex-col border-l-2 border-line bg-white shadow-[-8px_0_24px_rgb(15_23_42/0.12)]"
+              className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,90%)] flex-col border-l-2 border-line bg-surface shadow-[-8px_0_24px_rgb(15_23_42/0.12)]"
             >
               <div className="flex items-center justify-between border-b-2 border-line px-4 py-2">
                 <h3 className="flex items-center gap-2 font-extrabold"><BookOpen aria-hidden className="h-5 w-5 text-brand" /> Como funciona cada bloco</h3>
@@ -344,10 +344,10 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={run} className={buttonClass("success")}>
+          <button onClick={run} className={buttonClass("success", "md", "btn-go")}>
             <Flag aria-hidden className="h-5 w-5" /> Executar
           </button>
-          <button onClick={stop} disabled={!running} className={buttonClass("danger")}>
+          <button onClick={stop} disabled={!running} className={buttonClass("danger", "md", "btn-stop")}>
             <Square aria-hidden className="h-4 w-4 fill-current" /> Parar
           </button>
           <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md", "flex-1 sm:flex-none")}>
@@ -359,10 +359,10 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
         </div>
 
         {outcome && !resultOpen && (
-          <button type="button" onClick={() => setResultOpen(true)} className="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-white px-4 py-2 text-left font-extrabold hover:border-brand">
+          <button type="button" onClick={() => setResultOpen(true)} className="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-2 text-left font-extrabold hover:border-[#8b6cff]">
             {outcome.ok ? <Stars value={outcome.stars} /> : <CircleX aria-hidden className="h-5 w-5 text-red-600" />}
             <span className="flex-1 truncate">{outcome.ok ? outcome.summary : outcome.error}</span>
-            <span className="text-sm text-brand">Ver resultado</span>
+            <span className="text-sm text-star">Ver resultado</span>
           </button>
         )}
         {outcome && resultOpen && <ResultDialog outcome={outcome} nextHref={nextHref} onClose={() => setResultOpen(false)} />}
@@ -385,12 +385,12 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
               <div className="grid grid-cols-4 gap-2 rounded-2xl bg-brand-soft p-2" aria-label={picker === "sprite" ? "Escolha um ator" : "Escolha um cenário"}>
                 {picker === "sprite"
                   ? (Object.keys(CHARACTERS) as CharacterId[]).map((c) => (
-                      <button key={c} data-item={c} onClick={onPickSprite} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold hover:ring-2 hover:ring-brand">
+                      <button key={c} data-item={c} onClick={onPickSprite} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold text-night hover:ring-2 hover:ring-brand">
                         <Thumb character={c} /> {CHARACTERS[c].name}
                       </button>
                     ))
                   : (Object.keys(BACKDROPS) as BackdropId[]).map((b) => (
-                      <button key={b} data-item={b} onClick={onPickBackdrop} disabled={project.stage.backdrops.includes(b)} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold hover:ring-2 hover:ring-brand disabled:opacity-40">
+                      <button key={b} data-item={b} onClick={onPickBackdrop} disabled={project.stage.backdrops.includes(b)} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold text-night hover:ring-2 hover:ring-brand disabled:opacity-40">
                         <Thumb backdrop={b} /> {BACKDROPS[b]}
                       </button>
                     ))}
@@ -418,7 +418,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
                   </button>
                   {selected === s.id && (
                     <span className="absolute -top-2 -right-1 flex gap-0.5">
-                      <button onClick={() => renameSprite(s.id)} aria-label={`Renomear ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white shadow ring-1 ring-line">
+                      <button onClick={() => renameSprite(s.id)} aria-label={`Renomear ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white text-night shadow ring-1 ring-line">
                         <Pencil aria-hidden className="h-3.5 w-3.5" />
                       </button>
                       {project.sprites.length > 1 && (
@@ -482,16 +482,16 @@ function Thumb({ character, backdrop }: { character?: CharacterId; backdrop?: Ba
 }
 
 export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref: string | null }) {
-  if (!outcome.ok) return <p role="alert" className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{outcome.error}</p>;
+  if (!outcome.ok) return <p role="alert" className="rounded-2xl border-2 border-[#ff6b6b] bg-surface px-4 py-3 text-sm font-bold">{outcome.error}</p>;
   return (
-    <div role="status" aria-label="Resultado da verificação" className={`space-y-3 rounded-3xl border-2 p-5 ${outcome.passed ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
+    <div role="status" aria-label="Resultado da verificação" className={`space-y-3 rounded-3xl border-2 bg-surface p-5 ${outcome.passed ? "border-star" : "border-[#8b6cff]"}`}>
       <div className="flex items-center justify-between gap-3">
         <Stars value={outcome.stars} size="lg" />
-        {outcome.xpGained > 0 && <span className="rounded-full bg-brand-2 px-3 py-1 font-display font-extrabold">+{outcome.xpGained} XP!</span>}
+        {outcome.xpGained > 0 && <span className="rounded-full bg-star px-3 py-1 font-display font-extrabold text-night">+{outcome.xpGained} XP!</span>}
       </div>
       <p className="font-display text-xl font-extrabold">{outcome.summary}</p>
       {outcome.newBadges?.map((b) => (
-        <p key={b.id} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-2 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.12)]">
+        <p key={b.id} className="flex items-center gap-3 rounded-2xl border-2 border-star px-4 py-2 font-extrabold">
           <span aria-hidden className="text-3xl">{b.icon}</span> Nova medalha: {b.name}!
         </p>
       ))}
@@ -500,14 +500,14 @@ export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref
           const Icon = i.ok ? CircleCheck : i.bonus ? Lightbulb : CircleX;
           return (
             <li key={k} className="flex items-start gap-2">
-              <Icon aria-hidden className={`mt-0.5 h-4 w-4 shrink-0 ${i.ok ? "text-green-600" : i.bonus ? "text-amber-600" : "text-red-600"}`} />
+              <Icon aria-hidden className={`mt-0.5 h-4 w-4 shrink-0 ${i.ok ? "text-go" : i.bonus ? "text-star" : "text-[#ff6b6b]"}`} />
               <span>{i.message}</span>
             </li>
           );
         })}
       </ul>
       {outcome.passed && nextHref && (
-        <Link href={nextHref} className={buttonClass()}>Próxima lição <ArrowRight aria-hidden className="h-4 w-4" /></Link>
+        <Link href={nextHref} className={buttonClass("primary", "md", "btn-cta w-full text-lg")}>Próxima lição <ArrowRight aria-hidden className="h-5 w-5" /></Link>
       )}
     </div>
   );
@@ -521,13 +521,13 @@ function ResultDialog({ outcome, nextHref, onClose }: { outcome: VerifyOutcome; 
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#05041a]/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Resultado"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-hidden rounded-3xl bg-white p-3 shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col gap-3 overflow-hidden rounded-3xl border-2 border-line bg-[#120f35] p-3 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.8)]"
       >
         <div className="min-h-0 overflow-y-auto">
           <Result outcome={outcome} nextHref={nextHref} />
