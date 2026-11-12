@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* As cores da marca vêm do tenant (white-label) via variáveis CSS no <html>. */
+:root {
+  --brand-primary: #6d28d9;
+  --brand-primary-text: #ffffff;
+  --brand-secondary: #f59e0b;
+  --background: #faf8ff;
+  --foreground: #1f1d2b;
+}
+
+@theme inline {
+  --color-brand: var(--brand-primary);
+  --color-brand-text: var(--brand-primary-text);
+  --color-brand-2: var(--brand-secondary);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Impressão dos cartões de acesso: só a área marcada aparece no papel. */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; }
+  .no-print { display: none !important; }
+}

@@ -1,0 +1,499 @@
+// Blocos — esquema do banco de dados (multi-tenant).
+// Regra: toda tabela pertencente a um cliente tem `organizationId`.
+// Acesse os dados sempre pelos helpers em src/lib/dal/*.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Tenancy ─────────────────────────────
+
+enum OrgType {
+  ESCOLA
+  PROFESSOR_INDEPENDENTE
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique // usado no subdomínio: slug.seusite.com.br
+  type      OrgType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branding      OrgBranding?
+  domains       Domain[]
+  users         User[]
+  subscription  Subscription?
+  classes       Class[]
+  tracks        Track[]
+  jams          GameJam[]
+  consents      ConsentRecord[]
+  auditLogs     AuditLog[]
+  invites       Invite[]
+  hintRequests  HintRequest[]
+}
+
+model OrgBranding {
+  id                String       @id @default(cuid())
+  organizationId    String       @unique
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  displayName       String?
+  logoUrl           String?
+  logoDarkUrl       String?
+  faviconUrl        String?
+  mascotUrl         String?
+  loginBackgroundUrl String?
+  primaryColor      String? // hex, ex.: #6d28d9
+  secondaryColor    String?
+  emailSenderName   String?
+  supportEmail      String?
+  hidePlatformBrand Boolean      @default(false)
+  termsUrl          String?
+  privacyUrl        String?
+  updatedAt         DateTime     @updatedAt
+}
+
+enum DomainType {
+  SUBDOMINIO
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDENTE
+  VERIFICADO
+  ERRO
+}
+
+model Domain {
+  id             String       @id @default(cuid())
+  hostname       String       @unique // ex.: codigo.escolaabc.com.br
+  type           DomainType
+  status         DomainStatus @default(PENDENTE)
+  verifiedAt     DateTime?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+// ───────────────────────────── Usuários ─────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ORG_ADMIN
+  TEACHER
+  STUDENT
+  JUDGE
+}
+
+model User {
+  id             String        @id @default(cuid())
+  role           Role
+  name           String // alunos: primeiro nome ou apelido (LGPD)
+  email          String?       @unique // equipe e jurados; alunos não têm email
+  username       String? // alunos: único dentro da organização
+  passwordHash   String
+  avatar         String? // id de avatar pré-definido
+  xp             Int           @default(0)
+  active         Boolean       @default(true)
+  organizationId String? // null apenas para SUPER_ADMIN e jurados externos
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  lastLoginAt    DateTime?
+
+  teachingClasses Class[]       @relation("ClassTeacher")
+  enrollments     Enrollment[]
+  progress        Progress[]
+  submissions     Submission[]
+  badges          UserBadge[]
+  jamMemberships  JamTeamMember[]
+  jamJudging      JamJudge[]
+  jamScores       JamScore[]
+  jamFeedbacks    JamFeedback[]
+  hintRequests    HintRequest[]
+
+  @@unique([organizationId, username])
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  role           Role
+  token          String       @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+}
+
+// ───────────────────────────── Cobrança ─────────────────────────────
+
+model Plan {
+  id               String         @id // ex.: "professor", "escola", "escola_plus"
+  name             String
+  description      String         @default("")
+  order            Int            @default(0)
+  orgType          OrgType        @default(ESCOLA) // para quem o plano é vendido
+  priceCents       Int            @default(0) // preço mensal em centavos (BRL); por aluno se perSeat
+  perSeat          Boolean        @default(false)
+  minSeats         Int            @default(1)
+  stripePriceId    String?        @unique
+  maxStudents      Int? // null = ilimitado / por assento
+  maxClasses       Int?
+  features         String[] // ex.: ["white_label", "ai_tutor", "unlimited_jams"]
+  aiMonthlyQuota   Int            @default(0)
+  subscriptions    Subscription[]
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  READ_ONLY
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  organizationId       String             @unique
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 Plan               @relation(fields: [planId], references: [id])
+  status               SubscriptionStatus @default(TRIAL)
+  seats                Int?
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  updatedAt            DateTime           @updatedAt
+}
+
+// Eventos do Stripe já processados (idempotência do webhook).
+model StripeEvent {
+  id          String   @id // evt_...
+  type        String
+  processedAt DateTime @default(now())
+}
+
+// ───────────────────────────── LGPD ─────────────────────────────
+
+model ConsentRecord {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  document       String // ex.: "termos-v1", "dpa-v1"
+  acceptedAt     DateTime     @default(now())
+  ip             String?
+}
+
+model AuditLog {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorId        String?
+  action         String // ex.: "aluno.excluir", "dados.exportar"
+  target         String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// ───────────────────────────── Ensino ─────────────────────────────
+
+model Class {
+  id             String       @id @default(cuid())
+  name           String
+  code           String       @unique // código da turma usado no login do aluno
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacher        User         @relation("ClassTeacher", fields: [teacherId], references: [id])
+  archived       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  enrollments Enrollment[]
+  assignments TrackAssignment[]
+  jams        GameJam[]
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([classId, userId])
+}
+
+model Track {
+  id             String        @id @default(cuid())
+  slug           String
+  title          String
+  description    String
+  level          Int           @default(1)
+  order          Int           @default(0)
+  published      Boolean       @default(false)
+  organizationId String? // null = trilha oficial da plataforma
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  modules        Module[]
+  assignments    TrackAssignment[]
+
+  @@unique([organizationId, slug])
+}
+
+model Module {
+  id      String   @id @default(cuid())
+  trackId String
+  track   Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  title   String
+  order   Int      @default(0)
+  lessons Lesson[]
+}
+
+enum LessonType {
+  TEORIA
+  DEMO
+  EXERCICIO
+  DESAFIO
+}
+
+enum LessonMode {
+  EDITOR
+  SB3
+  AMBOS
+}
+
+model Lesson {
+  id                String     @id @default(cuid())
+  moduleId          String
+  module            Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  slug              String
+  title             String
+  type              LessonType
+  mode              LessonMode @default(EDITOR)
+  order             Int        @default(0)
+  content           String // markdown
+  starterWorkspace  Json?
+  allowedBlocks     String[] // opcodes Scratch liberados na caixa de blocos
+  checks            Json? // especificação de verificação
+  xp                Int        @default(10)
+  draft             Boolean    @default(false) // gerado por IA aguardando revisão
+
+  progress     Progress[]
+  submissions  Submission[]
+  hintRequests HintRequest[]
+
+  @@unique([moduleId, slug])
+}
+
+model TrackAssignment {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([classId, trackId])
+}
+
+enum ProgressStatus {
+  NAO_INICIADO
+  EM_ANDAMENTO
+  CONCLUIDO
+}
+
+model Progress {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  status    ProgressStatus @default(NAO_INICIADO)
+  stars     Int            @default(0)
+  attempts  Int            @default(0)
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, lessonId])
+}
+
+model Submission {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  workspace      Json?
+  sb3Url         String?
+  result         Json
+  stars          Int      @default(0)
+  teacherComment String?
+  createdAt      DateTime @default(now())
+
+  @@index([lessonId, createdAt])
+}
+
+model Badge {
+  id          String      @id // ex.: "primeiro-script"
+  name        String
+  description String
+  icon        String
+  users       UserBadge[]
+}
+
+model UserBadge {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@id([userId, badgeId])
+}
+
+model HintRequest {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  level          Int
+  inputTokens    Int          @default(0)
+  outputTokens   Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+// ───────────────────────────── Game Jams ─────────────────────────────
+
+enum JamScope {
+  PLATAFORMA
+  ORG
+  TURMA
+}
+
+enum JamStatus {
+  RASCUNHO
+  INSCRICOES
+  EM_ANDAMENTO
+  JULGAMENTO
+  ENCERRADA
+}
+
+model GameJam {
+  id                 String        @id @default(cuid())
+  slug               String        @unique
+  title              String
+  theme              String?
+  rules              String // markdown
+  scope              JamScope
+  status             JamStatus     @default(RASCUNHO)
+  organizationId     String? // null para jams da plataforma
+  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classId            String?
+  class              Class?        @relation(fields: [classId], references: [id], onDelete: SetNull)
+  startsAt           DateTime
+  submissionDeadline DateTime
+  judgingEndsAt      DateTime
+  maxTeamSize        Int           @default(1)
+  popularVote        Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+
+  teams     JamTeam[]
+  entries   JamEntry[]
+  criteria  JamCriterion[]
+  judges    JamJudge[]
+}
+
+model JamTeam {
+  id      String          @id @default(cuid())
+  jamId   String
+  jam     GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  name    String
+  members JamTeamMember[]
+  entry   JamEntry?
+}
+
+model JamTeamMember {
+  teamId String
+  team   JamTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+}
+
+model JamEntry {
+  id           String        @id @default(cuid())
+  jamId        String
+  jam          GameJam       @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  teamId       String        @unique
+  team         JamTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  sb3Url       String
+  thumbnailUrl String?
+  submittedAt  DateTime      @default(now())
+  scores       JamScore[]
+  feedbacks    JamFeedback[]
+}
+
+model JamCriterion {
+  id       String     @id @default(cuid())
+  jamId    String
+  jam      GameJam    @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  name     String // ex.: "Criatividade", "Uso do tema", "Jogabilidade"
+  weight   Float      @default(1)
+  maxScore Int        @default(10)
+  order    Int        @default(0)
+  scores   JamScore[]
+}
+
+model JamJudge {
+  jamId  String
+  jam    GameJam @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([jamId, userId])
+}
+
+model JamScore {
+  id          String       @id @default(cuid())
+  entryId     String
+  entry       JamEntry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  criterionId String
+  criterion   JamCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  judgeId     String
+  judge       User         @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  value       Int
+
+  @@unique([entryId, criterionId, judgeId])
+}
+
+model JamFeedback {
+  id               String   @id @default(cuid())
+  entryId          String
+  entry            JamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  judgeId          String
+  judge            User     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  text             String
+  visibleToStudent Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  @@unique([entryId, judgeId])
+}
