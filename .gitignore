@@ -56,3 +56,6 @@ next-env.d.ts
 
 # arquivos enviados (armazenamento local de desenvolvimento)
 /.data/
+
+# imagens de referência de outros produtos (só para estudo de design, não versionar)
+/referencias/
