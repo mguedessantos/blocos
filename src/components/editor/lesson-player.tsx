@@ -22,7 +22,7 @@ const BlockEditor = dynamic(() => import("./block-editor"), {
 });
 
 export type VerifyOutcome =
-  | { ok: true; passed: boolean; stars: number; summary: string; items: CheckItem[]; xpGained: number }
+  | { ok: true; passed: boolean; stars: number; summary: string; items: CheckItem[]; xpGained: number; newBadges?: { id: string; name: string; icon: string }[] }
   | { ok: false; error: string };
 
 type Props = {
@@ -459,6 +459,11 @@ export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref
         {outcome.xpGained > 0 && <span className="rounded-full bg-brand-2 px-3 py-1 font-display font-extrabold">+{outcome.xpGained} XP!</span>}
       </div>
       <p className="font-display text-xl font-extrabold">{outcome.summary}</p>
+      {outcome.newBadges?.map((b) => (
+        <p key={b.id} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-2 font-extrabold shadow-[0_3px_0_rgb(15_23_42/0.12)]">
+          <span aria-hidden className="text-3xl">{b.icon}</span> Nova medalha: {b.name}!
+        </p>
+      ))}
       <ul className="space-y-1.5 text-sm font-semibold">
         {outcome.items.map((i, k) => {
           const Icon = i.ok ? CircleCheck : i.bonus ? Lightbulb : CircleX;

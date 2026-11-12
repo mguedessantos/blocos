@@ -1,4 +1,5 @@
 import "server-only";
+import { awardBadges } from "./badges";
 import { Prisma } from "@/generated/prisma/client";
 import { compileProject, normalizeProject } from "../blocks/project";
 import { checkModel, checkProject, checksSchema, type CheckResult } from "../checker";
@@ -111,7 +112,8 @@ export async function getStudentLesson(user: CurrentUser, lessonId: string) {
 
 const MAX_WORKSPACE_BYTES = 200_000;
 
-export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number } | { ok: false; error: string };
+export type NewBadge = { id: string; name: string; icon: string };
+export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; newBadges: NewBadge[] } | { ok: false; error: string };
 
 /** Verifica no SERVIDOR (o resultado do navegador nunca é confiável) e registra o progresso. */
 export async function submitAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<AttemptOutcome> {
@@ -137,7 +139,7 @@ export async function submitAttempt(user: CurrentUser, lessonId: string, workspa
     workspace,
     result: { passed: result.passed, stars: result.stars, items: result.items },
   });
-  return { ok: true, result, xpGained };
+  return { ok: true, result, xpGained, newBadges: await awardBadges(user) };
 }
 
 /** Missões feitas no PictoBlox: o aluno envia o .sb3 e o servidor verifica a estrutura do projeto. */
@@ -159,7 +161,7 @@ export async function submitSb3Attempt(user: CurrentUser, lessonId: string, byte
     workspace: null,
     result: { passed: result.passed, stars: result.stars, items: result.items, origem: "sb3", bytes: bytes.byteLength },
   });
-  return { ok: true, result, xpGained };
+  return { ok: true, result, xpGained, newBadges: await awardBadges(user) };
 }
 
 /** Lições de teoria/demonstração: concluir é só marcar como lida. */
@@ -168,7 +170,7 @@ export async function completeTheory(user: CurrentUser, lessonId: string) {
   if (locked) return { ok: false as const, error: "Conclua a lição anterior primeiro." };
   if (lesson.type !== "TEORIA" && lesson.type !== "DEMO") return { ok: false as const, error: "Resolva o exercício para concluir." };
   const xpGained = await recordProgress(user, lesson.id, lesson.xp, true, 3, null);
-  return { ok: true as const, xpGained };
+  return { ok: true as const, xpGained, newBadges: await awardBadges(user) };
 }
 
 async function recordProgress(

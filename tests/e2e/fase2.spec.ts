@@ -9,6 +9,8 @@ async function signup(page: Page, opts: { type?: "Escola" | "Professor"; org: st
   await page.goto("/cadastro");
   if (opts.type === "Professor") await page.getByText("🍎 Professor(a)").click();
   await page.getByLabel(/Nome da (escola|sua conta)/).fill(opts.org);
+  await page.getByLabel("Cidade", { exact: true }).fill("Campinas");
+  await page.getByLabel("Estado").selectOption("SP");
   await page.getByLabel("Seu nome").fill("Rita Responsável");
   await page.getByLabel("Seu email").fill(opts.email);
   await page.getByLabel(/Crie uma senha/).fill("senhaforte123");
@@ -72,6 +74,8 @@ test("endereço ou email já usados mostram erro", async ({ page }) => {
   await page.goto("/cadastro");
   await page.getByLabel("Nome da escola").fill("Outra");
   await page.getByLabel("Endereço").fill("escola-demo");
+  await page.getByLabel("Cidade", { exact: true }).fill("Campinas");
+  await page.getByLabel("Estado").selectOption("SP");
   await page.getByLabel("Seu nome").fill("Fulano");
   await page.getByLabel("Seu email").fill(`novo-${run}@teste.dev`);
   await page.getByLabel(/Crie uma senha/).fill("senhaforte123");

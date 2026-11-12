@@ -23,6 +23,9 @@ model Organization {
   name      String
   slug      String   @unique // usado no subdomínio: slug.seusite.com.br
   type      OrgType
+  city      String   @default("") // cidade da escola (filtros do painel da plataforma)
+  state     String   @default("") // UF, ex.: "SP"
+  deletedAt DateTime? // removida (lixeira); restaurável por 90 dias
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -102,6 +105,7 @@ model User {
   avatar         String? // id de avatar pré-definido
   xp             Int           @default(0)
   active         Boolean       @default(true)
+  deletedAt      DateTime? // removido pelo dono da plataforma (lixeira)
   organizationId String? // null apenas para SUPER_ADMIN e jurados externos
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
@@ -117,6 +121,7 @@ model User {
   jamScores       JamScore[]
   jamFeedbacks    JamFeedback[]
   hintRequests    HintRequest[]
+  announcementReads AnnouncementRead[]
 
   @@unique([organizationId, username])
 }
@@ -519,4 +524,33 @@ model JamFeedback {
   createdAt        DateTime @default(now())
 
   @@unique([entryId, judgeId])
+}
+
+// ───────────────────────────── Avisos da plataforma ─────────────────────────────
+
+/** Aviso/notícia do dono da plataforma para escolas. Alvos vazios = todos. */
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  body        String // markdown
+  states      String[] // UFs alvo
+  cities      String[] // cidades alvo
+  orgIds      String[] // escolas específicas
+  roles       Role[] // papéis alvo (padrão: coordenação e professores)
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  reads AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now())
+
+  @@id([announcementId, userId])
 }

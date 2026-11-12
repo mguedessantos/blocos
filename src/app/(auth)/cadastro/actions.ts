@@ -5,12 +5,13 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { TRIAL_DAYS } from "@/lib/billing/entitlements";
+import { cleanCity, isUF } from "@/lib/br";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { slugError } from "@/lib/slug";
 import { getTenant } from "@/lib/tenant";
 
-export type SignupValues = Partial<Record<"type" | "orgName" | "slug" | "name" | "email" | "accept", string>>;
+export type SignupValues = Partial<Record<"type" | "orgName" | "slug" | "city" | "state" | "name" | "email" | "accept", string>>;
 export type SignupState = { error?: string; field?: string; values?: SignupValues } | undefined;
 
 const CONSENT_DOCUMENTS = ["termos-v1", "privacidade-v1", "dpa-v1"];
@@ -19,6 +20,8 @@ const schema = z.object({
   type: z.enum(["ESCOLA", "PROFESSOR_INDEPENDENTE"]),
   orgName: z.string().trim().min(2, "Informe o nome da escola ou da sua conta.").max(80),
   slug: z.string().trim().toLowerCase(),
+  city: z.string().transform(cleanCity).pipe(z.string().min(2, "Informe a cidade.").max(80)),
+  state: z.string().refine(isUF, "Escolha o estado."),
   name: z.string().trim().min(2, "Informe seu nome.").max(80),
   email: z.string().trim().toLowerCase().email("Informe um email válido."),
   password: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres.").max(200),
@@ -31,7 +34,7 @@ const TRIAL_PLAN = { ESCOLA: "escola_plus", PROFESSOR_INDEPENDENTE: "professor" 
 export async function signup(_: SignupState, formData: FormData): Promise<SignupState> {
   // Devolvemos o que foi digitado (menos a senha): o React limpa o formulário após a ação.
   const values: SignupValues = {};
-  for (const k of ["type", "orgName", "slug", "name", "email", "accept"] as const) {
+  for (const k of ["type", "orgName", "slug", "city", "state", "name", "email", "accept"] as const) {
     const v = formData.get(k);
     if (typeof v === "string") values[k] = v;
   }
@@ -67,6 +70,8 @@ export async function signup(_: SignupState, formData: FormData): Promise<Signup
           name: data.orgName,
           slug: data.slug,
           type: data.type,
+          city: data.city,
+          state: data.state,
           subscription: {
             create: {
               planId: TRIAL_PLAN[data.type],

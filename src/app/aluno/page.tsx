@@ -2,6 +2,7 @@ import { ArrowRight, Map as MapIcon, Rocket, Star, Trophy } from "lucide-react";
 import Link from "next/link";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
+import { getAchievements } from "@/lib/dal/badges";
 import { listStudentCourses } from "@/lib/dal/lessons";
 import { listStudentClasses } from "@/lib/dal/org";
 
@@ -11,7 +12,8 @@ const TRACK_COLORS = ["#4C97FF", "#9966FF", "#FFAB19", "#59C059", "#FF8C1A", "#0
 
 export default async function AlunoPage() {
   const user = await requireUser(["STUDENT"]);
-  const [courses, classes] = await Promise.all([listStudentCourses(user), listStudentClasses(user)]);
+  const [courses, classes, ach] = await Promise.all([listStudentCourses(user), listStudentClasses(user), getAchievements(user)]);
+  const earned = ach.badges.filter((b) => b.awardedAt);
   const done = courses.flatMap((c) => c.tracks).reduce((a, t) => a + t.done, 0);
 
   return (
@@ -31,7 +33,7 @@ export default async function AlunoPage() {
               <Star aria-hidden className="h-7 w-7 fill-white text-white" />
               <div className="leading-tight">
                 <p className="font-display text-2xl font-extrabold">{user.xp} XP</p>
-                <p className="text-xs font-bold text-foreground/70">pontos de experiência</p>
+                <p className="text-xs font-bold text-foreground/70">Nível {ach.level} · {ach.title}</p>
               </div>
             </div>
             <div className="hidden items-center gap-3 rounded-2xl bg-white px-5 py-3 ring-2 ring-line sm:flex">
@@ -43,6 +45,35 @@ export default async function AlunoPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="nivel" className="clay space-y-3 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="nivel" className="text-xl font-extrabold">Nível {ach.level}: {ach.title}</h2>
+          <p className="text-sm font-bold text-muted">
+            {ach.next ? `Faltam ${ach.next.xp - user.xp} XP para virar ${ach.next.title}` : "Você chegou ao nível máximo!"}
+          </p>
+        </div>
+        <div className="h-4 overflow-hidden rounded-full bg-black/[0.07]" role="progressbar" aria-valuenow={ach.pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso até o próximo nível">
+          <div className="h-full rounded-full bg-brand-2" style={{ width: `${ach.pct}%` }} />
+        </div>
+        <h3 className="pt-2 font-display text-lg font-extrabold">Minhas medalhas ({earned.length}/{ach.badges.length})</h3>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {ach.badges.map((b) => (
+            <li
+              key={b.id}
+              title={b.description}
+              className={`relative flex flex-col items-center gap-1 rounded-2xl border-2 p-3 text-center ${b.awardedAt ? "border-brand-2 bg-white" : "border-dashed border-line opacity-60 grayscale"}`}
+            >
+              {b.isNew && (
+                <span className="absolute -right-1 -top-2 rounded-full bg-red-600 px-2 text-[11px] font-extrabold text-white">Nova!</span>
+              )}
+              <span aria-hidden className="text-3xl">{b.awardedAt ? b.icon : "🔒"}</span>
+              <span className="text-sm font-extrabold leading-tight">{b.name}</span>
+              <span className="text-xs font-semibold text-muted">{b.awardedAt ? "Conquistada" : b.description}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {courses.length === 0 && (

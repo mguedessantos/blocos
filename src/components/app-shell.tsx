@@ -2,17 +2,21 @@ import { CircleAlert, Clock, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/(auth)/actions";
+import { AnnouncementsBell } from "@/components/announcements";
 import { BrandLogo, PoweredBy } from "@/components/brand-logo";
+import { Markdown } from "@/components/markdown";
 import { NavLinks, type NavItem } from "@/components/nav-links";
 import { getBrand } from "@/lib/branding";
 import type { CurrentUser } from "@/lib/dal/auth";
 import { getSubscriptionBanner } from "@/lib/dal/billing";
+import { getMyAnnouncements } from "@/lib/dal/platform";
 import { ROLE_LABEL } from "@/lib/roles";
 
 export type { NavItem };
 
 export async function AppShell({ user, nav, children }: { user: CurrentUser; nav: NavItem[]; children: ReactNode }) {
-  const [brand, banner] = await Promise.all([getBrand(), getSubscriptionBanner(user)]);
+  const [brand, banner, notices] = await Promise.all([getBrand(), getSubscriptionBanner(user), getMyAnnouncements(user)]);
+  const unread = notices.filter((n) => !n.read);
   const initial = user.name.trim().charAt(0).toUpperCase();
   return (
     <div className="flex flex-1 flex-col">
@@ -23,6 +27,21 @@ export async function AppShell({ user, nav, children }: { user: CurrentUser; nav
             <div className="hidden md:block"><NavLinks items={nav} /></div>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            {(user.role === "ORG_ADMIN" || user.role === "TEACHER") && (
+              <AnnouncementsBell unread={unread.length}>
+                <p className="mb-2 font-display text-lg font-extrabold">Avisos</p>
+                {notices.length === 0 && <p className="text-sm text-muted">Nenhum aviso por enquanto.</p>}
+                <ul className="space-y-3">
+                  {notices.slice(0, 10).map((n) => (
+                    <li key={n.id} className="rounded-2xl border-2 border-line p-3">
+                      <p className="font-extrabold">{!n.read && <span className="mr-1 text-red-600">●</span>}{n.title}</p>
+                      <p className="mb-1 text-xs font-semibold text-muted">{n.publishedAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
+                      <div className="text-sm"><Markdown source={n.body} /></div>
+                    </li>
+                  ))}
+                </ul>
+              </AnnouncementsBell>
+            )}
             <div className="hidden text-right leading-tight sm:block">
               <p className="font-extrabold">{user.name}</p>
               <p className="text-xs font-semibold text-muted">{ROLE_LABEL[user.role]}{brand.orgName ? ` · ${brand.orgName}` : ""}</p>
@@ -40,6 +59,13 @@ export async function AppShell({ user, nav, children }: { user: CurrentUser; nav
         </div>
         {nav.length > 1 && <div className="border-t border-line px-3 py-1.5 md:hidden"><NavLinks items={nav} /></div>}
       </header>
+      {unread[0] && (
+        <div role="status" className="no-print flex flex-wrap items-center justify-center gap-2 bg-brand-soft px-6 py-2 text-sm font-bold text-brand-shadow">
+          <span aria-hidden>📣</span> Novo aviso: {unread[0].title}
+          {unread.length > 1 && <span className="font-semibold">(+{unread.length - 1})</span>}
+          <span className="font-semibold">· abra o sino para ler</span>
+        </div>
+      )}
       {banner && <SubscriptionBanner banner={banner} canManage={user.role === "ORG_ADMIN"} />}
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
       <footer className="no-print flex justify-center p-4"><PoweredBy brand={brand} /></footer>

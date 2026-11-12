@@ -18,14 +18,18 @@ export const getCurrentUser = cache(async () => {
   if (!session) return null;
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, name: true, role: true, organizationId: true, active: true, avatar: true, xp: true },
+    select: {
+      id: true, name: true, role: true, organizationId: true, active: true, avatar: true, xp: true, deletedAt: true,
+      organization: { select: { deletedAt: true } },
+    },
   });
-  if (!user || !user.active) return null;
+  // conta ou escola removida (lixeira) derruba a sessão na hora
+  if (!user || !user.active || user.deletedAt || user.organization?.deletedAt) return null;
 
   // Num domínio de escola, só valem usuários dessa escola (exceto super admin e jurados externos).
   const tenant = await getTenant();
   if (tenant && user.organizationId && user.organizationId !== tenant.id) return null;
-  return user;
+  return { id: user.id, name: user.name, role: user.role, organizationId: user.organizationId, active: user.active, avatar: user.avatar, xp: user.xp };
 });
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

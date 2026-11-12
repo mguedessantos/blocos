@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Alert, Button, Input } from "@/components/ui";
+import { UF_LIST, UFS } from "@/lib/br";
 import { slugify } from "@/lib/slug";
 import { signup } from "./actions";
 
@@ -65,6 +66,16 @@ export function SignupForm({ rootDomain, billing }: { rootDomain: string; billin
         <p className="mt-1 text-xs text-muted">
           Seus alunos vão entrar por <strong>{slug || "seu-endereco"}.{rootDomain}</strong>
         </p>
+      </div>
+      <div className="grid grid-cols-[1fr_8rem] gap-3">
+        <Input label="Cidade" name="city" autoComplete="address-level2" defaultValue={state?.values?.city} required />
+        <label className="flex flex-col gap-1.5 text-sm font-bold">
+          Estado
+          <select key={state?.values?.state ?? "uf"} name="state" defaultValue={state?.values?.state ?? ""} required className="min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15">
+            <option value="" disabled>UF</option>
+            {UF_LIST.map((uf) => <option key={uf} value={uf} title={UFS[uf]}>{uf}</option>)}
+          </select>
+        </label>
       </div>
       <Input label="Seu nome" name="name" autoComplete="name" defaultValue={state?.values?.name} required />
       <Input label="Seu email" name="email" type="email" autoComplete="email" defaultValue={state?.values?.email} required />

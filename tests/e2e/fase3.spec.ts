@@ -121,6 +121,8 @@ test("plano Professor bloqueia a 4ª turma", async ({ page }) => {
   await page.goto("/cadastro");
   await page.getByText("🍎 Professor(a)").click();
   await page.getByLabel(/Nome da sua conta/).fill(`Limite ${run}`);
+  await page.getByLabel("Cidade", { exact: true }).fill("Campinas");
+  await page.getByLabel("Estado").selectOption("SP");
   await page.getByLabel("Seu nome").fill("Lu");
   await page.getByLabel("Seu email").fill(`limite-${run}@teste.dev`);
   await page.getByLabel(/Crie uma senha/).fill("senhaforte123");

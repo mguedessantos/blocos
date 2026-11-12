@@ -20,7 +20,7 @@ export async function getBillingOverview(user: CurrentUser) {
   const [org, subscription, students, classes] = await Promise.all([
     db.organization.findUniqueOrThrow({ where: { id: organizationId } }),
     getOrgSubscription(organizationId),
-    db.user.count({ where: { organizationId, role: "STUDENT", active: true } }),
+    db.user.count({ where: { organizationId, role: "STUDENT", active: true, deletedAt: null } }),
     db.class.count({ where: { organizationId, archived: false } }),
   ]);
   const plans = await db.plan.findMany({ where: { orgType: org.type }, orderBy: { order: "asc" } });
@@ -34,7 +34,7 @@ export async function getCheckoutContext(user: CurrentUser) {
     db.organization.findUniqueOrThrow({ where: { id: organizationId } }),
     getOrgSubscription(organizationId),
     db.user.findUniqueOrThrow({ where: { id: user.id }, select: { email: true, name: true } }),
-    db.user.count({ where: { organizationId, role: "STUDENT", active: true } }),
+    db.user.count({ where: { organizationId, role: "STUDENT", active: true, deletedAt: null } }),
   ]);
   return { org, subscription, admin, students };
 }
@@ -69,7 +69,7 @@ export async function assertCanAddStudents(user: CurrentUser, adding: number) {
   if (!user.organizationId) throw new Error("Usuário sem organização.");
   const [sub, current] = await Promise.all([
     getOrgSubscription(user.organizationId),
-    db.user.count({ where: { organizationId: user.organizationId, role: "STUDENT", active: true } }),
+    db.user.count({ where: { organizationId: user.organizationId, role: "STUDENT", active: true, deletedAt: null } }),
   ]);
   return checkCanAddStudents(sub, current, adding);
 }

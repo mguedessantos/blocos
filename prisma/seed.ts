@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient } from "../src/generated/prisma/client";
 import { OFFICIAL_COURSES } from "../content/cursos";
+import { BADGES } from "../src/lib/gamification";
 import { FLAG_STARTER, OFFICIAL_TRACKS, guideMarkdown } from "../content/trilhas";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
@@ -38,8 +39,10 @@ async function main() {
   // Escola com white-label (Escola+)
   const escola = await db.organization.upsert({
     where: { slug: "escola-demo" },
-    update: {},
+    update: { city: "Campinas", state: "SP" },
     create: {
+      city: "Campinas",
+      state: "SP",
       name: "Colégio Aurora",
       slug: "escola-demo",
       type: "ESCOLA",
@@ -82,8 +85,10 @@ async function main() {
   // Professora independente (plano Professor, sem white-label — mesmo tendo branding salvo)
   const indep = await db.organization.upsert({
     where: { slug: "prof-marina" },
-    update: {},
+    update: { city: "Belo Horizonte", state: "MG" },
     create: {
+      city: "Belo Horizonte",
+      state: "MG",
       name: "Turmas da Marina",
       slug: "prof-marina",
       type: "PROFESSOR_INDEPENDENTE",
@@ -158,6 +163,11 @@ async function main() {
     }
     // Lições que saíram do currículo ficam ocultas (draft), sem apagar o progresso dos alunos.
     await db.lesson.updateMany({ where: { module: { trackId: track.id }, id: { notIn: kept } }, data: { draft: true } });
+  }
+
+  // Catálogo de medalhas (regras em src/lib/gamification.ts)
+  for (const { id, name, description, icon } of BADGES) {
+    await db.badge.upsert({ where: { id }, update: { name, description, icon }, create: { id, name, description, icon } });
   }
 
   console.log("Seed concluído ✔");

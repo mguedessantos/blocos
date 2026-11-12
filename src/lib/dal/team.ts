@@ -18,7 +18,7 @@ export async function getTeam(user: CurrentUser) {
   const org = await requireSchoolAdmin(user);
   const [members, invites] = await Promise.all([
     db.user.findMany({
-      where: { organizationId: org.id, role: { in: ["TEACHER", "ORG_ADMIN"] } },
+      where: { organizationId: org.id, role: { in: ["TEACHER", "ORG_ADMIN"] }, deletedAt: null },
       select: { id: true, name: true, email: true, role: true, active: true, lastLoginAt: true, _count: { select: { teachingClasses: true } } },
       orderBy: { name: "asc" },
     }),

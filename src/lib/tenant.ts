@@ -17,13 +17,14 @@ export const getTenant = cache(async () => {
 
   if (info.kind === "root") return null;
   if (info.kind === "subdomain") {
-    return db.organization.findUnique({ where: { slug: info.slug }, include: tenantInclude });
+    const org = await db.organization.findUnique({ where: { slug: info.slug }, include: tenantInclude });
+    return org?.deletedAt ? null : org;
   }
   const domain = await db.domain.findUnique({
     where: { hostname: info.hostname },
     include: { organization: { include: tenantInclude } },
   });
-  return domain?.status === "VERIFICADO" ? domain.organization : null;
+  return domain?.status === "VERIFICADO" && !domain.organization.deletedAt ? domain.organization : null;
 });
 
 export type Tenant = NonNullable<Awaited<ReturnType<typeof getTenant>>>;

@@ -28,7 +28,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/licoes/[id]
     if (!r.ok) return Response.json(r, { status: 422 });
     revalidatePath("/aluno", "layout");
     const { passed, stars, summary, items } = r.result;
-    return Response.json({ ok: true, passed, stars, summary, items, xpGained: r.xpGained });
+    return Response.json({ ok: true, passed, stars, summary, items, xpGained: r.xpGained, newBadges: r.newBadges });
   } catch (err) {
     if (err instanceof AccessError) return Response.json({ ok: false, error: err.message }, { status: 404 });
     throw err;

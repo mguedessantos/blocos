@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { Card } from "@/components/ui";
 import { getBrand } from "@/lib/branding";
 import { requireUser } from "@/lib/dal/auth";
-import { AccessError, getClassDetail } from "@/lib/dal/classes";
+import { AccessError, getClassDetail, getClassProgress } from "@/lib/dal/classes";
 import { listAssignableCourses } from "@/lib/dal/lessons";
 import { getStudentLoginUrl } from "@/lib/dal/org";
 import { archiveClassAction, setCourseAssignmentAction } from "../../actions";
+import { ProgressGrid } from "./progress-grid";
 import { AddStudentsForm, RenameClassForm, StudentsTable } from "./class-forms";
 
 export const metadata = { title: "Turma" };
@@ -18,7 +19,13 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
     if (err instanceof AccessError) notFound();
     throw err;
   });
-  const [brand, loginUrl, tracks] = await Promise.all([getBrand(), getStudentLoginUrl(user), listAssignableCourses(user, klass.id)]);
+  const trilha = (await props.searchParams).trilha;
+  const [brand, loginUrl, tracks, progress] = await Promise.all([
+    getBrand(),
+    getStudentLoginUrl(user),
+    listAssignableCourses(user, klass.id),
+    getClassProgress(user, klass.id, typeof trilha === "string" ? trilha : undefined),
+  ]);
   const card = { brandName: brand.name, logoUrl: brand.logoUrl, loginUrl, classCode: klass.code, className: klass.name };
   const students = klass.enrollments.map((e) => e.user);
 
@@ -40,6 +47,11 @@ export default async function TurmaPage(props: PageProps<"/professor/turmas/[id]
       <Card>
         <h2 className="no-print mb-3 text-lg font-bold">Alunos</h2>
         <StudentsTable classId={klass.id} students={students} card={card} />
+      </Card>
+
+      <Card className="no-print">
+        <h2 id="progresso" className="mb-3 text-lg font-bold">Progresso da turma</h2>
+        <ProgressGrid classId={klass.id} data={progress} />
       </Card>
 
       <Card className="no-print">

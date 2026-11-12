@@ -52,6 +52,7 @@ export async function getClassDetail(user: CurrentUser, classId: string) {
     include: {
       teacher: { select: { id: true, name: true } },
       enrollments: {
+        where: { user: { deletedAt: null } },
         include: { user: { select: { id: true, name: true, username: true, active: true, lastLoginAt: true, xp: true } } },
         orderBy: { user: { name: "asc" } },
       },
@@ -61,7 +62,7 @@ export async function getClassDetail(user: CurrentUser, classId: string) {
 
 export async function listOrgTeachers(user: CurrentUser) {
   return db.user.findMany({
-    where: { organizationId: orgOf(user), role: { in: ["TEACHER", "ORG_ADMIN"] }, active: true },
+    where: { organizationId: orgOf(user), role: { in: ["TEACHER", "ORG_ADMIN"] }, active: true, deletedAt: null },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -193,4 +194,59 @@ export async function exportStudentData(user: CurrentUser, studentId: string) {
   });
   await audit(user, "aluno.exportar", studentId);
   return data;
+}
+
+// ───────────── Painel do professor: progresso da turma ─────────────
+
+/** Mapa de calor alunos × lições de uma trilha dos cursos liberados para a turma. */
+export async function getClassProgress(user: CurrentUser, classId: string, trackId?: string) {
+  await requireClass(user, classId);
+  const tracks = await db.track.findMany({
+    where: { published: true, course: { assignments: { some: { classId } } } },
+    orderBy: [{ course: { order: "asc" } }, { level: "asc" }, { order: "asc" }],
+    select: { id: true, title: true },
+  });
+  const track = tracks.find((t) => t.id === trackId) ?? tracks[0];
+  if (!track) return { tracks, track: null, lessons: [], students: [] };
+
+  const [lessons, students] = await Promise.all([
+    db.lesson.findMany({
+      where: { module: { trackId: track.id }, draft: false },
+      orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
+      select: { id: true, title: true, optional: true },
+    }),
+    db.user.findMany({
+      where: { role: "STUDENT", deletedAt: null, enrollments: { some: { classId } } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, lastLoginAt: true },
+    }),
+  ]);
+  const progress = await db.progress.findMany({
+    where: { userId: { in: students.map((s) => s.id) }, lessonId: { in: lessons.map((l) => l.id) } },
+    select: { userId: true, lessonId: true, status: true, stars: true, attempts: true },
+  });
+  const cell = new Map(progress.map((p) => [`${p.userId}:${p.lessonId}`, p]));
+  const required = lessons.filter((l) => !l.optional);
+
+  return {
+    tracks,
+    track,
+    lessons,
+    students: students.map((s) => {
+      const cells = lessons.map((l) => {
+        const p = cell.get(`${s.id}:${l.id}`);
+        return { lessonId: l.id, done: p?.status === "CONCLUIDO", stars: p?.stars ?? 0, attempts: p?.attempts ?? 0 };
+      });
+      const doneRequired = cells.filter((c, i) => c.done && !lessons[i].optional).length;
+      // "travado": 3+ tentativas sem concluir na primeira lição obrigatória pendente
+      const firstPending = cells.find((c, i) => !lessons[i].optional && !c.done);
+      return {
+        ...s,
+        cells,
+        done: doneRequired,
+        total: required.length,
+        stuck: Boolean(firstPending && firstPending.attempts >= 3),
+      };
+    }),
+  };
 }

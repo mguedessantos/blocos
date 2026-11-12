@@ -14,7 +14,7 @@ export async function verifyLessonAction(lessonId: string, workspaceJson: string
     if (!r.ok) return r;
     revalidatePath("/aluno", "layout");
     const { passed, stars, summary, items } = r.result;
-    return { ok: true, passed, stars, summary, items, xpGained: r.xpGained };
+    return { ok: true, passed, stars, summary, items, xpGained: r.xpGained, newBadges: r.newBadges };
   } catch (err) {
     if (err instanceof AccessError) return { ok: false, error: err.message };
     throw err;

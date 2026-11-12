@@ -34,10 +34,10 @@ export async function loginStaff(_: LoginState, formData: FormData): Promise<Log
   if (!parsed.success) return { error: parsed.error.issues[0].message, values };
 
   const tenant = await getTenant();
-  const user = await db.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await db.user.findUnique({ where: { email: parsed.data.email }, include: { organization: { select: { deletedAt: true } } } });
   const ok = await bcrypt.compare(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
 
-  if (!user || !ok || !user.active || user.role === "STUDENT") {
+  if (!user || !ok || !user.active || user.deletedAt || user.organization?.deletedAt || user.role === "STUDENT") {
     return { error: "Email ou senha incorretos.", values };
   }
   if (tenant && user.organizationId && user.organizationId !== tenant.id) {
@@ -64,7 +64,7 @@ export async function loginStudent(_: LoginState, formData: FormData): Promise<L
 
   const tenant = await getTenant();
   const klass = await db.class.findUnique({ where: { code: classCode } });
-  if (!klass || klass.archived || (tenant && klass.organizationId !== tenant.id)) {
+  if (!klass || klass.archived || (await isOrgDeleted(klass.organizationId)) || (tenant && klass.organizationId !== tenant.id)) {
     await bcrypt.compare(password, DUMMY_HASH);
     return genericError;
   }
@@ -74,13 +74,18 @@ export async function loginStudent(_: LoginState, formData: FormData): Promise<L
     include: { enrollments: { where: { classId: klass.id } } },
   });
   const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
-  if (!user || !ok || !user.active || user.role !== "STUDENT" || user.enrollments.length === 0) {
+  if (!user || !ok || !user.active || user.deletedAt || user.role !== "STUDENT" || user.enrollments.length === 0) {
     return genericError;
   }
 
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   await createSession({ userId: user.id, role: user.role, orgId: user.organizationId });
   redirect("/aluno");
+}
+
+async function isOrgDeleted(orgId: string) {
+  const org = await db.organization.findUnique({ where: { id: orgId }, select: { deletedAt: true } });
+  return !org || org.deletedAt !== null;
 }
 
 export async function logout() {
