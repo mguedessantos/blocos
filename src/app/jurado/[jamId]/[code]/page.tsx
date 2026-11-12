@@ -24,7 +24,8 @@ export default async function JudgeEntryPage(props: PageProps<"/jurado/[jamId]/[
       <div>
         <p className="font-mono text-sm font-extrabold text-muted">Projeto {e.anonCode}</p>
         <h1 className="text-3xl font-extrabold">{e.title}</h1>
-        <p className="font-semibold text-muted">Tema da jam: {d.jam.theme}</p>
+        <p className="font-semibold text-muted">Tema da jam: {d.jam.theme}{e.category ? ` · Categoria ${e.category}` : ""}</p>
+        <p className="text-sm text-muted">Compare só com projetos da mesma categoria: as equipes desta faixa têm idades parecidas.</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-4">

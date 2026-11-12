@@ -23,7 +23,7 @@ export function navFor(user: CurrentUser): NavItem[] {
     case "SUPER_ADMIN":
       return [
         { href: "/plataforma", label: "Painel", icon: "painel" },
-        JAM,
+        { href: "/jams", label: "Game Jams", icon: "jams" },
         { href: "/plataforma/avisos", label: "Avisos", icon: "avisos" },
         { href: "/plataforma/lixeira", label: "Lixeira", icon: "lixeira" },
       ];

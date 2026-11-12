@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { JamScope, PrizeRecipient } from "@/generated/prisma/enums";
 import { cleanCity, isUF } from "@/lib/br";
 import { requireUser } from "@/lib/dal/auth";
+import { rangeName } from "@/lib/jams";
 import { AccessError } from "@/lib/dal/classes";
 import {
   addJudge,
@@ -66,8 +67,16 @@ function parseJam(fd: FormData): JamInput | string {
     .map((title, i) => ({ place: i + 1, title, description: pd[i] ?? "", recipient: (pr[i] === "ESCOLA" ? "ESCOLA" : "EQUIPE") as PrizeRecipient }))
     .filter((p) => p.title);
 
+  const cmin = all(fd, "catMin");
+  const cmax = all(fd, "catMax");
+  const categories = cmin
+    .map((v, i) => ({ minYear: Number(v), maxYear: Number(cmax[i]) }))
+    .filter((c) => c.minYear && c.maxYear)
+    .map((c) => ({ ...c, name: rangeName(c.minYear, c.maxYear) }));
+
   return {
     ...base.data,
+    categories,
     scope: base.data.scope as JamScope,
     states: fd.getAll("states").map(String).filter(isUF),
     cities: String(fd.get("cities") ?? "").split(/[,;\n]/).map(cleanCity).filter(Boolean),
@@ -132,7 +141,8 @@ export async function createTeamAction(jamId: string, slug: string, _: JamFormSt
   if (!name.success) return { error: name.error.issues[0].message };
   let teamId: string;
   try {
-    teamId = (await createTeam(user, jamId, name.data, fd.getAll("students").map(String))).id;
+    const members = fd.getAll("students").map(String).map((id) => ({ id, schoolYear: Number(fd.get(`year_${id}`)) }));
+    teamId = (await createTeam(user, jamId, name.data, members)).id;
   } catch (e) {
     return friendly(e);
   }

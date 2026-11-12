@@ -163,3 +163,43 @@ export const DEFAULT_CRITERIA = [
   { name: "Programação", weight: 1, maxScore: 10 },
   { name: "Documentação", weight: 0.5, maxScore: 10 },
 ];
+
+// ───────────── Categorias por ano escolar ─────────────
+
+export const SCHOOL_YEARS = [2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const yearLabel = (y: number) => `${y}º ano`;
+
+export type CategoryRange = { name: string; minYear: number; maxYear: number };
+
+export const DEFAULT_CATEGORIES: CategoryRange[] = [
+  { name: "2º e 3º ano", minYear: 2, maxYear: 3 },
+  { name: "4º e 5º ano", minYear: 4, maxYear: 5 },
+  { name: "6º e 7º ano", minYear: 6, maxYear: 7 },
+  { name: "8º e 9º ano", minYear: 8, maxYear: 9 },
+];
+
+export const rangeName = (min: number, max: number) =>
+  min === max ? `${min}º ano` : max - min === 1 ? `${min}º e ${max}º ano` : `${min}º ao ${max}º ano`;
+
+/** Faixas válidas: dentro de 2º–9º, mínimo ≤ máximo e sem sobreposição. */
+export function validateCategories(cats: CategoryRange[]): string | null {
+  if (cats.length === 0) return "Inclua pelo menos uma categoria de ano escolar.";
+  for (const c of cats) {
+    if (!Number.isInteger(c.minYear) || !Number.isInteger(c.maxYear) || c.minYear < 2 || c.maxYear > 9 || c.minYear > c.maxYear) {
+      return "Cada categoria vai do 2º ao 9º ano, com o ano inicial menor ou igual ao final.";
+    }
+  }
+  const sorted = [...cats].sort((a, b) => a.minYear - b.minYear);
+  for (let i = 1; i < sorted.length; i++) if (sorted[i].minYear <= sorted[i - 1].maxYear) return "As categorias não podem se sobrepor.";
+  return null;
+}
+
+/** Categoria da equipe: todos os alunos precisam caber na MESMA faixa. */
+export function categoryFor<C extends { minYear: number; maxYear: number }>(years: number[], cats: C[]): { category: C } | { error: string } {
+  if (years.some((y) => !SCHOOL_YEARS.includes(y as (typeof SCHOOL_YEARS)[number]))) return { error: "Informe o ano escolar (2º ao 9º) de cada aluno." };
+  const found = cats.filter((c) => years.every((y) => y >= c.minYear && y <= c.maxYear));
+  if (found.length === 0) {
+    return { error: "Os alunos da equipe precisam estar na mesma categoria de ano escolar. Monte equipes com anos da mesma faixa." };
+  }
+  return { category: found[0] };
+}

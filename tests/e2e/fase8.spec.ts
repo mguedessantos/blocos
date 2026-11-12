@@ -85,9 +85,17 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await prof.getByLabel("Nome da equipe").fill(team);
   await prof.getByRole("checkbox", { name: /Ana/ }).check();
   await prof.getByRole("checkbox", { name: /Bruno/ }).check();
+  await prof.getByLabel("Ano escolar de Ana").selectOption("5");
+  await prof.getByLabel("Ano escolar de Bruno").selectOption("6"); // 5º e 6º: faixas diferentes
+  await expect(prof.getByText(/não cabem numa mesma categoria/)).toBeVisible();
+  await expect(prof.getByRole("button", { name: "Inscrever equipe" })).toBeDisabled();
+  await prof.getByLabel("Ano escolar de Bruno").selectOption("4");
+  await expect(prof.getByText("Categoria da equipe: 4º e 5º ano")).toBeVisible();
   await prof.getByRole("button", { name: "Inscrever equipe" }).click();
   await prof.waitForURL(/\/equipes\//);
   await expect(prof.getByText(/As entregas abrem em/)).toBeVisible(); // ainda não abriu
+  await expect(prof.getByText("Categoria 4º e 5º ano")).toBeVisible();
+  await expect(prof.getByText("Ana (5º ano)", { exact: false })).toBeVisible();
 
   // ── entregas abertas: Ana envia
   await shiftJam(jamId, "EM_ANDAMENTO");
@@ -131,10 +139,11 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await judge.goto(`${ROOT}/jurado/${jamId}`);
   await judge.getByRole("link", { name: new RegExp(`Projeto ${code}`) }).click();
   await expect(judge.getByRole("heading", { name: "Gato Invertido" })).toBeVisible();
+  await expect(judge.getByText(/Tema da jam: .* · Categoria 4º e 5º ano/)).toBeVisible();
 
   // nada na página do jurado revela a origem
   const html = await judge.content();
-  for (const secret of ["Aurora", "Campinas", team, "Bruno", "5º ano", "meu jogo da escola", "Colegio"]) expect(html).not.toContain(secret);
+  for (const secret of ["Aurora", "Campinas", team, "Bruno", "5º ano A", "meu jogo da escola", "Colegio"]) expect(html).not.toContain(secret);
 
   const docDisp = await judge.evaluate(async (u) => {
     const r = await fetch(u);
@@ -162,6 +171,7 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await ana.goto(`${ESCOLA}/jams`);
   await ana.getByRole("article").filter({ hasText: title }).getByRole("link", { name: "Ver jam" }).click();
   await ana.waitForURL(new RegExp(`/jams/jam-teste-${run}$`));
+  await expect(ana.getByRole("heading", { name: "Categoria 4º e 5º ano" })).toBeVisible();
   const mine = ana.getByRole("listitem").filter({ hasText: "Gato Invertido" });
   await expect(mine).toContainText("1º");
   await expect(mine).toContainText(team);
@@ -182,4 +192,14 @@ test("só a organização cria jams", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Criar jam" })).toHaveCount(0);
   await page.goto(`${ESCOLA}/jams/nova`);
   await expect(page).toHaveURL(/\/jams$/);
+});
+
+test("painel do administrador mostra as game jams e cria uma nova", async ({ page }) => {
+  await loginStaff(page, ROOT, "admin@blocos.dev", "admin123");
+  await page.goto(`${ROOT}/plataforma`);
+  await expect(page.getByRole("heading", { name: "Game Jams" })).toBeVisible();
+  await page.getByRole("link", { name: "Criar game jam" }).click();
+  await expect(page).toHaveURL(/\/jams\/nova$/);
+  await expect(page.getByText("Categorias por ano escolar")).toBeVisible();
+  await expect(page.getByLabel("Categoria 4: ano final")).toHaveValue("9");
 });

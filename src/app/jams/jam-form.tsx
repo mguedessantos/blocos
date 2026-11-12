@@ -14,7 +14,10 @@ export type JamFormValues = {
   maxTeamSize: number;
   criteria: { name: string; weight: number; maxScore: number }[];
   prizes: { title: string; description: string; recipient: "ESCOLA" | "EQUIPE" }[];
+  categories: { minYear: number; maxYear: number }[];
 };
+
+const YEARS = [2, 3, 4, 5, 6, 7, 8, 9];
 
 const textarea = "rounded-2xl border-2 border-line bg-white px-4 py-3 text-base font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15";
 const select = "min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-semibold";
@@ -26,11 +29,12 @@ const SCOPES = [
   { v: "ESCOLAS", l: "Escolas convidadas" },
 ] as const;
 
-export function JamForm({ jamId, initial, schools, criteriaLocked }: { jamId: string | null; initial: JamFormValues; schools: { id: string; name: string; city: string; state: string }[]; criteriaLocked?: boolean }) {
+export function JamForm({ jamId, initial, schools, criteriaLocked, categoriesLocked }: { jamId: string | null; initial: JamFormValues; schools: { id: string; name: string; city: string; state: string }[]; criteriaLocked?: boolean; categoriesLocked?: boolean }) {
   const [state, action, pending] = useActionState<JamFormState, FormData>(saveJamAction.bind(null, jamId), undefined);
   const [scope, setScope] = useState(initial.scope);
   const [criteria, setCriteria] = useState(initial.criteria.map((c, i) => ({ ...c, key: i })));
   const [prizes, setPrizes] = useState(initial.prizes.map((p, i) => ({ ...p, key: i })));
+  const [cats, setCats] = useState(initial.categories.map((c, i) => ({ ...c, key: i })));
 
   return (
     <form action={action} className="space-y-6">
@@ -81,6 +85,38 @@ export function JamForm({ jamId, initial, schools, criteriaLocked }: { jamId: st
       </fieldset>
 
       <fieldset className="space-y-3">
+        <legend className="text-lg font-extrabold">Categorias por ano escolar</legend>
+        <p className="text-sm text-muted">Na inscrição, o professor informa o ano de cada aluno (2º ao 9º). As equipes só competem com equipes da mesma categoria, e os prêmios valem para cada categoria.</p>
+        {categoriesLocked && <p className="text-sm font-semibold text-amber-800">Já há equipes inscritas: as categorias não podem mais mudar.</p>}
+        {cats.map((c, i) => (
+          <div key={c.key} className="flex flex-wrap items-end gap-2">
+            <label className="flex flex-col gap-1 text-sm font-bold">
+              {i === 0 ? "Do" : ""}
+              <select name="catMin" defaultValue={c.minYear} disabled={categoriesLocked} aria-label={`Categoria ${i + 1}: ano inicial`} className={select}>
+                {YEARS.map((y) => <option key={y} value={y}>{y}º ano</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-bold">
+              {i === 0 ? "Até" : ""}
+              <select name="catMax" defaultValue={c.maxYear} disabled={categoriesLocked} aria-label={`Categoria ${i + 1}: ano final`} className={select}>
+                {YEARS.map((y) => <option key={y} value={y}>{y}º ano</option>)}
+              </select>
+            </label>
+            <button type="button" disabled={categoriesLocked || cats.length === 1} onClick={() => setCats(cats.filter((x) => x.key !== c.key))} className="btn btn-secondary btn-sm mb-1" aria-label={`Remover categoria ${i + 1}`}><Trash2 aria-hidden className="h-4 w-4" /></button>
+          </div>
+        ))}
+        {categoriesLocked && cats.map((c) => (
+          <span key={`hc${c.key}`}><input type="hidden" name="catMin" value={c.minYear} /><input type="hidden" name="catMax" value={c.maxYear} /></span>
+        ))}
+        {!categoriesLocked && (
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setCats([...cats, { minYear: 2, maxYear: 9, key: Date.now() }])}><Plus aria-hidden className="h-4 w-4" /> Categoria</Button>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setCats([{ minYear: 2, maxYear: 9, key: Date.now() }])}>Uma categoria só (2º ao 9º)</Button>
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset className="space-y-3">
         <legend className="text-lg font-extrabold">Critérios de avaliação</legend>
         {criteriaLocked && <p className="text-sm font-semibold text-amber-800">Os jurados já começaram a dar notas: os critérios não podem mais mudar.</p>}
         {criteria.map((c, i) => (
@@ -100,7 +136,7 @@ export function JamForm({ jamId, initial, schools, criteriaLocked }: { jamId: st
 
       <fieldset className="space-y-3">
         <legend className="text-lg font-extrabold">Prêmios</legend>
-        <p className="text-sm text-muted">Aparecem na página da jam para divulgar o evento. A ordem define a colocação (1º, 2º, 3º…).</p>
+        <p className="text-sm text-muted">Aparecem na página da jam para divulgar o evento. A ordem define a colocação (1º, 2º, 3º…) — em cada categoria.</p>
         {prizes.map((p, i) => (
           <div key={p.key} className="grid items-end gap-2 sm:grid-cols-[3rem_1fr_1fr_11rem_auto]">
             <span className="mb-3 font-display text-xl font-extrabold">{i + 1}º</span>

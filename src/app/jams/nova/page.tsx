@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { isJamManager, listSchoolsForJam } from "@/lib/dal/jams";
-import { DEFAULT_CRITERIA, defaultJamDates } from "@/lib/jams";
+import { DEFAULT_CATEGORIES, DEFAULT_CRITERIA, defaultJamDates } from "@/lib/jams";
 import { JamForm } from "../jam-form";
 
 export const metadata = { title: "Criar game jam" };
@@ -25,6 +25,7 @@ export default async function NovaJamPage() {
             title: "", theme: "", description: "", scope: "PLATAFORMA", states: [], cities: [], orgIds: [],
             ...defaultJamDates(), maxTeamSize: 4, criteria: DEFAULT_CRITERIA,
             prizes: [{ title: "", description: "", recipient: "EQUIPE" }],
+            categories: DEFAULT_CATEGORIES,
           }}
         />
       </Card>

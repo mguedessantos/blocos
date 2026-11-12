@@ -7,6 +7,7 @@ import { docExtOf, FileError, findIdentityLeaks, MAX_DOC_BYTES, MAX_PROJECT_BYTE
 import {
   canJudge,
   canRegisterTeams,
+  categoryFor,
   canSubmit,
   jamOpenTo,
   jamPhase,
@@ -15,7 +16,9 @@ import {
   rankEntries,
   resultsPublic,
   slugifyJam,
+  validateCategories,
   validateJamDates,
+  type CategoryRange,
   type JamPhase,
 } from "../jams";
 import { deleteFile, putFile } from "../storage";
@@ -66,7 +69,7 @@ export async function listJams(user: CurrentUser) {
 async function loadVisibleJam(user: CurrentUser, slug: string) {
   const jam = await db.gameJam.findUnique({
     where: { slug },
-    include: { prizes: { orderBy: { place: "asc" } }, criteria: { orderBy: { order: "asc" } } },
+    include: { prizes: { orderBy: { place: "asc" } }, criteria: { orderBy: { order: "asc" } }, categories: { orderBy: { minYear: "asc" } } },
   });
   if (!jam) throw new AccessError("Jam não encontrada.");
   const org = await orgOf(user);
@@ -93,8 +96,8 @@ export async function getJam(user: CurrentUser, slug: string) {
         where: teamWhere,
         orderBy: { createdAt: "asc" },
         select: {
-          id: true, name: true,
-          members: { select: { user: { select: { id: true, name: true } } } },
+          id: true, name: true, category: { select: { name: true } },
+          members: { select: { schoolYear: true, user: { select: { id: true, name: true } } } },
           origin: { select: { entry: { select: { id: true, anonCode: true, title: true, updatedAt: true } } } },
         },
       })
@@ -105,47 +108,65 @@ export async function getJam(user: CurrentUser, slug: string) {
       id: jam.id, slug: jam.slug, title: jam.title, theme: jam.theme, description: jam.description, scope: jam.scope,
       states: jam.states, cities: jam.cities, startsAt: jam.startsAt, endsAt: jam.endsAt, judgingEndsAt: jam.judgingEndsAt,
       maxTeamSize: jam.maxTeamSize, published: jam.published,
-      prizes: jam.prizes, criteria: jam.criteria.map((c) => ({ name: c.name, weight: c.weight, maxScore: c.maxScore })),
+      prizes: jam.prizes,
+      categories: jam.categories.map((c) => ({ id: c.id, name: c.name, minYear: c.minYear, maxYear: c.maxYear })),
+      criteria: jam.criteria.map((c) => ({ name: c.name, weight: c.weight, maxScore: c.maxScore })),
     },
     phase,
     manager,
     isJudge,
     canCreateTeams: (user.role === "TEACHER" || user.role === "ORG_ADMIN") && canRegisterTeams(phase) && Boolean(org),
-    teams: teams.map((t) => ({ id: t.id, name: t.name, members: t.members.map((m) => m.user), entry: t.origin?.entry ?? null })),
+    teams: teams.map((t) => ({
+      id: t.id, name: t.name, category: t.category?.name ?? null,
+      members: t.members.map((m) => ({ ...m.user, schoolYear: m.schoolYear })),
+      entry: t.origin?.entry ?? null,
+    })),
     results: resultsPublic(phase) ? await getJamResults(jam.id, teams.map((t) => t.id)) : null,
   };
 }
 
-/** Resultados com a origem revelada — SÓ depois do fim do julgamento. */
+/** Resultados com a origem revelada — SÓ depois do fim do julgamento. Ranking e prêmios por categoria. */
 async function getJamResults(jamId: string, myTeamIds: string[]) {
-  const jam = await db.gameJam.findUniqueOrThrow({ where: { id: jamId }, include: { criteria: true, prizes: { orderBy: { place: "asc" } } } });
+  const jam = await db.gameJam.findUniqueOrThrow({
+    where: { id: jamId },
+    include: { criteria: true, prizes: { orderBy: { place: "asc" } }, categories: { orderBy: { minYear: "asc" } } },
+  });
   if (!resultsPublic(jamPhase(jam))) throw new AccessError("Os resultados ainda não foram revelados.");
   const entries = await db.jamEntry.findMany({
     where: { jamId },
     select: {
-      id: true, anonCode: true, title: true, youtubeId: true,
+      id: true, anonCode: true, title: true, youtubeId: true, categoryId: true,
       origin: { select: { team: { select: { id: true, name: true, organization: { select: { name: true, city: true, state: true } } } } } },
       feedbacks: { select: { text: true } },
     },
   });
   const scores = await db.jamScore.findMany({ where: { entry: { jamId } }, select: { entryId: true, criterionId: true, judgeId: true, value: true } });
-  const ranking = rankEntries(entries.map((e) => e.id), jam.criteria, scores);
   const byId = new Map(entries.map((e) => [e.id, e]));
   const mine = new Set(myTeamIds);
-  return ranking.map((r) => {
-    const e = byId.get(r.entryId)!;
-    const team = e.origin?.team;
-    const isMine = team ? mine.has(team.id) : false;
-    return {
-      ...r,
-      anonCode: e.anonCode, title: e.title, youtubeId: e.youtubeId,
-      team: team?.name ?? "—",
-      school: team ? `${team.organization.name} · ${team.organization.city}/${team.organization.state}` : "—",
-      prize: r.place ? jam.prizes.find((p) => p.place === r.place) ?? null : null,
-      isMine,
-      feedback: isMine ? e.feedbacks.map((f) => f.text) : [],
-    };
-  });
+  const groups = [...jam.categories.map((c) => ({ id: c.id as string | null, name: c.name })), { id: null, name: "Sem categoria" }];
+  return groups
+    .map((g) => {
+      const ids = entries.filter((e) => e.categoryId === g.id).map((e) => e.id);
+      const ranking = rankEntries(ids, jam.criteria, scores.filter((sc) => ids.includes(sc.entryId)));
+      return {
+        category: g.name,
+        entries: ranking.map((r) => {
+          const e = byId.get(r.entryId)!;
+          const team = e.origin?.team;
+          const isMine = team ? mine.has(team.id) : false;
+          return {
+            ...r,
+            anonCode: e.anonCode, title: e.title, youtubeId: e.youtubeId,
+            team: team?.name ?? "—",
+            school: team ? `${team.organization.name} · ${team.organization.city}/${team.organization.state}` : "—",
+            prize: r.place ? jam.prizes.find((p) => p.place === r.place) ?? null : null,
+            isMine,
+            feedback: isMine ? e.feedbacks.map((f) => f.text) : [],
+          };
+        }),
+      };
+    })
+    .filter((g) => g.entries.length > 0);
 }
 
 // ───────────── Criar / editar (dono e organizadores) ─────────────
@@ -156,12 +177,15 @@ export type JamInput = {
   startsAt: Date; endsAt: Date; judgingEndsAt: Date; maxTeamSize: number;
   criteria: { name: string; weight: number; maxScore: number }[];
   prizes: { place: number; title: string; description: string; recipient: PrizeRecipient }[];
+  categories: CategoryRange[];
 };
 
 function checkInput(i: JamInput) {
   const dates = validateJamDates(i.startsAt, i.endsAt, i.judgingEndsAt);
   if (dates) throw new AccessError(dates);
   if (i.criteria.length === 0) throw new AccessError("Inclua pelo menos um critério de avaliação.");
+  const cats = validateCategories(i.categories);
+  if (cats) throw new AccessError(cats);
   if (i.scope === "ESTADOS" && !i.states.length) throw new AccessError("Escolha pelo menos um estado.");
   if (i.scope === "CIDADES" && !i.cities.length) throw new AccessError("Informe pelo menos uma cidade.");
   if (i.scope === "ESCOLAS" && !i.orgIds.length) throw new AccessError("Escolha pelo menos uma escola.");
@@ -178,12 +202,13 @@ export async function createJam(user: CurrentUser, input: JamInput) {
   const base = ["nova", "gerenciar", "arquivo"].includes(raw) ? `${raw}-jam` : raw; // rotas fixas de /jams
   let slug = base;
   for (let n = 2; await db.gameJam.findUnique({ where: { slug }, select: { id: true } }); n++) slug = `${base}-${n}`;
-  const { criteria, prizes, ...data } = input;
+  const { criteria, prizes, categories, ...data } = input;
   const jam = await db.gameJam.create({
     data: {
       ...data, slug, createdById: user.id,
       criteria: { create: criteria.map((c, order) => ({ ...c, order })) },
       prizes: { create: prizes },
+      categories: { create: categories.map((c, order) => ({ ...c, order })) },
     },
   });
   await audit(user, "jam.criar", jam.slug);
@@ -195,14 +220,19 @@ export async function updateJam(user: CurrentUser, jamId: string, input: JamInpu
   checkInput(input);
   const jam = await db.gameJam.findUniqueOrThrow({ where: { id: jamId } });
   const phase = jamPhase(jam);
-  const scored = await db.jamScore.count({ where: { entry: { jamId } } });
-  const { criteria, prizes, ...data } = input;
+  const [scored, teams] = await Promise.all([db.jamScore.count({ where: { entry: { jamId } } }), db.jamTeam.count({ where: { jamId } })]);
+  const { criteria, prizes, categories, ...data } = input;
   await db.$transaction(async (tx) => {
     await tx.gameJam.update({ where: { id: jamId }, data });
     // critérios não mudam depois que alguém já deu nota (mudaria o ranking)
     if (scored === 0 && phase !== "ENCERRADA") {
       await tx.jamCriterion.deleteMany({ where: { jamId } });
       await tx.jamCriterion.createMany({ data: criteria.map((c, order) => ({ ...c, order, jamId })) });
+    }
+    // categorias não mudam depois que há equipes inscritas (cada equipe já tem a sua)
+    if (teams === 0) {
+      await tx.jamCategory.deleteMany({ where: { jamId } });
+      await tx.jamCategory.createMany({ data: categories.map((c, order) => ({ ...c, order, jamId })) });
     }
     await tx.jamPrize.deleteMany({ where: { jamId } });
     await tx.jamPrize.createMany({ data: prizes.map((p) => ({ ...p, jamId })) });
@@ -223,17 +253,18 @@ export async function getJamForManager(user: CurrentUser, jamId: string) {
     include: {
       prizes: { orderBy: { place: "asc" } },
       criteria: { orderBy: { order: "asc" } },
+      categories: { orderBy: { minYear: "asc" }, include: { _count: { select: { teams: true, entries: true } } } },
       judges: { select: { user: { select: { id: true, name: true, email: true, role: true } } } },
       _count: { select: { teams: true, entries: true } },
     },
   });
   if (!jam) throw new AccessError("Jam não encontrada.");
-  const entries = await db.jamEntry.findMany({ where: { jamId }, select: { id: true, anonCode: true, _count: { select: { feedbacks: true } }, scores: { select: { judgeId: true }, distinct: ["judgeId"] } } });
+  const entries = await db.jamEntry.findMany({ where: { jamId }, select: { id: true, anonCode: true, category: { select: { name: true } }, _count: { select: { feedbacks: true } }, scores: { select: { judgeId: true }, distinct: ["judgeId"] } } });
   return {
     jam,
     phase: jamPhase(jam),
     // progresso do julgamento sem revelar origem
-    entries: entries.map((e) => ({ anonCode: e.anonCode, judgesScored: e.scores.length, feedbacks: e._count.feedbacks })),
+    entries: entries.map((e) => ({ anonCode: e.anonCode, category: e.category?.name ?? null, judgesScored: e.scores.length, feedbacks: e._count.feedbacks })),
   };
 }
 
@@ -289,30 +320,41 @@ export async function listTeamCandidates(user: CurrentUser, jamId: string) {
         enrollments: { some: { class: { archived: false, ...(user.role === "TEACHER" ? { teacherId: user.id } : {}) } } },
       },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, username: true, enrollments: { select: { class: { select: { name: true } } } } },
+      select: {
+        id: true, name: true, username: true,
+        enrollments: { select: { class: { select: { name: true } } } },
+        jamMemberships: { orderBy: { team: { createdAt: "desc" } }, take: 1, select: { schoolYear: true } },
+      },
     }),
     db.jamTeamMember.findMany({ where: { team: { jamId } }, select: { userId: true } }),
   ]);
   const busy = new Set(taken.map((t) => t.userId));
-  return students.map((s) => ({ id: s.id, name: s.name, username: s.username, classes: s.enrollments.map((e) => e.class.name).join(", "), busy: busy.has(s.id) }));
+  return students.map((s) => ({ id: s.id, name: s.name, username: s.username, classes: s.enrollments.map((e) => e.class.name).join(", "), busy: busy.has(s.id), lastYear: s.jamMemberships[0]?.schoolYear ?? null }));
 }
 
-export async function createTeam(user: CurrentUser, jamId: string, name: string, studentIds: string[]) {
+/** Inscreve a equipe. Cada aluno informa o ano escolar; todos precisam caber na mesma categoria. */
+export async function createTeam(user: CurrentUser, jamId: string, name: string, members: { id: string; schoolYear: number }[]) {
   const { jam, org } = await jamForTeams(user, jamId);
   if (!canRegisterTeams(jamPhase(jam))) throw new AccessError("As inscrições desta jam estão fechadas.");
-  const ids = [...new Set(studentIds)];
-  if (ids.length === 0) throw new AccessError("Escolha pelo menos um aluno.");
-  if (ids.length > jam.maxTeamSize) throw new AccessError(`Cada equipe pode ter no máximo ${jam.maxTeamSize} alunos.`);
+  const uniq = [...new Map(members.map((m) => [m.id, m])).values()];
+  if (uniq.length === 0) throw new AccessError("Escolha pelo menos um aluno.");
+  if (uniq.length > jam.maxTeamSize) throw new AccessError(`Cada equipe pode ter no máximo ${jam.maxTeamSize} alunos.`);
   const allowed = new Map((await listTeamCandidates(user, jamId)).map((c) => [c.id, c]));
-  for (const id of ids) {
-    const c = allowed.get(id);
+  for (const m of uniq) {
+    const c = allowed.get(m.id);
     if (!c) throw new AccessError("Aluno não encontrado nas suas turmas.");
     if (c.busy) throw new AccessError(`${c.name} já está em outra equipe desta jam.`);
   }
+  const cats = await db.jamCategory.findMany({ where: { jamId }, orderBy: { minYear: "asc" } });
+  const fit = categoryFor(uniq.map((m) => m.schoolYear), cats);
+  if ("error" in fit) throw new AccessError(fit.error);
   const team = await db.jamTeam.create({
-    data: { jamId, name, organizationId: org.id, teacherId: user.id, members: { create: ids.map((userId) => ({ userId })) } },
+    data: {
+      jamId, name, organizationId: org.id, teacherId: user.id, categoryId: fit.category.id,
+      members: { create: uniq.map((m) => ({ userId: m.id, schoolYear: m.schoolYear })) },
+    },
   });
-  await audit(user, "jam.equipe.criar", team.id, { jam: jam.slug });
+  await audit(user, "jam.equipe.criar", team.id, { jam: jam.slug, categoria: fit.category.name });
   return team;
 }
 
@@ -323,7 +365,8 @@ async function requireTeam(user: CurrentUser, teamId: string) {
     include: {
       jam: true,
       organization: { select: { name: true, city: true } },
-      members: { select: { user: { select: { id: true, name: true, username: true } } } },
+      members: { select: { schoolYear: true, user: { select: { id: true, name: true, username: true } } } },
+      category: { select: { name: true } },
       origin: { include: { entry: true } },
     },
   });
@@ -341,7 +384,7 @@ export async function getTeam(user: CurrentUser, teamId: string) {
   const phase = jamPhase(team.jam);
   const e = team.origin?.entry ?? null;
   return {
-    team: { id: team.id, name: team.name, members: team.members.map((m) => m.user) },
+    team: { id: team.id, name: team.name, category: team.category?.name ?? null, members: team.members.map((m) => ({ ...m.user, schoolYear: m.schoolYear })) },
     jam: { id: team.jam.id, slug: team.jam.slug, title: team.jam.title, theme: team.jam.theme, endsAt: team.jam.endsAt, startsAt: team.jam.startsAt },
     phase,
     canSubmit: canSubmit(phase),
@@ -411,7 +454,7 @@ export async function submitEntry(user: CurrentUser, teamId: string, input: Entr
   } else {
     const taken = new Set((await db.jamEntry.findMany({ where: { jamId: team.jamId }, select: { anonCode: true } })).map((e) => e.anonCode));
     const entry = await db.jamEntry.create({
-      data: { ...data, jamId: team.jamId, anonCode: newAnonCode(taken), projectKey: projectKey!, docKey: docKey!, origin: { create: { teamId: team.id } } },
+      data: { ...data, jamId: team.jamId, categoryId: team.categoryId, anonCode: newAnonCode(taken), projectKey: projectKey!, docKey: docKey!, origin: { create: { teamId: team.id } } },
     });
     entryId = entry.id;
   }
@@ -453,14 +496,14 @@ export async function getJudgeJam(user: CurrentUser, jamId: string) {
     ? await db.jamEntry.findMany({
         where: { jamId, id: { notIn: [...blocked] } },
         orderBy: { anonCode: "asc" },
-        select: { id: true, anonCode: true, title: true, scores: { where: { judgeId: user.id }, select: { id: true } } },
+        select: { id: true, anonCode: true, title: true, category: { select: { name: true } }, scores: { where: { judgeId: user.id }, select: { id: true } } },
       })
     : [];
   return {
     jam: { id: jam.id, title: jam.title, theme: jam.theme, judgingEndsAt: jam.judgingEndsAt, endsAt: jam.endsAt },
     phase,
     conflicts: blocked.size,
-    entries: entries.map((e) => ({ id: e.id, anonCode: e.anonCode, title: e.title, scored: e.scores.length > 0 })),
+    entries: entries.map((e) => ({ id: e.id, anonCode: e.anonCode, title: e.title, category: e.category?.name ?? "Sem categoria", scored: e.scores.length > 0 })),
   };
 }
 
@@ -471,7 +514,7 @@ export async function getJudgeEntry(user: CurrentUser, jamId: string, anonCode: 
   const entry = await db.jamEntry.findUnique({
     where: { jamId_anonCode: { jamId, anonCode } },
     select: {
-      id: true, anonCode: true, title: true, description: true, youtubeId: true, docExt: true,
+      id: true, anonCode: true, title: true, description: true, youtubeId: true, docExt: true, category: { select: { name: true } },
       scores: { where: { judgeId: user.id }, select: { criterionId: true, value: true } },
       feedbacks: { where: { judgeId: user.id }, select: { text: true } },
     },
@@ -484,7 +527,7 @@ export async function getJudgeEntry(user: CurrentUser, jamId: string, anonCode: 
     canScore: canJudge(phase),
     criteria: jam.criteria.map((c) => ({ id: c.id, name: c.name, weight: c.weight, maxScore: c.maxScore })),
     entry: {
-      id: entry.id, anonCode: entry.anonCode, title: entry.title, description: entry.description, youtubeId: entry.youtubeId, docExt: entry.docExt,
+      id: entry.id, anonCode: entry.anonCode, title: entry.title, category: entry.category?.name ?? null, description: entry.description, youtubeId: entry.youtubeId, docExt: entry.docExt,
       scores: Object.fromEntries(entry.scores.map((s) => [s.criterionId, s.value])) as Record<string, number>,
       feedback: entry.feedbacks[0]?.text ?? "",
     },

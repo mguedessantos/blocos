@@ -35,8 +35,11 @@ export default async function JudgeJamPage(props: PageProps<"/jurado/[jamId]">) 
         <Card>
           <h2 className="mb-1 text-lg font-bold">Entregas ({done}/{d.entries.length} avaliadas)</h2>
           {d.conflicts > 0 && <p className="mb-2 text-sm text-muted">{d.conflicts} entrega(s) da sua própria escola não aparecem aqui (conflito de interesse).</p>}
+          {[...new Set(d.entries.map((e) => e.category))].map((cat) => (
+          <section key={cat} className="mt-3">
+          <h3 className="mb-2 font-extrabold text-brand">Categoria {cat}</h3>
           <ul className="grid gap-2 sm:grid-cols-2">
-            {d.entries.map((e) => (
+            {d.entries.filter((e) => e.category === cat).map((e) => (
               <li key={e.id}>
                 <Link href={`/jurado/${jamId}/${e.anonCode}`} className="clay clay-hover flex items-center gap-3 p-4">
                   {e.scored ? <CheckCircle2 aria-label="Avaliada" className="h-6 w-6 text-green-600" /> : <Circle aria-label="Pendente" className="h-6 w-6 text-muted" />}
@@ -47,8 +50,10 @@ export default async function JudgeJamPage(props: PageProps<"/jurado/[jamId]">) 
                 </Link>
               </li>
             ))}
-            {d.entries.length === 0 && <li className="text-sm text-muted">Nenhuma entrega para avaliar.</li>}
           </ul>
+          </section>
+          ))}
+          {d.entries.length === 0 && <p className="text-sm text-muted">Nenhuma entrega para avaliar.</p>}
         </Card>
       )}
     </div>

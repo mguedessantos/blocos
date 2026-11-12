@@ -28,7 +28,8 @@ export default async function TeamPage(props: PageProps<"/jams/[slug]/equipes/[t
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold">Equipe {d.team.name}</h1>
-          <p className="font-semibold text-muted">{d.team.members.map((m) => m.name).join(", ")} · Tema: {d.jam.theme}</p>
+          <p className="font-semibold text-muted">{d.team.members.map((m) => `${m.name} (${m.schoolYear}º ano)`).join(", ")} · Tema: {d.jam.theme}</p>
+          {d.team.category && <p className="mt-1 inline-block rounded-full bg-brand-soft px-3 py-0.5 text-sm font-extrabold text-brand-shadow">Categoria {d.team.category}</p>}
         </div>
         <PhaseBadge phase={d.phase} />
       </div>

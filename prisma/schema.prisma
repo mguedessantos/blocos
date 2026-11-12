@@ -449,7 +449,8 @@ model GameJam {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  prizes   JamPrize[]
+  prizes     JamPrize[]
+  categories JamCategory[]
   teams    JamTeam[]
   entries  JamEntry[]
   criteria JamCriterion[]
@@ -466,6 +467,19 @@ model JamPrize {
   recipient   PrizeRecipient @default(EQUIPE)
 }
 
+/** Categoria por faixa de ano escolar (ex.: 4º–5º ano). Equipes só competem dentro da própria. */
+model JamCategory {
+  id      String     @id @default(cuid())
+  jamId   String
+  jam     GameJam    @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  name    String
+  minYear Int // 2..9
+  maxYear Int
+  order   Int        @default(0)
+  teams   JamTeam[]
+  entries JamEntry[]
+}
+
 /** Equipe inscrita por um professor. Nunca é mostrada aos jurados. */
 model JamTeam {
   id             String          @id @default(cuid())
@@ -475,6 +489,8 @@ model JamTeam {
   organizationId String
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   teacherId      String
+  categoryId     String?
+  category       JamCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt      DateTime        @default(now())
   members        JamTeamMember[]
   origin         JamEntryOrigin?
@@ -483,8 +499,9 @@ model JamTeam {
 model JamTeamMember {
   teamId String
   team   JamTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId String
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolYear Int // ano escolar do aluno na inscrição (2º ao 9º)
 
   @@id([teamId, userId])
 }
@@ -498,6 +515,8 @@ model JamEntry {
   jamId         String
   jam           GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
   anonCode      String // ex.: "K7Q2"
+  categoryId    String? // copiada da equipe; não identifica a escola
+  category      JamCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   title         String
   description   String
   youtubeId     String

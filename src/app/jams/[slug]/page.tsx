@@ -50,9 +50,19 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
         </div>
       </section>
 
+      {jam.categories.length > 0 && (
+        <section aria-labelledby="categorias" className="space-y-2">
+          <h2 id="categorias" className="text-2xl font-extrabold">Categorias</h2>
+          <p className="text-sm font-semibold text-muted">As equipes competem só com equipes da mesma faixa de ano escolar. Os prêmios valem para cada categoria.</p>
+          <ul className="flex flex-wrap gap-2">
+            {jam.categories.map((c) => <li key={c.id} className="rounded-full border-2 border-line bg-white px-4 py-1 font-extrabold">{c.name}</li>)}
+          </ul>
+        </section>
+      )}
+
       {jam.prizes.length > 0 && (
         <section aria-labelledby="premios" className="space-y-3">
-          <h2 id="premios" className="flex items-center gap-2 text-2xl font-extrabold"><Trophy aria-hidden className="h-6 w-6 text-brand" /> Prêmios</h2>
+          <h2 id="premios" className="flex items-center gap-2 text-2xl font-extrabold"><Trophy aria-hidden className="h-6 w-6 text-brand" /> Prêmios{jam.categories.length > 1 ? " (em cada categoria)" : ""}</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             {jam.prizes.map((p) => (
               <div key={p.id} className="clay p-4">
@@ -69,8 +79,11 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
       {d.results && (
         <Card className="space-y-4">
           <h2 className="text-2xl font-extrabold">Resultado</h2>
+          {d.results.map((group) => (
+          <section key={group.category} className="space-y-3">
+          <h3 className="text-xl font-extrabold text-brand">Categoria {group.category}</h3>
           <ol className="space-y-3">
-            {d.results.map((r) => (
+            {group.entries.map((r) => (
               <li key={r.entryId} className={`rounded-2xl border-2 p-4 ${r.isMine ? "border-brand bg-brand-soft/40" : "border-line"}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-lg font-extrabold">
@@ -94,6 +107,8 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
               </li>
             ))}
           </ol>
+          </section>
+          ))}
         </Card>
       )}
 
@@ -105,7 +120,8 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
               <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-line p-3">
                 <span>
                   <strong>{t.name}</strong>
-                  <span className="block text-sm text-muted">{t.members.map((m) => m.name).join(", ")}</span>
+                  {t.category && <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-extrabold text-brand-shadow">{t.category}</span>}
+                  <span className="block text-sm text-muted">{t.members.map((m) => `${m.name} (${m.schoolYear}º ano)`).join(", ")}</span>
                 </span>
                 <span className="flex items-center gap-3">
                   <span className={`text-sm font-bold ${t.entry ? "text-green-700" : "text-muted"}`}>{t.entry ? `✓ Entregue (código ${t.entry.anonCode})` : "Sem entrega"}</span>
@@ -115,7 +131,7 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
             ))}
             {d.teams.length === 0 && <li className="text-sm text-muted">{user.role === "STUDENT" ? "Você ainda não está em uma equipe. Fale com seu professor!" : "Nenhuma equipe inscrita ainda."}</li>}
           </ul>
-          {d.canCreateTeams && <CreateTeamForm jamId={jam.id} slug={jam.slug} maxTeamSize={jam.maxTeamSize} candidates={candidates} />}
+          {d.canCreateTeams && <CreateTeamForm jamId={jam.id} slug={jam.slug} maxTeamSize={jam.maxTeamSize} candidates={candidates} categories={jam.categories} />}
         </Card>
       )}
 

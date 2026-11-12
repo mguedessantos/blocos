@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { FileError, findIdentityLeaks, sanitizeDocx, sanitizePdf, sanitizeSb3 } from "@/lib/jam-files";
-import { jamOpenTo, jamPhase, newAnonCode, parseYouTube, rankEntries, slugifyJam, validateJamDates } from "@/lib/jams";
+import { categoryFor, DEFAULT_CATEGORIES, jamOpenTo, jamPhase, newAnonCode, parseYouTube, rangeName, rankEntries, slugifyJam, validateCategories, validateJamDates } from "@/lib/jams";
 import { projectJson } from "./sb3-builder";
 
 const d = (s: string) => new Date(s);
@@ -155,5 +155,30 @@ describe("nomes que revelam a origem", () => {
     const leaks = findIdentityLeaks(["Jogo feito no colegio aurora, em Campinas!", "Personagem: Bruno"], ["Colégio Aurora", "Campinas", "Bruno", "Ana", "Clara"]);
     expect(leaks).toEqual(["Colégio Aurora", "Campinas", "Bruno"]);
     expect(findIdentityLeaks(["Brunoso e Clarabóia"], ["Bruno", "Clara"])).toEqual([]);
+  });
+});
+
+describe("categorias por ano escolar", () => {
+  const cats = DEFAULT_CATEGORIES.map((c, i) => ({ ...c, id: `c${i}` }));
+  it("padrão: 4 faixas válidas do 2º ao 9º", () => {
+    expect(validateCategories(DEFAULT_CATEGORIES)).toBeNull();
+    expect(DEFAULT_CATEGORIES.map((c) => c.name)).toEqual(["2º e 3º ano", "4º e 5º ano", "6º e 7º ano", "8º e 9º ano"]);
+  });
+  it("recusa faixas fora de 2–9, invertidas ou sobrepostas", () => {
+    expect(validateCategories([])).toMatch(/pelo menos/);
+    expect(validateCategories([{ name: "x", minYear: 1, maxYear: 3 }])).toMatch(/2º ao 9º/);
+    expect(validateCategories([{ name: "x", minYear: 5, maxYear: 4 }])).toMatch(/2º ao 9º/);
+    expect(validateCategories([{ name: "a", minYear: 2, maxYear: 5 }, { name: "b", minYear: 5, maxYear: 9 }])).toMatch(/sobrepor/);
+  });
+  it("equipe cabe numa categoria só", () => {
+    expect(categoryFor([4, 5, 5], cats)).toMatchObject({ category: { id: "c1" } });
+    expect(categoryFor([9], cats)).toMatchObject({ category: { id: "c3" } });
+    expect(categoryFor([3, 4], cats)).toHaveProperty("error");
+    expect(categoryFor([1], cats)).toHaveProperty("error");
+    expect(categoryFor([3, 8], [{ id: "all", minYear: 2, maxYear: 9 }])).toMatchObject({ category: { id: "all" } });
+  });
+  it("nomes das faixas", () => {
+    expect(rangeName(5, 5)).toBe("5º ano");
+    expect(rangeName(2, 9)).toBe("2º ao 9º ano");
   });
 });

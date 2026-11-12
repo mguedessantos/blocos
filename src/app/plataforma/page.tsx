@@ -1,7 +1,9 @@
-import { ArrowDown, ArrowUp, Download, LayoutDashboard, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, LayoutDashboard, Plus, Settings, Trash2, Trophy } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Stat } from "@/components/app-shell";
+import { PhaseBadge } from "@/components/jams";
+import { listJams } from "@/lib/dal/jams";
 import { buttonClass, Card, PageHeader } from "@/components/ui";
 import { UF_LIST, UFS } from "@/lib/br";
 import { requireUser } from "@/lib/dal/auth";
@@ -18,12 +20,35 @@ const field = "min-h-12 rounded-2xl border-2 border-line bg-white px-4 text-base
 export default async function PlataformaPage(props: PageProps<"/plataforma">) {
   const user = await requireUser(["SUPER_ADMIN"]);
   const f = parsePlatformFilters(await props.searchParams);
-  const d = await getPlatformDashboard(user, f);
+  const [d, jams] = await Promise.all([getPlatformDashboard(user, f), listJams(user)]);
   const filtered = Boolean(f.uf || f.cidade || f.q || f.tipo);
 
   return (
     <div className="space-y-8">
       <PageHeader icon={<LayoutDashboard className="h-7 w-7" />} title="Painel da plataforma" subtitle="Todas as escolas e professores, com filtros por estado, cidade e escola." />
+
+      <Card className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-xl font-extrabold"><Trophy aria-hidden className="h-5 w-5 text-brand" /> Game Jams</h2>
+          <div className="flex gap-2">
+            <Link href="/jams" className={buttonClass("secondary", "sm")}>Ver todas</Link>
+            <Link href="/jams/nova" className={buttonClass("primary", "sm")}><Plus aria-hidden className="h-4 w-4" /> Criar game jam</Link>
+          </div>
+        </div>
+        <ul className="divide-y divide-line">
+          {jams.slice(0, 5).map((j) => (
+            <li key={j.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+              <span className="flex flex-wrap items-center gap-2">
+                <PhaseBadge phase={j.phase} />
+                <Link href={`/jams/${j.slug}`} className="font-extrabold hover:underline">{j.title}</Link>
+                <span className="text-sm text-muted">{j._count.teams} equipes · {j._count.entries} entregas</span>
+              </span>
+              <Link href={`/jams/gerenciar/${j.id}`} className={buttonClass("secondary", "sm")}><Settings aria-hidden className="h-4 w-4" /> Gerenciar</Link>
+            </li>
+          ))}
+          {jams.length === 0 && <li className="py-2 text-sm text-muted">Nenhuma game jam criada ainda.</li>}
+        </ul>
+      </Card>
 
       <Card>
         <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_9rem_1fr_13rem_auto]" role="search" aria-label="Filtrar escolas">

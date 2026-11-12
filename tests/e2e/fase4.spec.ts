@@ -75,6 +75,7 @@ async function openFirstExercise(page: Page) {
 }
 
 test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a próxima", async ({ page, browser }) => {
+  test.setTimeout(60_000); // fluxo longo; sob carga do conjunto completo passa de 30 s
   const cred = await teacherCreatesStudent(page, `Trilha ${run}`, "Iara", "Introdução à Programação de Blocos");
 
   const ctx = await browser.newContext();

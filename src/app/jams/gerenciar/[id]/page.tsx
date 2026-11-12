@@ -58,13 +58,24 @@ export default async function GerenciarJamPage(props: PageProps<"/jams/gerenciar
         <AddJudgeForm jamId={jam.id} />
       </Card>
 
+      {jam.categories.length > 0 && (
+        <Card>
+          <h2 className="mb-2 text-lg font-bold">Categorias</h2>
+          <ul className="flex flex-wrap gap-2">
+            {jam.categories.map((c) => (
+              <li key={c.id} className="rounded-2xl border-2 border-line px-3 py-1 text-sm font-bold">{c.name} · {c._count.teams} equipes · {c._count.entries} entregas</li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Card>
         <h2 className="mb-1 text-lg font-bold">Andamento do julgamento</h2>
         <p className="mb-3 text-sm text-muted">Mostrado só pelo código anônimo. As escolas aparecem no resultado, depois do fim do julgamento.</p>
         <div className="flex flex-wrap gap-2">
           {entries.map((e) => (
             <span key={e.anonCode} className="rounded-2xl border-2 border-line px-3 py-1 text-sm font-bold">
-              <span className="font-mono">{e.anonCode}</span> · {e.judgesScored}/{jam.judges.length} jurados
+              <span className="font-mono">{e.anonCode}</span>{e.category ? ` · ${e.category}` : ""} · {e.judgesScored}/{jam.judges.length} jurados
             </span>
           ))}
           {entries.length === 0 && <span className="text-sm text-muted">Nenhuma entrega ainda.</span>}
@@ -77,6 +88,7 @@ export default async function GerenciarJamPage(props: PageProps<"/jams/gerenciar
           jamId={jam.id}
           schools={schools}
           criteriaLocked={scored}
+          categoriesLocked={jam._count.teams > 0}
           initial={{
             title: jam.title, theme: jam.theme, description: jam.description, scope: jam.scope,
             states: jam.states, cities: jam.cities, orgIds: jam.orgIds,
@@ -84,6 +96,7 @@ export default async function GerenciarJamPage(props: PageProps<"/jams/gerenciar
             maxTeamSize: jam.maxTeamSize,
             criteria: jam.criteria.map((c) => ({ name: c.name, weight: c.weight, maxScore: c.maxScore })),
             prizes: jam.prizes.map((p) => ({ title: p.title, description: p.description, recipient: p.recipient })),
+            categories: jam.categories.map((c) => ({ minYear: c.minYear, maxYear: c.maxYear })),
           }}
         />
       </Card>
