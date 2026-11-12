@@ -7,7 +7,8 @@ import { listJams } from "@/lib/dal/jams";
 import { buttonClass, Card, PageHeader } from "@/components/ui";
 import { UF_LIST, UFS } from "@/lib/br";
 import { requireUser } from "@/lib/dal/auth";
-import { getPlatformDashboard } from "@/lib/dal/platform";
+import { getPlatformDashboard, listPlans } from "@/lib/dal/platform";
+import { NewSchoolForm } from "./forms";
 import { filtersToQuery, parsePlatformFilters, type PlatformFilters, type SchoolSort } from "@/lib/platform-filters";
 
 export const metadata = { title: "Plataforma" };
@@ -20,12 +21,20 @@ const field = "min-h-12 rounded-2xl border-2 border-line bg-white px-4 text-base
 export default async function PlataformaPage(props: PageProps<"/plataforma">) {
   const user = await requireUser(["SUPER_ADMIN"]);
   const f = parsePlatformFilters(await props.searchParams);
-  const [d, jams] = await Promise.all([getPlatformDashboard(user, f), listJams(user)]);
+  const [d, jams, plans] = await Promise.all([getPlatformDashboard(user, f), listJams(user), listPlans()]);
   const filtered = Boolean(f.uf || f.cidade || f.q || f.tipo);
 
   return (
     <div className="space-y-8">
       <PageHeader icon={<LayoutDashboard className="h-7 w-7" />} title="Painel da plataforma" subtitle="Todas as escolas e professores, com filtros por estado, cidade e escola." />
+
+      <Card className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-extrabold">Criar escola ou professor(a)</h2>
+        </div>
+        <p className="text-sm text-muted">As escolas também podem se cadastrar sozinhas em /cadastro. Aqui você cria a conta já ativa e recebe a senha temporária para enviar.</p>
+        <NewSchoolForm plans={plans} />
+      </Card>
 
       <Card className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">

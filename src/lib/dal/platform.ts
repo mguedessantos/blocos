@@ -1,6 +1,10 @@
 import "server-only";
+import { randomInt } from "node:crypto";
+import bcrypt from "bcryptjs";
 import type { Role } from "@/generated/prisma/enums";
 import { cleanCity, isUF, TRASH_DAYS } from "../br";
+import { generateKidPassword } from "../credentials";
+import { slugError } from "../slug";
 import { db } from "../db";
 import {
   ANNOUNCEMENT_ROLES,
@@ -279,4 +283,74 @@ export async function getMyAnnouncements(user: CurrentUser) {
 export async function markAllAnnouncementsRead(user: CurrentUser) {
   const unread = (await getMyAnnouncements(user)).filter((a) => !a.read);
   if (unread.length) await db.announcementRead.createMany({ data: unread.map((a) => ({ announcementId: a.id, userId: user.id })), skipDuplicates: true });
+}
+
+// ───────────── Dono cria escolas e contas ─────────────
+
+/** Senha temporária forte (o dono repassa; a pessoa pode trocar depois). */
+function tempPassword() {
+  return `${generateKidPassword()}-${generateKidPassword()}-${randomInt(10, 99)}`;
+}
+
+export type NewSchoolInput = {
+  name: string; slug: string; type: "ESCOLA" | "PROFESSOR_INDEPENDENTE"; city: string; state: string;
+  planId: string; adminName: string; adminEmail: string;
+};
+
+/** Cria escola (ou conta de professor independente) já com a pessoa responsável (ORG_ADMIN). */
+export async function createSchoolAsOwner(user: CurrentUser, i: NewSchoolInput) {
+  requireOwner(user);
+  const slugProblem = slugError(i.slug);
+  if (slugProblem) throw new AccessError(slugProblem);
+  if (!isUF(i.state)) throw new AccessError("Escolha o estado.");
+  const [slugTaken, emailTaken, plan] = await Promise.all([
+    db.organization.findUnique({ where: { slug: i.slug }, select: { id: true } }),
+    db.user.findUnique({ where: { email: i.adminEmail }, select: { id: true } }),
+    db.plan.findUnique({ where: { id: i.planId }, select: { id: true } }),
+  ]);
+  if (slugTaken) throw new AccessError("Este endereço já está em uso.");
+  if (emailTaken) throw new AccessError("Já existe uma conta com este email.");
+  if (!plan) throw new AccessError("Plano inválido.");
+  const password = tempPassword();
+  const passwordHash = await bcrypt.hash(password, 10);
+  const org = await db.$transaction(async (tx) => {
+    const o = await tx.organization.create({
+      data: {
+        name: i.name, slug: i.slug, type: i.type, city: cleanCity(i.city), state: i.state,
+        // criada pelo dono: assinatura ativa (a cobrança, quando ligada, é combinada à parte)
+        subscription: { create: { planId: i.planId, status: "ACTIVE" } },
+      },
+    });
+    await tx.user.create({ data: { role: "ORG_ADMIN", name: i.adminName, email: i.adminEmail, passwordHash, organizationId: o.id } });
+    await tx.auditLog.create({ data: { organizationId: o.id, actorId: user.id, action: "plataforma.escola.criar", target: o.slug } });
+    return o;
+  });
+  return { orgId: org.id, email: i.adminEmail, password };
+}
+
+/** Adiciona coordenação ou professor(a) a uma escola existente. */
+export async function addStaffAsOwner(user: CurrentUser, orgId: string, role: "ORG_ADMIN" | "TEACHER", name: string, email: string) {
+  requireOwner(user);
+  const org = await db.organization.findUnique({ where: { id: orgId }, select: { id: true, deletedAt: true } });
+  if (!org || org.deletedAt) throw new AccessError("Escola não encontrada.");
+  if (await db.user.findUnique({ where: { email }, select: { id: true } })) throw new AccessError("Já existe uma conta com este email.");
+  const password = tempPassword();
+  await db.user.create({ data: { role, name, email, passwordHash: await bcrypt.hash(password, 10), organizationId: org.id } });
+  await audit(user, "plataforma.conta.criar", email, org.id, { role });
+  return { email, password };
+}
+
+/** Nova senha temporária para uma conta (quando a pessoa esquece). */
+export async function resetPasswordAsOwner(user: CurrentUser, userId: string) {
+  requireOwner(user);
+  const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, role: true, email: true, username: true, organizationId: true } });
+  if (!target || target.role === "SUPER_ADMIN") throw new AccessError("Conta não encontrada.");
+  const password = tempPassword();
+  await db.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(password, 10) } });
+  await audit(user, "plataforma.conta.nova-senha", userId, target.organizationId);
+  return { login: target.email ?? target.username ?? "", password };
+}
+
+export async function listPlans() {
+  return db.plan.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true, orgType: true } });
 }

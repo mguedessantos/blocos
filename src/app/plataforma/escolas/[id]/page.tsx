@@ -7,7 +7,7 @@ import { getPlatformSchool } from "@/lib/dal/platform";
 import { ROLE_LABEL } from "@/lib/roles";
 import { restoreOrgAction, restoreUserAction } from "../../actions";
 import { setOrganizerAction } from "@/app/jams/actions";
-import { RemoveButton } from "../../forms";
+import { AddStaffForm, RemoveButton, ResetPasswordButton } from "../../forms";
 
 export const metadata = { title: "Escola" };
 const when = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
@@ -65,6 +65,7 @@ export default async function EscolaDetalhe(props: PageProps<"/plataforma/escola
                       </button>
                     </form>
                   )}
+                  {!u.deletedAt && <ResetPasswordButton userId={u.id} name={u.name} />}
                   {u.deletedAt ? (
                     <form action={restoreUserAction.bind(null, u.id)}><button className="btn btn-secondary btn-sm">Restaurar</button></form>
                   ) : (
@@ -77,6 +78,14 @@ export default async function EscolaDetalhe(props: PageProps<"/plataforma/escola
           </tbody>
         </table>
       </Card>
+
+      {!org.deletedAt && (
+        <Card>
+          <h2 className="mb-1 text-lg font-bold">Adicionar pessoa</h2>
+          <p className="mb-3 text-sm text-muted">Cria a conta já ligada a esta escola, com uma senha temporária para você enviar.</p>
+          <AddStaffForm orgId={org.id} isSchool={org.type === "ESCOLA"} />
+        </Card>
+      )}
 
       <Card>
         <h2 className="mb-3 text-lg font-bold">Turmas ({org.classes.length})</h2>

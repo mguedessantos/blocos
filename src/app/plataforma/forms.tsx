@@ -1,10 +1,12 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Copy, KeyRound, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Alert, Button, Input } from "@/components/ui";
 import { UF_LIST, UFS } from "@/lib/br";
-import { createAnnouncementAction, removeOrgAction, removeUserAction, type FormState } from "./actions";
+import { addStaffAction, createAnnouncementAction, createSchoolAction, removeOrgAction, removeUserAction, resetPasswordAction, type FormState } from "./actions";
+import { slugify } from "@/lib/slug";
 
 /** Botão "Remover" que abre um campo de motivo antes de confirmar. */
 export function RemoveButton({ kind, id, name }: { kind: "org" | "user"; id: string; name: string }) {
@@ -68,6 +70,109 @@ export function AnnouncementForm({ schools, cities }: { schools: { id: string; n
       {state?.error && <Alert>{state.error}</Alert>}
       {state?.ok && <p role="status" className="text-sm font-bold text-green-700">{state.ok}</p>}
       <Button disabled={pending}>{pending ? "Publicando..." : "Publicar aviso"}</Button>
+    </form>
+  );
+}
+
+/** Mostra login + senha temporária UMA vez, com botão de copiar. */
+function Credentials({ state }: { state: FormState }) {
+  if (!state?.password) return null;
+  const text = `Login: ${state.login}
+Senha temporária: ${state.password}`;
+  return (
+    <div role="status" className="space-y-2 rounded-2xl border-2 border-green-300 bg-green-50 p-4 text-sm">
+      <p className="font-extrabold text-green-900">{state.ok}</p>
+      <p>Login: <code className="rounded bg-white px-2 py-0.5 font-mono font-bold">{state.login}</code></p>
+      <p>Senha temporária: <code className="rounded bg-white px-2 py-0.5 font-mono font-bold">{state.password}</code></p>
+      <p className="text-xs font-semibold text-green-900">Copie agora e envie à pessoa: a senha não será mostrada de novo.</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => navigator.clipboard.writeText(text)} className="btn btn-secondary btn-sm"><Copy aria-hidden className="h-4 w-4" /> Copiar</button>
+        {state.href && <Link href={state.href} className="btn btn-sm">Abrir a escola</Link>}
+      </div>
+    </div>
+  );
+}
+
+const select = "min-h-12 rounded-2xl border-2 border-line bg-white px-3 text-base font-semibold";
+
+export function NewSchoolForm({ plans }: { plans: { id: string; name: string; orgType: string }[] }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(createSchoolAction, undefined);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [edited, setEdited] = useState(false);
+  const [type, setType] = useState<"ESCOLA" | "PROFESSOR_INDEPENDENTE">("ESCOLA");
+  if (!open) return <Button size="sm" onClick={() => setOpen(true)}><Plus aria-hidden className="h-4 w-4" /> Nova escola</Button>;
+  return (
+    <div className="space-y-4">
+      <form action={action} className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-sm font-bold">
+          Tipo
+          <select name="type" value={type} onChange={(e) => setType(e.target.value as typeof type)} className={select}>
+            <option value="ESCOLA">Escola</option>
+            <option value="PROFESSOR_INDEPENDENTE">Professor(a) independente</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm font-bold">
+          Plano
+          <select name="planId" defaultValue={plans.find((p) => p.orgType === "ESCOLA")?.id} className={select}>
+            {plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
+        <Input label={type === "ESCOLA" ? "Nome da escola" : "Nome da conta"} name="name" value={name} required onChange={(e) => { setName(e.target.value); if (!edited) setSlug(slugify(e.target.value)); }} />
+        <Input label="Endereço (subdomínio)" name="slug" value={slug} required onChange={(e) => { setEdited(true); setSlug(e.target.value.toLowerCase()); }} />
+        <Input label="Cidade da escola" name="city" required />
+        <label className="flex flex-col gap-1.5 text-sm font-bold">
+          Estado da escola
+          <select name="state" required defaultValue="" className={select}>
+            <option value="" disabled>UF</option>
+            {UF_LIST.map((uf) => <option key={uf} value={uf}>{uf} · {UFS[uf]}</option>)}
+          </select>
+        </label>
+        <Input label={type === "ESCOLA" ? "Nome da coordenação" : "Nome do(a) professor(a)"} name="adminName" required />
+        <Input label="Email da pessoa responsável" name="adminEmail" type="email" required />
+        <div className="flex gap-2 sm:col-span-2">
+          <Button disabled={pending}>{pending ? "Criando..." : "Criar conta"}</Button>
+          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Fechar</Button>
+        </div>
+        {state?.error && <div className="sm:col-span-2"><Alert>{state.error}</Alert></div>}
+      </form>
+      <Credentials state={state} />
+    </div>
+  );
+}
+
+export function AddStaffForm({ orgId, isSchool }: { orgId: string; isSchool: boolean }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(addStaffAction.bind(null, orgId), undefined);
+  return (
+    <div className="space-y-3">
+      <form action={action} className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1.5 text-sm font-bold">
+          Papel
+          <select name="role" defaultValue="TEACHER" className={select}>
+            <option value="TEACHER">Professor(a)</option>
+            {isSchool && <option value="ORG_ADMIN">Coordenação</option>}
+          </select>
+        </label>
+        <div className="min-w-48 flex-1"><Input label="Nome" name="name" required /></div>
+        <div className="min-w-56 flex-1"><Input label="Email" name="email" type="email" required /></div>
+        <Button size="sm" disabled={pending}>{pending ? "Criando..." : "Adicionar pessoa"}</Button>
+      </form>
+      {state?.error && <Alert>{state.error}</Alert>}
+      <Credentials state={state} />
+    </div>
+  );
+}
+
+export function ResetPasswordButton({ userId, name }: { userId: string; name: string }) {
+  const [state, action, pending] = useActionState<FormState>(resetPasswordAction.bind(null, userId), undefined);
+  if (state?.password) return <Credentials state={state} />;
+  return (
+    <form action={action} className="inline">
+      <button className="btn btn-secondary btn-sm" disabled={pending} aria-label={`Nova senha para ${name}`} title="Gerar senha temporária">
+        <KeyRound aria-hidden className="h-4 w-4" /> {pending ? "..." : "Nova senha"}
+      </button>
+      {state?.error && <span className="ml-2 text-xs font-bold text-red-700">{state.error}</span>}
     </form>
   );
 }

@@ -6,7 +6,10 @@ import type { Role } from "@/generated/prisma/enums";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import {
+  addStaffAsOwner,
   createAnnouncement,
+  createSchoolAsOwner,
+  resetPasswordAsOwner,
   deleteAnnouncement,
   purgeOrganization,
   purgeUser,
@@ -16,7 +19,7 @@ import {
   restoreUser,
 } from "@/lib/dal/platform";
 
-export type FormState = { error?: string; ok?: string } | undefined;
+export type FormState = { error?: string; ok?: string; login?: string; password?: string; href?: string } | undefined;
 
 const owner = () => requireUser(["SUPER_ADMIN"]);
 const reasonSchema = z.string().trim().min(3, "Escreva o motivo (fica registrado no histórico).").max(300);
@@ -117,3 +120,54 @@ export async function deleteAnnouncementAction(id: string) {
   await deleteAnnouncement(await owner(), id);
   refresh();
 }
+
+const email = z.string().trim().toLowerCase().email("Email inválido.");
+const personName = z.string().trim().min(2, "Informe o nome.").max(80);
+
+export async function createSchoolAction(_: FormState, fd: FormData): Promise<FormState> {
+  const user = await owner();
+  const parsed = z
+    .object({
+      name: z.string().trim().min(2, "Informe o nome da escola.").max(80),
+      slug: z.string().trim().toLowerCase(),
+      type: z.enum(["ESCOLA", "PROFESSOR_INDEPENDENTE"]),
+      city: z.string().trim().min(2, "Informe a cidade.").max(80),
+      state: z.string(),
+      planId: z.string().min(1),
+      adminName: personName,
+      adminEmail: email,
+    })
+    .safeParse(Object.fromEntries(fd));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  try {
+    const r = await createSchoolAsOwner(user, parsed.data);
+    refresh();
+    return { ok: `Conta criada: ${parsed.data.name}.`, login: r.email, password: r.password, href: `/plataforma/escolas/${r.orgId}` };
+  } catch (e) {
+    return friendly(e);
+  }
+}
+
+export async function addStaffAction(orgId: string, _: FormState, fd: FormData): Promise<FormState> {
+  const user = await owner();
+  const parsed = z.object({ role: z.enum(["ORG_ADMIN", "TEACHER"]), name: personName, email }).safeParse(Object.fromEntries(fd));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  try {
+    const r = await addStaffAsOwner(user, orgId, parsed.data.role, parsed.data.name, parsed.data.email);
+    refresh();
+    return { ok: `${parsed.data.role === "TEACHER" ? "Professor(a)" : "Coordenação"} adicionado(a).`, login: r.email, password: r.password };
+  } catch (e) {
+    return friendly(e);
+  }
+}
+
+export async function resetPasswordAction(userId: string): Promise<FormState> {
+  const user = await owner();
+  try {
+    const r = await resetPasswordAsOwner(user, userId);
+    return { ok: "Nova senha criada.", login: r.login, password: r.password };
+  } catch (e) {
+    return friendly(e);
+  }
+}
+

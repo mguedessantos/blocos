@@ -137,3 +137,45 @@ test("coordenação vê conclusão por turma e atividade da equipe", async ({ pa
   await expect(page.getByRole("progressbar", { name: "Conclusão da turma 5º ano A" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "Paulo Professor" }).first()).toBeVisible();
 });
+
+test("dono cria escola e professor(a) com senha temporária", async ({ page, browser }) => {
+  await loginStaff(page, ROOT, "admin@blocos.dev", "admin123");
+  await page.goto(`${ROOT}/plataforma`);
+  await page.getByRole("button", { name: "Nova escola" }).click();
+  await page.getByLabel("Nome da escola").fill(`Escola Dono ${run}`);
+  await expect(page.getByLabel("Endereço (subdomínio)")).toHaveValue(`escola-dono-${run}`);
+  await page.getByLabel("Cidade da escola").fill("Salvador");
+  await page.getByLabel("Estado da escola").selectOption("BA");
+  await page.getByLabel("Nome da coordenação").fill("Bia");
+  await page.getByLabel("Email da pessoa responsável").fill(`bia-${run}@teste.dev`);
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  const box = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  await expect(box).toBeVisible();
+  const coordPw = (await box.locator("code").nth(1).innerText()).trim();
+
+  // a coordenação entra com a senha temporária
+  const coord = await (await browser.newContext()).newPage();
+  await loginStaff(coord, ROOT, `bia-${run}@teste.dev`, coordPw);
+  await expect(coord).toHaveURL(/\/escola/);
+
+  // o dono adiciona um professor na página da escola
+  await box.getByRole("link", { name: "Abrir a escola" }).click();
+  await page.getByLabel("Nome", { exact: true }).fill("Teo");
+  await page.getByLabel("Email", { exact: true }).fill(`teo-${run}@teste.dev`);
+  await page.getByRole("button", { name: "Adicionar pessoa" }).click();
+  const tbox = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  const teoPw = (await tbox.locator("code").nth(1).innerText()).trim();
+  const teo = await (await browser.newContext()).newPage();
+  await loginStaff(teo, ROOT, `teo-${run}@teste.dev`, teoPw);
+  await expect(teo).toHaveURL(/\/professor/);
+
+  // nova senha invalida a anterior
+  await page.reload();
+  await page.getByRole("button", { name: "Nova senha para Teo" }).click();
+  const nbox = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  const newPw = (await nbox.locator("code").nth(1).innerText()).trim();
+  expect(newPw).not.toBe(teoPw);
+  const again = await (await browser.newContext()).newPage();
+  await loginStaff(again, ROOT, `teo-${run}@teste.dev`, newPw);
+  await expect(again).toHaveURL(/\/professor/);
+});
