@@ -49,3 +49,10 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Lições de jogos usam `starter: game({...})` (de `src/lib/blocks/build.ts`) e podem simular teclas/cliques na verificação (`checks.inputs`).
 - `tests/unit/content.test.ts` exige: guia do professor em toda lição, solução de referência com 3 estrelas e que o projeto inicial NÃO passe sem o aluno fazer nada.
 - Depois de mudar o schema do Prisma, REINICIE o `npm run dev` (ele mantém o client antigo em memória).
+
+## Game Jams (julgamento cego)
+- Fase da jam vem do relógio do servidor (`jamPhase` em `src/lib/jams.ts`), nunca é gravada. Entregas só entre `startsAt` e `endsAt`.
+- `JamEntry` não aponta para equipe/escola; o vínculo fica em `JamEntryOrigin`. Funções do jurado em `src/lib/dal/jams.ts` NUNCA selecionam `origin`, equipe, escola, alunos ou nomes de arquivo. Origem só aparece no resultado (fase ENCERRADA).
+- Arquivos: limpos em `src/lib/jam-files.ts` (meta do .sb3, metadados de PDF/.docx) e guardados com chave aleatória em `src/lib/storage.ts` (`.data/uploads` no dev; trocar por bucket privado do Supabase em produção). Download só por `/jams/arquivo/[entryId]/[kind]`, com nome `projeto-CODIGO.sb3`.
+- Quem cria jams: SUPER_ADMIN ou usuário com `canOrganizeJams` (o dono concede na página da escola em /plataforma).
+- O e2e `fase8.spec.ts` move as datas da jam direto no banco para passar pelas fases.

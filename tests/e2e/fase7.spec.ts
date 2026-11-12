@@ -77,6 +77,7 @@ test("remover escola derruba o acesso; restaurar devolve; aviso chega à escola"
   await expect(sp.getByText(`Novo aviso: Jam regional ${run}`)).toBeVisible();
   await sp.getByRole("button", { name: /Avisos \(\d+ novos?\)/ }).click();
   await expect(sp.getByRole("dialog", { name: "Avisos" })).toContainText("game jam");
+  await sp.waitForLoadState("networkidle"); // espera o "marcar como lido" terminar
   await sp.reload();
   await expect(sp.getByText(`Novo aviso: Jam regional ${run}`)).toHaveCount(0); // marcado como lido
 

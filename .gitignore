@@ -53,3 +53,6 @@ next-env.d.ts
 /plan.md
 /skills-lock.json
 /referencia.html
+
+# arquivos enviados (armazenamento local de desenvolvimento)
+/.data/

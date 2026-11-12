@@ -152,7 +152,7 @@ export async function getPlatformSchool(user: CurrentUser, orgId: string) {
       },
       users: {
         orderBy: [{ role: "asc" }, { name: "asc" }],
-        select: { id: true, name: true, email: true, username: true, role: true, active: true, deletedAt: true, lastLoginAt: true, _count: { select: { progress: { where: { status: "CONCLUIDO" } } } } },
+        select: { id: true, name: true, email: true, username: true, role: true, active: true, deletedAt: true, lastLoginAt: true, canOrganizeJams: true, _count: { select: { progress: { where: { status: "CONCLUIDO" } } } } },
       },
       auditLogs: { orderBy: { createdAt: "desc" }, take: 20 },
     },

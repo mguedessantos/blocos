@@ -6,6 +6,7 @@ import { AccessError } from "@/lib/dal/classes";
 import { getPlatformSchool } from "@/lib/dal/platform";
 import { ROLE_LABEL } from "@/lib/roles";
 import { restoreOrgAction, restoreUserAction } from "../../actions";
+import { setOrganizerAction } from "@/app/jams/actions";
 import { RemoveButton } from "../../forms";
 
 export const metadata = { title: "Escola" };
@@ -56,11 +57,20 @@ export default async function EscolaDetalhe(props: PageProps<"/plataforma/escola
                 <td className="text-right tabular-nums">{u._count.progress}</td>
                 <td className="pl-4">{u.lastLoginAt ? when.format(u.lastLoginAt) : "—"}</td>
                 <td className="py-2 text-right">
+                  <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                  {!u.deletedAt && (u.role === "TEACHER" || u.role === "ORG_ADMIN") && (
+                    <form action={setOrganizerAction.bind(null, u.id, !u.canOrganizeJams)}>
+                      <button className={`btn btn-sm ${u.canOrganizeJams ? "btn-success" : "btn-secondary"}`} title="Pode criar e gerenciar game jams">
+                        {u.canOrganizeJams ? "✓ Organiza jams" : "Permitir organizar jams"}
+                      </button>
+                    </form>
+                  )}
                   {u.deletedAt ? (
                     <form action={restoreUserAction.bind(null, u.id)}><button className="btn btn-secondary btn-sm">Restaurar</button></form>
                   ) : (
                     <RemoveButton kind="user" id={u.id} name={u.name} />
                   )}
+                  </span>
                 </td>
               </tr>
             ))}

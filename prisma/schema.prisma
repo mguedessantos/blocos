@@ -36,7 +36,7 @@ model Organization {
   classes       Class[]
   tracks        Track[]
   courses       Course[]
-  jams          GameJam[]
+  jamTeams      JamTeam[]
   consents      ConsentRecord[]
   auditLogs     AuditLog[]
   invites       Invite[]
@@ -106,6 +106,7 @@ model User {
   xp             Int           @default(0)
   active         Boolean       @default(true)
   deletedAt      DateTime? // removido pelo dono da plataforma (lixeira)
+  canOrganizeJams Boolean      @default(false) // pode criar game jams (concedido pelo dono)
   organizationId String? // null apenas para SUPER_ADMIN e jurados externos
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
@@ -228,7 +229,6 @@ model Class {
 
   enrollments Enrollment[]
   courses     CourseAssignment[]
-  jams        GameJam[]
 }
 
 model Enrollment {
@@ -408,52 +408,76 @@ model HintRequest {
 
 // ───────────────────────────── Game Jams ─────────────────────────────
 
+/** Quem pode participar: escolas de todo o país, de estados, de cidades ou escolas convidadas. */
 enum JamScope {
   PLATAFORMA
-  ORG
-  TURMA
+  ESTADOS
+  CIDADES
+  ESCOLAS
 }
 
-enum JamStatus {
-  RASCUNHO
-  INSCRICOES
-  EM_ANDAMENTO
-  JULGAMENTO
-  ENCERRADA
+enum PrizeRecipient {
+  ESCOLA
+  EQUIPE
 }
 
+enum ProjectSource {
+  SB3
+  SITE
+}
+
+/**
+ * Game jam. A fase (em breve / em andamento / julgamento / encerrada) é calculada pelo
+ * relógio do servidor a partir das datas — nunca guardada (ver src/lib/jams.ts).
+ */
 model GameJam {
-  id                 String        @id @default(cuid())
-  slug               String        @unique
-  title              String
-  theme              String?
-  rules              String // markdown
-  scope              JamScope
-  status             JamStatus     @default(RASCUNHO)
-  organizationId     String? // null para jams da plataforma
-  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  classId            String?
-  class              Class?        @relation(fields: [classId], references: [id], onDelete: SetNull)
-  startsAt           DateTime
-  submissionDeadline DateTime
-  judgingEndsAt      DateTime
-  maxTeamSize        Int           @default(1)
-  popularVote        Boolean       @default(false)
-  createdAt          DateTime      @default(now())
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  theme         String
+  description   String // markdown: regras e informações
+  scope         JamScope  @default(PLATAFORMA)
+  states        String[]
+  cities        String[]
+  orgIds        String[]
+  startsAt      DateTime // entregas abrem
+  endsAt        DateTime // entregas fecham
+  judgingEndsAt DateTime // resultados revelados
+  maxTeamSize   Int       @default(4)
+  published     Boolean   @default(false)
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  teams     JamTeam[]
-  entries   JamEntry[]
-  criteria  JamCriterion[]
-  judges    JamJudge[]
+  prizes   JamPrize[]
+  teams    JamTeam[]
+  entries  JamEntry[]
+  criteria JamCriterion[]
+  judges   JamJudge[]
 }
 
+model JamPrize {
+  id          String         @id @default(cuid())
+  jamId       String
+  jam         GameJam        @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  place       Int // 1 = primeiro lugar
+  title       String
+  description String         @default("")
+  recipient   PrizeRecipient @default(EQUIPE)
+}
+
+/** Equipe inscrita por um professor. Nunca é mostrada aos jurados. */
 model JamTeam {
-  id      String          @id @default(cuid())
-  jamId   String
-  jam     GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
-  name    String
-  members JamTeamMember[]
-  entry   JamEntry?
+  id             String          @id @default(cuid())
+  jamId          String
+  jam            GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  name           String
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacherId      String
+  createdAt      DateTime        @default(now())
+  members        JamTeamMember[]
+  origin         JamEntryOrigin?
 }
 
 model JamTeamMember {
@@ -465,19 +489,36 @@ model JamTeamMember {
   @@id([teamId, userId])
 }
 
+/**
+ * Entrega anônima. NÃO tem ligação direta com equipe/escola: o vínculo fica em
+ * JamEntryOrigin, que só o dono da plataforma lê (e só é revelado após o julgamento).
+ */
 model JamEntry {
-  id           String        @id @default(cuid())
-  jamId        String
-  jam          GameJam       @relation(fields: [jamId], references: [id], onDelete: Cascade)
-  teamId       String        @unique
-  team         JamTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  title        String
-  description  String
-  sb3Url       String
-  thumbnailUrl String?
-  submittedAt  DateTime      @default(now())
-  scores       JamScore[]
-  feedbacks    JamFeedback[]
+  id            String          @id @default(cuid())
+  jamId         String
+  jam           GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  anonCode      String // ex.: "K7Q2"
+  title         String
+  description   String
+  youtubeId     String
+  projectSource ProjectSource   @default(SB3)
+  projectKey    String // chave aleatória no armazenamento
+  docKey        String
+  docExt        String // "pdf" | "docx"
+  submittedAt   DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  origin        JamEntryOrigin?
+  scores        JamScore[]
+  feedbacks     JamFeedback[]
+
+  @@unique([jamId, anonCode])
+}
+
+model JamEntryOrigin {
+  entryId String   @id
+  entry   JamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  teamId  String   @unique
+  team    JamTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
 
 model JamCriterion {
@@ -514,14 +555,14 @@ model JamScore {
 }
 
 model JamFeedback {
-  id               String   @id @default(cuid())
-  entryId          String
-  entry            JamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  judgeId          String
-  judge            User     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
-  text             String
-  visibleToStudent Boolean  @default(true)
-  createdAt        DateTime @default(now())
+  id        String   @id @default(cuid())
+  entryId   String
+  entry     JamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  judgeId   String
+  judge     User     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([entryId, judgeId])
 }

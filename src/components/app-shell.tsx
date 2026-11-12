@@ -11,11 +11,19 @@ import type { CurrentUser } from "@/lib/dal/auth";
 import { getSubscriptionBanner } from "@/lib/dal/billing";
 import { getMyAnnouncements } from "@/lib/dal/platform";
 import { ROLE_LABEL } from "@/lib/roles";
+import { db } from "@/lib/db";
+import { navFor, withJudging } from "@/lib/nav";
 
 export type { NavItem };
 
-export async function AppShell({ user, nav, children }: { user: CurrentUser; nav: NavItem[]; children: ReactNode }) {
-  const [brand, banner, notices] = await Promise.all([getBrand(), getSubscriptionBanner(user), getMyAnnouncements(user)]);
+export async function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
+  const [brand, banner, notices, judging] = await Promise.all([
+    getBrand(),
+    getSubscriptionBanner(user),
+    getMyAnnouncements(user),
+    user.role === "JUDGE" ? 0 : db.jamJudge.count({ where: { userId: user.id } }),
+  ]);
+  const nav = withJudging(navFor(user), judging > 0);
   const unread = notices.filter((n) => !n.read);
   const initial = user.name.trim().charAt(0).toUpperCase();
   return (

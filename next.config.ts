@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     // O app é renderizado por requisição (marca do tenant + login). Só valida navegação
     // instantânea nas páginas que marcarem `export const instant = true`.
     instantInsights: { validationLevel: "manual-warning" },
+    // entregas das game jams: projeto (até 25 MB) + documentação (até 10 MB)
+    serverActions: { bodySizeLimit: "40mb" },
+    proxyClientMaxBodySize: "40mb",
   },
   turbopack: {
     rules: {
