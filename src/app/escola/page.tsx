@@ -13,8 +13,8 @@ export const metadata = { title: "Escola" };
 const when = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "America/Sao_Paulo" });
 
 export default async function EscolaPage(props: PageProps<"/escola">) {
-  const user = await requireUser(["ORG_ADMIN", "SUPER_ADMIN"]);
-  if (!user.organizationId) redirect("/plataforma");
+  const user = await requireUser(["ORG_ADMIN"]);
+  if (!user.organizationId) redirect("/sem-acesso");
   const [{ org, students }, dash] = await Promise.all([getOrgOverview(user), getSchoolDashboard(user)]);
   const sub = org.subscription;
   const welcome = (await props.searchParams)["bem-vindo"] === "1";

@@ -163,8 +163,12 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await prof.goto(`${ESCOLA}/jurado/${jamId}`);
   await expect(prof.getByText(/da sua própria escola não aparecem/)).toBeVisible();
   await expect(prof.getByRole("link", { name: new RegExp(`Projeto ${code}`) })).toHaveCount(0);
-  const blocked = await prof.evaluate(async (u) => (await fetch(u)).status, `/jurado/${jamId}/${code}`);
-  expect(blocked).toBe(404);
+  const blocked = await prof.evaluate(async (u) => {
+    const r = await fetch(u);
+    return { status: r.status, body: await r.text() };
+  }, `/jurado/${jamId}/${code}`);
+  expect(blocked.status).toBe(404);
+  expect(blocked.body).not.toContain("Gato Invertido"); // o conteúdo da entrega nunca aparece
 
   // ── resultado: origem revelada, prêmio e comentário para a equipe
   await shiftJam(jamId, "ENCERRADA");
