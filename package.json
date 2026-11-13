@@ -18,7 +18,8 @@
     "postinstall": "prisma generate",
     "manual:capturas": "tsx scripts/manual-screenshots.ts",
     "editor:assets": "tsx scripts/export-assets.ts",
-    "editor:build": "node scripts/build-editor.mjs"
+    "editor:build": "node scripts/build-editor.mjs",
+    "editor:mirror": "tsx scripts/mirror-library.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

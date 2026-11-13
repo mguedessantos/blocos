@@ -45,6 +45,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 ## Editor de blocos = fork do TurboWarp (iframe)
 - O aluno programa no editor do TurboWarp (fork GPL-3.0 em `../blocos-editor`, compilado em `public/editor/` com `npm run editor:build`). O site é fechado e só conversa por `postMessage` (`src/components/editor/scratch-frame.tsx` ↔ `blocos-editor/src/lib/blocos-bridge.js`): `load` (sb3 + blocos liberados), `getProject`, `hello/ready/loaded/changed`.
 - No fork, tudo que é nosso fica atrás de `window.__BLOCOS__` (sem nome/gato do Scratch, sem "Novo", sem configurações avançadas, bibliotecas e arte vindas de `/editor-assets`).
+- Biblioteca original do editor (Scratch/TurboWarp): `npm run editor:mirror` copia os ~1.300 arquivos para `public/editor-assets` (LGPD: o navegador do aluno não acessa servidores de terceiros). O worker de downloads do editor exige endereço completo (`location.origin`).
 - Arte e sons da biblioteca: `npm run editor:assets` desenha `components/editor/art.ts` em PNG/WAV (`public/editor-assets/`) e gera `src/lib/sb3/assets.json` + as listas da biblioteca do editor.
 - Conversores em `src/lib/sb3/convert.ts`: `projectToSb3Json` (projeto inicial → .sb3) e `sb3JsonToProject` (.sb3 do editor → nosso `ProjectState`, entrada não confiável). A verificação continua no SERVIDOR com o nosso interpretador; `tests/unit/content.test.ts` confere a ida e volta de todas as lições.
 - Ao verificar, os atores que existem no projeto inicial voltam à posição inicial (`withStarterPlacement`): no editor, rodar o programa move os atores.
