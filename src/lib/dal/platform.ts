@@ -344,7 +344,7 @@ export async function resetPasswordAsOwner(user: CurrentUser, userId: string) {
   const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, role: true, email: true, username: true, organizationId: true } });
   if (!target || target.role === "SUPER_ADMIN") throw new AccessError("Conta não encontrada.");
   const password = tempPassword();
-  await db.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true } });
+  await db.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: target.role !== "STUDENT" } });
   await audit(user, "plataforma.conta.nova-senha", userId, target.organizationId);
   return { login: target.email ?? target.username ?? "", password };
 }

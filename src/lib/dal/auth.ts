@@ -39,7 +39,7 @@ export async function requireUser(roles?: Role[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect(roles && !roles.includes("STUDENT") ? "/entrar?perfil=equipe" : "/entrar");
   if (roles && !roles.includes(user.role)) redirect("/sem-acesso");
-  // senha padrão: só segue depois de trocar
-  if (user.mustChangePassword) redirect("/trocar-senha");
+  // senha padrão: só segue depois de trocar (alunos não trocam a senha sozinhos: quem cuida é o professor)
+  if (user.mustChangePassword && user.role !== "STUDENT") redirect("/trocar-senha");
   return user;
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui";
 import { getCurrentUser } from "@/lib/dal/auth";
+import { logout } from "../actions";
 import { ChangePasswordForm } from "./form";
 
 export const metadata = { title: "Trocar a senha" };
@@ -18,6 +19,9 @@ export default async function TrocarSenhaPage() {
         </p>
       </div>
       <ChangePasswordForm />
+      <form action={logout} className="border-t-2 border-line pt-4 text-center">
+        <button type="submit" className="text-sm font-bold text-muted underline hover:text-foreground">Não é você? Sair e entrar com outra conta</button>
+      </form>
     </Card>
   );
 }
