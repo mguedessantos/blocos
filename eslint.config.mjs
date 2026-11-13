@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     ".vercel/**",
     ".data/**",
+    // editor de blocos compilado (fork GPL, código em ../blocos-editor)
+    "public/editor/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -42,6 +42,14 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - `BILLING_ENABLED="false"` (padrão): sem preços, assinatura, banner de teste, bloqueio somente-leitura nem limites de plano; webhook do Stripe responde 404. White-label continua seguindo o plano da organização.
 - Para ligar: `BILLING_ENABLED="true"` no `.env` (testes de cobrança do Playwright só rodam assim; os unitários sempre ligam).
 
+## Editor de blocos = fork do TurboWarp (iframe)
+- O aluno programa no editor do TurboWarp (fork GPL-3.0 em `../blocos-editor`, compilado em `public/editor/` com `npm run editor:build`). O site é fechado e só conversa por `postMessage` (`src/components/editor/scratch-frame.tsx` ↔ `blocos-editor/src/lib/blocos-bridge.js`): `load` (sb3 + blocos liberados), `getProject`, `hello/ready/loaded/changed`.
+- No fork, tudo que é nosso fica atrás de `window.__BLOCOS__` (sem nome/gato do Scratch, sem "Novo", sem configurações avançadas, bibliotecas e arte vindas de `/editor-assets`).
+- Arte e sons da biblioteca: `npm run editor:assets` desenha `components/editor/art.ts` em PNG/WAV (`public/editor-assets/`) e gera `src/lib/sb3/assets.json` + as listas da biblioteca do editor.
+- Conversores em `src/lib/sb3/convert.ts`: `projectToSb3Json` (projeto inicial → .sb3) e `sb3JsonToProject` (.sb3 do editor → nosso `ProjectState`, entrada não confiável). A verificação continua no SERVIDOR com o nosso interpretador; `tests/unit/content.test.ts` confere a ida e volta de todas as lições.
+- Ao verificar, os atores que existem no projeto inicial voltam à posição inicial (`withStarterPlacement`): no editor, rodar o programa move os atores.
+- O .sb3 completo do aluno fica no armazenamento privado (`Progress.projectKey`, rota `/api/licoes/[id]/projeto`) e no IndexedDB; abre o mais novo.
+
 ## Currículo (o site vem primeiro)
 - 10 mundos em 3 níveis (`content/trilhas/{basico,intermediario,avancado}.ts`). Toda habilidade é ensinada e verificada NO EDITOR DO SITE; o PictoBlox aparece só em missões `optional: true` (“Leve para o PictoBlox”), que nunca bloqueiam a trilha.
 - Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).

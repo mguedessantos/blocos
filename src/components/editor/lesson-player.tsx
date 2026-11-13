@@ -1,25 +1,17 @@
 "use client";
 
-import { ArrowRight, BookOpen, Moon, Sun, CircleCheck, CircleX, Flag, Image as ImageIcon, Lightbulb, Pencil, Plus, Puzzle, RotateCcw, Square, Trash2, X } from "lucide-react";
-import dynamic from "next/dynamic";
+import { ArrowRight, BookOpen, CircleCheck, CircleX, Lightbulb, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { Stars } from "@/components/lesson-icon";
 import { buttonClass } from "@/components/ui";
-import { BLOCKS, CATEGORIES } from "@/lib/blocks/catalog";
-import { FPS, World, type WorldState } from "@/lib/blocks/interpreter";
-import { BACKDROPS, CHARACTERS, type BackdropId, type CharacterId } from "@/lib/blocks/library";
-import type { BlocklyState } from "@/lib/blocks/program";
-import { compileProject, MAX_SPRITES, newSprite, normalizeProject, type ProjectState } from "@/lib/blocks/project";
+import { BLOCKS } from "@/lib/blocks/catalog";
+import { normalizeProject, type ProjectState } from "@/lib/blocks/project";
 import type { CheckItem } from "@/lib/checker";
-import { drawBackdrop, drawCharacter, playSound } from "./art";
-import type { BlockEditorHandle, EditorContext } from "./block-editor";
-import { Stage } from "./stage";
-
-const BlockEditor = dynamic(() => import("./block-editor"), {
-  ssr: false,
-  loading: () => <div className="grid h-full min-h-[420px] place-items-center font-bold text-muted">Carregando blocos…</div>,
-});
+import { ConvertError } from "@/lib/sb3/convert";
+import { buildSb3, clearDraft, deleteSavedProject, fetchSavedProject, projectFromSb3, readDraft, uploadProject, writeDraft } from "@/lib/sb3/pack";
+import { BlockPreview } from "./block-preview";
+import { ScratchFrame, type ScratchFrameHandle } from "./scratch-frame";
 
 export type VerifyOutcome =
   | { ok: true; passed: boolean; stars: number; summary: string; items: CheckItem[]; xpGained: number; newBadges?: { id: string; name: string; icon: string }[] }
@@ -30,10 +22,8 @@ type Props = {
   allowedBlocks: string[];
   starter: unknown;
   saved: unknown;
-  /** Mostra o painel de atores e cenários (lições de jogos). */
-  showSprites: boolean;
   nextHref: string | null;
-  /** Recebe o projeto como JSON (texto). */
+  /** Recebe o projeto (nosso formato) como JSON (texto). */
   verify: (projectJson: string) => Promise<VerifyOutcome>;
   /** Barra do topo (mundo, lição, título) e a missão/instruções, mostradas na coluna da esquerda. */
   header?: ReactNode;
@@ -41,42 +31,23 @@ type Props = {
   extra?: ReactNode;
 };
 
-const MAX_RUN_SECONDS = 600;
-
-// Preferência do modo escuro do editor (por computador). useSyncExternalStore evita diferença entre servidor e navegador.
-const DARK_KEY = "blocos:editor-escuro";
-const darkListeners = new Set<() => void>();
-function readDark() {
-  try {
-    return localStorage.getItem(DARK_KEY) === "1";
-  } catch {
-    return false;
-  }
+/**
+ * No editor, rodar o programa move os atores e o projeto guarda onde eles pararam. A verificação
+ * começa sempre como a lição começa: atores que já existem no projeto inicial voltam ao lugar dele.
+ */
+export function withStarterPlacement(project: ProjectState, starter: ProjectState): ProjectState {
+  const byName = new Map(starter.sprites.map((s) => [s.name, s]));
+  return {
+    ...project,
+    sprites: project.sprites.map((s) => {
+      const st = byName.get(s.name);
+      return st ? { ...s, x: st.x, y: st.y, direction: st.direction, size: st.size, visible: st.visible } : s;
+    }),
+  };
 }
-function writeDark(v: boolean) {
-  try {
-    localStorage.setItem(DARK_KEY, v ? "1" : "0");
-  } catch {
-    /* navegação privada: vale só nesta página */
-  }
-  darkListeners.forEach((l) => l());
-}
-function useEditorDark() {
-  return useSyncExternalStore(
-    (cb) => {
-      darkListeners.add(cb);
-      return () => darkListeners.delete(cb);
-    },
-    readDark,
-    () => false,
-  );
-}
-const STAGE_ID = "__palco__";
 
-const KEY_NAMES: Record<string, string> = { " ": "space", ArrowUp: "up arrow", ArrowDown: "down arrow", ArrowLeft: "left arrow", ArrowRight: "right arrow" };
-const toScratchKey = (e: KeyboardEvent) => KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toLowerCase() : null);
-
-function readDraft(key: string): unknown {
+/** Rascunho do editor antigo (projeto em JSON no localStorage), para ninguém perder o que fez. */
+function legacyDraft(key: string): unknown {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
@@ -85,249 +56,90 @@ function readDraft(key: string): unknown {
   }
 }
 
-const snapshot = (s: WorldState): WorldState => ({ ...s, targets: s.targets.map((t) => ({ ...t })), lines: s.lines.slice(), vars: { ...s.vars } });
-
-export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSprites, nextHref, verify, header, mission, extra }: Props) {
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra }: Props) {
   const draftKey = `blocos:licao:${lessonId}`;
-  const starterProject = useMemo(() => normalizeProject(starter), [starter]);
-  const [project, setProject] = useState<ProjectState>(() =>
-    normalizeProject((typeof window === "undefined" ? null : readDraft(draftKey)) ?? saved ?? starter),
-  );
-  const projectRef = useRef(project);
-  const [selected, setSelected] = useState<string>(project.sprites[0].id);
-  const editor = useRef<BlockEditorHandle>(null);
-  const world = useRef<World | null>(null);
-  const frame = useRef<number | null>(null);
-  const [stage, setStage] = useState<WorldState>(() => new World(compileProject(project)).state);
-  const [running, setRunning] = useState(false);
+  const editor = useRef<ScratchFrameHandle | null>(null);
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const dark = useEditorDark();
   const [pending, startTransition] = useTransition();
-  const [picker, setPicker] = useState<"sprite" | "backdrop" | null>(null);
-  const dragging = useRef<string | null>(null);
+  const starterSb3 = useCallback(() => buildSb3(normalizeProject(starter)), [starter]);
 
-  const commit = useCallback((next: ProjectState, preview = true) => {
-    projectRef.current = next;
-    setProject(next);
-    try {
-      localStorage.setItem(draftKey, JSON.stringify(next));
-    } catch {
-      /* sem armazenamento local: tudo bem */
+  // o mais novo entre o rascunho deste computador e o projeto guardado no servidor (ambos com fantasias e sons);
+  // senão, o rascunho do editor antigo, os blocos da última tentativa ou o projeto inicial
+  const initial = useCallback(async () => {
+    const [local, server] = await Promise.all([readDraft(draftKey), fetchSavedProject(lessonId)]);
+    const newest = [local, server].filter((d) => !!d).sort((a, b) => b!.at - a!.at)[0];
+    return newest?.sb3 ?? buildSb3(normalizeProject(legacyDraft(draftKey) ?? saved ?? starter));
+  }, [draftKey, lessonId, saved, starter]);
+
+  // rascunho local a cada mudança; no servidor, no máximo a cada 30 s (e sempre ao verificar)
+  const lastUpload = useRef(0);
+  const saveDraft = useCallback(async () => {
+    const sb3 = await editor.current?.getSb3().catch(() => null);
+    if (!sb3) return;
+    await writeDraft(draftKey, sb3.slice(0));
+    if (Date.now() - lastUpload.current > 30_000) {
+      lastUpload.current = Date.now();
+      void uploadProject(lessonId, sb3);
     }
-    if (preview && !world.current) setStage(new World(compileProject(next)).state);
-  }, [draftKey]);
-
-  const contextFor = useCallback((p: ProjectState, id: string): EditorContext => {
-    const sprite = p.sprites.find((s) => s.id === id);
-    return {
-      sprites: p.sprites.map((s) => s.name),
-      self: sprite?.name ?? "",
-      costumes: sprite ? CHARACTERS[sprite.character].costumes : [],
-      backdrops: p.stage.backdrops.map((b) => [BACKDROPS[b], b]),
-      isStage: id === STAGE_ID,
-    };
-  }, []);
-
-  const workspaceOf = (p: ProjectState, id: string): BlocklyState => {
-    const ws = id === STAGE_ID ? p.stage.workspace : p.sprites.find((s) => s.id === id)?.workspace ?? {};
-    return { ...ws, variables: p.variables };
-  };
-
-  // ───────────── edição ─────────────
-
-  const onBlocksChange = (state: BlocklyState) => {
-    const p = projectRef.current;
-    const blocks = { blocks: state.blocks };
-    const variables = (state.variables ?? p.variables).map((v) => ({ id: v.id, name: v.name }));
-    const next: ProjectState =
-      selected === STAGE_ID
-        ? { ...p, variables, stage: { ...p.stage, workspace: blocks } }
-        : { ...p, variables, sprites: p.sprites.map((s) => (s.id === selected ? { ...s, workspace: blocks } : s)) };
-    commit(next, false);
-  };
-
-  const select = (id: string) => {
-    if (id === selected) return;
-    setSelected(id);
-    editor.current?.load(workspaceOf(projectRef.current, id), contextFor(projectRef.current, id));
-  };
-
-  const addSprite = (character: CharacterId) => {
-    const p = project;
-    if (p.sprites.length >= MAX_SPRITES) return;
-    let name = CHARACTERS[character].name;
-    for (let k = 2; p.sprites.some((s) => s.name === name); k++) name = `${CHARACTERS[character].name} ${k}`;
-    // cada ator novo aparece num lugar diferente (o aluno arrasta para onde quiser)
-    const slot = p.sprites.length;
-    const s = newSprite(character, name, { x: ((slot * 70) % 320) - 160, y: slot % 2 ? 60 : -60 });
-    const next = { ...p, sprites: [...p.sprites, s] };
-    commit(next);
-    setPicker(null);
-    setSelected(s.id);
-    editor.current?.load(workspaceOf(next, s.id), contextFor(next, s.id));
-  };
-
-  const onPickSprite = (e: React.MouseEvent<HTMLButtonElement>) => addSprite(e.currentTarget.dataset.item as CharacterId);
-  const onPickBackdrop = (e: React.MouseEvent<HTMLButtonElement>) => addBackdrop(e.currentTarget.dataset.item as BackdropId);
-
-  const renameSprite = (id: string) => {
-    const p = projectRef.current;
-    const s = p.sprites.find((x) => x.id === id);
-    const name = s && prompt("Novo nome do ator:", s.name)?.trim().slice(0, 30);
-    if (!s || !name || p.sprites.some((x) => x.name === name && x.id !== id)) return;
-    commit({ ...p, sprites: p.sprites.map((x) => (x.id === id ? { ...x, name } : x)) });
-  };
-
-  const removeSprite = (id: string) => {
-    const p = projectRef.current;
-    if (p.sprites.length <= 1 || !confirm("Apagar este ator e todos os blocos dele?")) return;
-    const next = { ...p, sprites: p.sprites.filter((s) => s.id !== id) };
-    commit(next);
-    const first = next.sprites[0].id;
-    setSelected(first);
-    editor.current?.load(workspaceOf(next, first), contextFor(next, first));
-  };
-
-  const addBackdrop = (id: BackdropId) => {
-    const p = project;
-    setPicker(null);
-    if (p.stage.backdrops.includes(id) || p.stage.backdrops.length >= 10) return;
-    commit({ ...p, stage: { ...p.stage, backdrops: [...p.stage.backdrops, id] } });
-  };
-  const removeBackdrop = (id: BackdropId) => {
-    const p = projectRef.current;
-    if (p.stage.backdrops.length <= 1) return;
-    commit({ ...p, stage: { ...p.stage, backdrops: p.stage.backdrops.filter((b) => b !== id) } });
-  };
-
-  // ───────────── execução ─────────────
-
-  const stop = useCallback(() => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
-    frame.current = null;
-    world.current = null;
-    setRunning(false);
-  }, []);
-
-  useEffect(() => stop, [stop]);
-
-  const run = useCallback(() => {
-    stop();
-    const w = new World(compileProject(projectRef.current), Date.now() % 100000);
-    w.onSound = playSound;
-    w.start();
-    world.current = w;
-    setStage(snapshot(w.state));
-    setRunning(true);
-    let last = performance.now();
-    let acc = 0;
-    const loop = (now: number) => {
-      if (world.current !== w) return;
-      acc += Math.min(now - last, 250);
-      last = now;
-      while (acc >= 1000 / FPS && !w.state.stopped) {
-        w.tick();
-        acc -= 1000 / FPS;
-      }
-      setStage(snapshot(w.state));
-      // jogos com teclado ou clique continuam “vivos” esperando o jogador
-      if (w.state.stopped || (w.done && !w.interactive) || w.state.time >= MAX_RUN_SECONDS) {
-        frame.current = null;
-        world.current = null;
-        setRunning(false);
-        return;
-      }
-      frame.current = requestAnimationFrame(loop);
-    };
-    frame.current = requestAnimationFrame(loop);
-  }, [stop]);
-
-  // teclado durante o jogo
-  useEffect(() => {
-    if (!running) return;
-    const typing = (e: KeyboardEvent) => e.target instanceof HTMLElement && (e.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName));
-    const down = (e: KeyboardEvent) => {
-      if (typing(e)) return;
-      const k = toScratchKey(e);
-      if (!k || !world.current) return;
-      if (k === "space" || k.endsWith("arrow")) e.preventDefault();
-      world.current.keyDown(k);
-    };
-    const up = (e: KeyboardEvent) => {
-      const k = toScratchKey(e);
-      if (k && world.current) world.current.keyUp(k);
-    };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-    };
-  }, [running]);
-
-  const onMouse = (m: { x: number; y: number; down?: boolean }) => {
-    if (world.current) {
-      world.current.mouse = { x: m.x, y: m.y, down: m.down ?? world.current.mouse.down };
-      return;
-    }
-    if (!showSprites) return;
-    // parado: arrastar atores define a posição inicial
-    const p = projectRef.current;
-    if (m.down === true) {
-      const hit = [...p.sprites].reverse().find((s) => Math.hypot(s.x - m.x, s.y - m.y) <= CHARACTERS[s.character].radius * (s.size / 100) + 6);
-      dragging.current = hit?.id ?? null;
-      if (hit) select(hit.id);
-    } else if (m.down === false) {
-      dragging.current = null;
-    } else if (dragging.current) {
-      const x = Math.max(-240, Math.min(240, m.x)), y = Math.max(-180, Math.min(180, m.y));
-      commit({ ...p, sprites: p.sprites.map((s) => (s.id === dragging.current ? { ...s, x, y } : s)) });
-    }
-  };
+  }, [draftKey, lessonId]);
 
   const onVerify = () => {
-    const json = JSON.stringify(projectRef.current);
-    run();
     startTransition(async () => {
       try {
-        setOutcome(await verify(json));
-        setResultOpen(true);
-      } catch {
-        setOutcome({ ok: false, error: "Não foi possível verificar agora. Tente de novo." });
-        setResultOpen(true);
+        const sb3 = await editor.current!.getSb3();
+        await writeDraft(draftKey, sb3.slice(0));
+        lastUpload.current = Date.now();
+        void uploadProject(lessonId, sb3.slice(0));
+        const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
+        setOutcome(await verify(JSON.stringify(project)));
+      } catch (e) {
+        setOutcome({ ok: false, error: e instanceof ConvertError ? e.message : "Não foi possível verificar agora. Tente de novo." });
       }
+      setResultOpen(true);
     });
   };
 
-  const restart = () => {
+  const restart = async () => {
     if (!confirm("Apagar seus blocos e começar de novo?")) return;
-    stop();
-    commit(starterProject);
-    const first = starterProject.sprites[0].id;
-    setSelected(first);
-    editor.current?.load(workspaceOf(starterProject, first), contextFor(starterProject, first));
+    await Promise.all([clearDraft(draftKey), deleteSavedProject(lessonId)]);
+    try {
+      localStorage.removeItem(draftKey); // rascunho do editor antigo
+    } catch {
+      /* sem armazenamento local */
+    }
+    editor.current?.load(await starterSb3());
     setOutcome(null);
   };
 
-  const allowed = allowedBlocks.length ? BLOCKS.filter((b) => allowedBlocks.includes(b.opcode)) : BLOCKS;
-  const selectedName = selected === STAGE_ID ? "Palco" : project.sprites.find((s) => s.id === selected)?.name;
+  const allowed = useMemo(() => (allowedBlocks.length ? BLOCKS.filter((b) => allowedBlocks.includes(b.opcode)) : BLOCKS), [allowedBlocks]);
+
+  // Ocupa exatamente a janela abaixo do menu do site: o aluno nunca precisa rolar a página.
+  const [top, setTop] = useState(0);
+  useEffect(() => {
+    const header = document.querySelector("header");
+    const update = () => setTop(header ? header.getBoundingClientRect().bottom : 0);
+    update();
+    const ro = new ResizeObserver(update);
+    if (header) ro.observe(header);
+    window.addEventListener("resize", update);
+    const html = document.documentElement;
+    const prev = html.style.overflow;
+    html.style.overflow = "hidden";
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      html.style.overflow = prev;
+    };
+  }, []);
 
   return (
-    // Tela cheia (como um editor de verdade): sai da coluna centralizada do site e ocupa a largura toda.
-    <div className="relative left-1/2 -my-8 flex w-screen -translate-x-1/2 flex-col border-t-2 border-line lg:h-[calc(100dvh-66px)]">
+    <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col border-t-2 border-line bg-background" style={{ top }}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-line bg-surface px-4 py-2">
         <div className="min-w-0 flex-1">{header}</div>
-        <button
-          type="button"
-          onClick={() => writeDark(!dark)}
-          aria-pressed={dark}
-          className="inline-flex min-h-11 items-center gap-2 rounded-2xl border-2 border-line px-3 font-extrabold text-foreground hover:border-[#8b6cff]"
-          title={dark ? "Voltar a área de blocos para o modo claro" : "Deixar a área de blocos escura"}
-        >
-          {dark ? <Sun aria-hidden className="h-4 w-4 text-star" /> : <Moon aria-hidden className="h-4 w-4 text-star" />}
-          {dark ? "Modo claro" : "Modo escuro"}
+        <button type="button" onClick={restart} className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-muted hover:text-foreground">
+          <RotateCcw aria-hidden className="h-4 w-4" /> Recomeçar
         </button>
         <button
           type="button"
@@ -338,149 +150,12 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
         >
           <BookOpen aria-hidden className="h-4 w-4" /> Como funciona cada bloco
         </button>
-        <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md")}>
-          <CircleCheck aria-hidden className="h-5 w-5" /> {pending ? "Verificando…" : "Verificar"}
-        </button>
-        {outcome?.ok && outcome.passed && nextHref && !resultOpen && (
-          <Link href={nextHref} className={buttonClass("primary", "md", "btn-cta")}>Próxima lição <ArrowRight aria-hidden className="h-5 w-5" /></Link>
-        )}
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[clamp(340px,30vw,480px)_minmax(0,1fr)]">
-        {/* Coluna da esquerda: missão, palco e atores */}
-        <aside className="space-y-3 overflow-y-auto border-b-2 border-line p-3 lg:border-b-0 lg:border-r-2" aria-label="Missão e palco">
-          {mission && <div className="clay p-4 text-[0.95rem]">{mission}</div>}
-        <div className="clay overflow-hidden p-2">
-          <Stage state={stage} onMouse={onMouse} onStageClick={(x, y) => world.current?.click(x, y)} />
-          <p className="flex justify-between gap-2 px-2 pt-2 text-xs font-bold text-muted">
-            <span>{running ? "Jogando! Use o teclado e o mouse no palco." : showSprites ? "Arraste os atores para mudar onde eles começam." : ""}</span>
-            {stage.targets[0] && <span className="font-mono">x: {Math.round(stage.targets[0].x)} · y: {Math.round(stage.targets[0].y)}</span>}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button onClick={run} className={buttonClass("success", "md", "btn-go")}>
-            <Flag aria-hidden className="h-5 w-5" /> Executar
-          </button>
-          <button onClick={stop} disabled={!running} className={buttonClass("danger", "md", "btn-stop")}>
-            <Square aria-hidden className="h-4 w-4 fill-current" /> Parar
-          </button>
-          <button onClick={restart} className="ml-auto inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-muted hover:text-foreground">
-            <RotateCcw aria-hidden className="h-4 w-4" /> Recomeçar
-          </button>
-        </div>
-
-        {outcome && !resultOpen && (
-          <button type="button" onClick={() => setResultOpen(true)} className="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-2 text-left font-extrabold hover:border-[#8b6cff]">
-            {outcome.ok ? <Stars value={outcome.stars} /> : <CircleX aria-hidden className="h-5 w-5 text-red-600" />}
-            <span className="flex-1 truncate">{outcome.ok ? outcome.summary : outcome.error}</span>
-            <span className="text-sm text-star">Ver resultado</span>
-          </button>
-        )}
-        {outcome && resultOpen && <ResultDialog outcome={outcome} nextHref={nextHref} onClose={() => setResultOpen(false)} />}
-
-        {showSprites && (
-          <div className="clay space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold">Atores e palco</h3>
-              <div className="flex gap-1">
-                <button onClick={() => setPicker(picker === "sprite" ? null : "sprite")} className={buttonClass("secondary", "sm")} disabled={project.sprites.length >= MAX_SPRITES}>
-                  <Plus aria-hidden className="h-4 w-4" /> Ator
-                </button>
-                <button onClick={() => setPicker(picker === "backdrop" ? null : "backdrop")} className={buttonClass("secondary", "sm")}>
-                  <ImageIcon aria-hidden className="h-4 w-4" /> Cenário
-                </button>
-              </div>
-            </div>
-
-            {picker && (
-              <div className="grid grid-cols-4 gap-2 rounded-2xl bg-brand-soft p-2" aria-label={picker === "sprite" ? "Escolha um ator" : "Escolha um cenário"}>
-                {picker === "sprite"
-                  ? (Object.keys(CHARACTERS) as CharacterId[]).map((c) => (
-                      <button key={c} data-item={c} onClick={onPickSprite} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold text-night hover:ring-2 hover:ring-brand">
-                        <Thumb character={c} /> {CHARACTERS[c].name}
-                      </button>
-                    ))
-                  : (Object.keys(BACKDROPS) as BackdropId[]).map((b) => (
-                      <button key={b} data-item={b} onClick={onPickBackdrop} disabled={project.stage.backdrops.includes(b)} className="flex flex-col items-center gap-1 rounded-xl bg-white p-1.5 text-xs font-bold text-night hover:ring-2 hover:ring-brand disabled:opacity-40">
-                        <Thumb backdrop={b} /> {BACKDROPS[b]}
-                      </button>
-                    ))}
-              </div>
-            )}
-
-            <ul className="grid grid-cols-3 gap-2">
-              <li>
-                <button
-                  onClick={() => select(STAGE_ID)}
-                  aria-pressed={selected === STAGE_ID}
-                  className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 p-1.5 text-xs font-extrabold ${selected === STAGE_ID ? "border-brand bg-brand-soft" : "border-line"}`}
-                >
-                  <Thumb backdrop={project.stage.backdrops[0]} /> Palco
-                </button>
-              </li>
-              {project.sprites.map((s) => (
-                <li key={s.id} className="relative">
-                  <button
-                    onClick={() => select(s.id)}
-                    aria-pressed={selected === s.id}
-                    className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 p-1.5 text-xs font-extrabold ${selected === s.id ? "border-brand bg-brand-soft" : "border-line"}`}
-                  >
-                    <Thumb character={s.character} /> <span className="max-w-full truncate">{s.name}</span>
-                  </button>
-                  {selected === s.id && (
-                    <span className="absolute -top-2 -right-1 flex gap-0.5">
-                      <button onClick={() => renameSprite(s.id)} aria-label={`Renomear ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white text-night shadow ring-1 ring-line">
-                        <Pencil aria-hidden className="h-3.5 w-3.5" />
-                      </button>
-                      {project.sprites.length > 1 && (
-                        <button onClick={() => removeSprite(s.id)} aria-label={`Apagar ${s.name}`} className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 shadow ring-1 ring-line">
-                          <Trash2 aria-hidden className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {selected === STAGE_ID && (
-              <div className="space-y-1">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-muted">Cenários do palco</p>
-                <ul className="flex flex-wrap gap-2">
-                  {project.stage.backdrops.map((b) => (
-                    <li key={b} className="flex items-center gap-1 rounded-full bg-black/5 py-1 pr-1 pl-3 text-xs font-bold">
-                      {BACKDROPS[b]}
-                      {project.stage.backdrops.length > 1 && (
-                        <button onClick={() => removeBackdrop(b)} aria-label={`Remover cenário ${BACKDROPS[b]}`} className="grid h-6 w-6 place-items-center rounded-full hover:bg-black/10">
-                          <Trash2 aria-hidden className="h-3 w-3" />
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-          {extra}
-        </aside>
-
-      {/* Área de blocos: ocupa todo o espaço que sobra */}
-      <div className={`blocos-editor relative flex min-h-[560px] flex-col overflow-hidden bg-surface lg:min-h-0 ${dark ? "editor-escuro" : ""}`}>
-        {showSprites && (
-          <div className="flex min-h-10 items-center gap-2 border-b-2 border-line px-3 py-1 text-sm font-extrabold">
-            <Puzzle aria-hidden className="h-4 w-4 text-star" /> Blocos de: <span className="text-star">{selectedName}</span>
-          </div>
-        )}
-        <div className="relative min-h-0 flex-1">
-          <BlockEditor
-            handle={editor}
-            allowedBlocks={allowedBlocks}
-            initialState={workspaceOf(project, selected)}
-            initialContext={contextFor(project, selected)}
-            onChange={onBlocksChange}
-            dark={dark}
-          />
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_clamp(280px,22vw,380px)] lg:grid-rows-1">
+        {/* Editor de blocos (esquerda) */}
+        <div className="relative min-h-0">
+          <ScratchFrame handle={editor} initial={initial} allowedBlocks={allowedBlocks} onChange={saveDraft} />
           {helpOpen && (
             <aside
               id="ajuda-blocos"
@@ -496,9 +171,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
               <ul className="flex-1 space-y-3 overflow-y-auto p-4 text-base">
                 {allowed.map((b) => (
                   <li key={b.opcode} className="flex flex-col gap-1">
-                    <span className="w-fit rounded-lg px-2.5 py-1 text-sm font-extrabold text-white shadow-[0_2px_0_rgb(15_23_42/0.2)]" style={{ background: CATEGORIES[b.category].colour }}>
-                      {b.text.split("|")[0].replace(/%\d/g, "▢")}
-                    </span>
+                    <BlockPreview def={b} />
                     <span className="font-semibold text-muted">{b.help}</span>
                   </li>
                 ))}
@@ -506,36 +179,34 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, showSpri
             </aside>
           )}
         </div>
-      </div>
 
+        {/* Coluna da direita: missão, desafio extra e Verificar */}
+        <aside className="max-h-[40dvh] space-y-3 overflow-y-auto border-t-2 border-line p-3 lg:max-h-none lg:border-l-2 lg:border-t-0" aria-label="Missão">
+          {mission && <div className="clay p-4 text-[0.95rem]">{mission}</div>}
+          {extra}
+          <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md", "w-full text-lg")}>
+            <CircleCheck aria-hidden className="h-5 w-5" /> {pending ? "Verificando…" : "Verificar"}
+          </button>
+          {outcome?.ok && outcome.passed && nextHref && !resultOpen && (
+            <Link href={nextHref} className={buttonClass("primary", "md", "btn-cta w-full text-lg")}>Próxima lição <ArrowRight aria-hidden className="h-5 w-5" /></Link>
+          )}
+          {outcome && !resultOpen && (
+            <button type="button" onClick={() => setResultOpen(true)} className="flex w-full items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-2 text-left font-extrabold hover:border-[#8b6cff]">
+              {outcome.ok ? <Stars value={outcome.stars} /> : <CircleX aria-hidden className="h-5 w-5 text-red-600" />}
+              <span className="flex-1 truncate">{outcome.ok ? outcome.summary : outcome.error}</span>
+              <span className="text-sm text-star">Ver resultado</span>
+            </button>
+          )}
+          {/* o editor é um fork GPL-3.0 do TurboWarp: o código-fonte fica público */}
+          <p className="pt-2 text-center text-xs font-semibold text-muted">
+            Editor baseado no TurboWarp ·{" "}
+            <a href="https://github.com/mguedessantos/blocos-editor" target="_blank" rel="noreferrer" className="underline hover:text-foreground">código-fonte (GPL)</a>
+          </p>
+        </aside>
       </div>
+      {outcome && resultOpen && <ResultDialog outcome={outcome} nextHref={nextHref} onClose={() => setResultOpen(false)} />}
     </div>
   );
-}
-
-/** Miniatura de personagem ou cenário. */
-function Thumb({ character, backdrop }: { character?: CharacterId; backdrop?: BackdropId }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const ctx = ref.current?.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 96, 72);
-    if (backdrop) {
-      ctx.save();
-      ctx.scale(96 / 480, 72 / 360);
-      drawBackdrop(ctx, backdrop, 480, 360);
-      ctx.restore();
-    } else if (character) {
-      ctx.save();
-      ctx.translate(48, 38);
-      const k = Math.min(1.2, 26 / CHARACTERS[character].radius);
-      ctx.scale(k, k);
-      ctx.strokeStyle = "#111827";
-      drawCharacter(ctx, character, 0);
-      ctx.restore();
-    }
-  }, [character, backdrop]);
-  return <canvas ref={ref} width={96} height={72} className="h-12 w-16 rounded-lg bg-slate-50" aria-hidden />;
 }
 
 export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref: string | null }) {

@@ -296,10 +296,10 @@ export function drawBackdrop(ctx: Ctx, id: BackdropId, w: number, h: number) {
 
 let audio: AudioContext | null = null;
 
-export function playSound(id: SoundId) {
+/** Toca o som; com `target`, sintetiza nele (ex.: OfflineAudioContext para gerar o arquivo .wav). */
+export function playSound(id: SoundId, target?: BaseAudioContext) {
   try {
-    audio ??= new AudioContext();
-    const ctx = audio;
+    const ctx = target ?? (audio ??= new AudioContext());
     const now = ctx.currentTime;
     const tone = (freq: number, start: number, dur: number, type: OscillatorType = "square", endFreq?: number) => {
       const o = ctx.createOscillator();

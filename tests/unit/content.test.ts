@@ -10,6 +10,7 @@ import { BLOCKS_BY_OPCODE } from "@/lib/blocks/catalog";
 import { compileProject, normalizeProject } from "@/lib/blocks/project";
 import { checkModel, checkProject, checksSchema, needsRuntime } from "@/lib/checker";
 import { modelFromProjectJson } from "@/lib/sb3/project";
+import { projectToSb3Json, sb3JsonToProject } from "@/lib/sb3/convert";
 import { projectJson, type Node, type ProjectSpec } from "./sb3-builder";
 
 // ───────────── Soluções de referência das lições do SITE ─────────────
@@ -283,6 +284,14 @@ describe("currículo oficial", () => {
     // o projeto inicial, sem mudanças, não pode passar
     const starter = l.starter ?? (l.startWithFlag ? { blocks: { blocks: [{ type: "event_whenflagclicked" }] } } : {});
     expect(run(starter, l).passed, `${l.slug}: o projeto inicial já passa sem fazer nada`).toBe(false);
+
+    // ida e volta pelo editor de blocos (.sb3): a solução continua valendo 3 estrelas e o início continua não passando
+    const viaSb3 = (spec: GameSpec | object) =>
+      sb3JsonToProject(JSON.parse(JSON.stringify(projectToSb3Json(normalizeProject("sprites" in spec && !("v" in spec) ? project(spec as GameSpec) : spec)).json)));
+    const back = checkProject(compileProject(viaSb3(solution)), checks);
+    expect(back.items.filter((i) => !i.ok), `${l.slug} (via .sb3)`).toEqual([]);
+    expect(back.stars).toBe(3);
+    expect(checkProject(compileProject(viaSb3(starter)), checks).passed, `${l.slug} (via .sb3): o início já passa`).toBe(false);
   });
 
   it.each(WRONG.map(([slug, prog], i) => [`${slug} #${i}`, slug, prog] as const))("rejeita solução errada: %s", (_, slug, prog) => {

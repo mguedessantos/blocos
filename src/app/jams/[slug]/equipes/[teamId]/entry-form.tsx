@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { Alert, Button, Input } from "@/components/ui";
 import { submitEntryAction, type JamFormState } from "../../../actions";
 
-const file = "block w-full rounded-2xl border-2 border-dashed border-line bg-white px-4 py-3 text-sm font-semibold file:mr-3 file:rounded-xl file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:font-extrabold";
+const file = "block w-full rounded-2xl border-2 border-dashed border-line bg-surface text-foreground px-4 py-3 text-sm font-semibold file:mr-3 file:rounded-xl file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:font-extrabold";
 
 export function EntryForm({ teamId, hasEntry, maxDescription, initial }: { teamId: string; hasEntry: boolean; maxDescription: number; initial: { title: string; description: string; youtubeUrl: string } | null }) {
   const [state, action, pending] = useActionState<JamFormState, FormData>(submitEntryAction.bind(null, teamId), undefined);
@@ -17,7 +17,7 @@ export function EntryForm({ teamId, hasEntry, maxDescription, initial }: { teamI
         Descrição breve
         <textarea
           name="description" required rows={4} maxLength={maxDescription} value={desc} onChange={(e) => setDesc(e.target.value)}
-          className="rounded-2xl border-2 border-line bg-white px-4 py-3 text-base font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          className="rounded-2xl border-2 border-line bg-surface text-foreground px-4 py-3 text-base font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
         />
         <span className="text-xs font-semibold text-muted">{desc.length}/{maxDescription} · Conte do que se trata o jogo e como se joga.</span>
       </label>

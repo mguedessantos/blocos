@@ -351,6 +351,9 @@ model Progress {
   status    ProgressStatus @default(NAO_INICIADO)
   stars     Int            @default(0)
   attempts  Int            @default(0)
+  /// Último projeto do editor de blocos (.sb3 com fantasias e sons do aluno), no armazenamento privado.
+  projectKey     String?
+  projectSavedAt DateTime?
   updatedAt DateTime       @updatedAt
 
   @@unique([userId, lessonId])

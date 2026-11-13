@@ -35,7 +35,7 @@ async function supabase(method: string, objectPath: string, body?: BodyInit, con
 }
 
 /** Grava e devolve a chave (ex.: "jams/2b0c…"). */
-export async function putFile(folder: "jams" | "marca", bytes: Uint8Array) {
+export async function putFile(folder: "jams" | "marca" | "projetos", bytes: Uint8Array) {
   const key = `${folder}/${randomUUID()}`;
   if (useSupabase) {
     const res = await supabase("POST", `${BUCKET}/${key}`, Buffer.from(bytes));

@@ -18,17 +18,19 @@ export function NavLinks({ items }: { items: NavItem[] }) {
       {items.map((n) => {
         const Icon = n.icon ? NAV_ICONS[n.icon] : null;
         const on = n.href === active;
+        const compact = items.length > 5 && !on;
         return (
           <Link
             key={n.href}
             href={n.href}
             aria-current={on ? "page" : undefined}
+            title={compact ? n.label : undefined}
             className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-extrabold transition-colors ${
               on ? "bg-brand-soft text-brand-shadow" : "text-muted hover:bg-black/5 hover:text-foreground"
             }`}
           >
             <LinkIcon Icon={Icon} />
-            {n.label}
+            <span className={compact ? "sr-only 2xl:not-sr-only" : undefined}>{n.label}</span>
           </Link>
         );
       })}

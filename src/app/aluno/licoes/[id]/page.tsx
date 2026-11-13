@@ -14,12 +14,6 @@ import { TheoryDone } from "./theory-done";
 
 export const metadata = { title: "Lição" };
 
-/** Lições de jogos mostram o painel de atores e cenários (definido no projeto inicial da lição). */
-function showSprites(starter: unknown) {
-  return !!starter && typeof starter === "object" && "ui" in starter && (starter as { ui?: { sprites?: boolean } }).ui?.sprites === true;
-}
-
-
 export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) {
   const user = await requireUser(["STUDENT"]);
   const { id } = await props.params;
@@ -54,7 +48,6 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
         allowedBlocks={lesson.allowedBlocks}
         starter={lesson.starterWorkspace}
         saved={data.savedWorkspace}
-        showSprites={showSprites(lesson.starterWorkspace)}
         nextHref={nextHref}
         verify={verifyLessonAction.bind(null, lesson.id)}
         header={

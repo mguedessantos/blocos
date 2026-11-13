@@ -77,7 +77,7 @@ export function Countdown({ to, label, size = "md" }: { to: string; label: strin
 
 function Unit({ v, u, big }: { v: number; u: string; big: boolean }) {
   return (
-    <span className={`rounded-xl bg-white ring-2 ring-line ${big ? "px-3 py-1" : "px-2"}`}>
+    <span className={`rounded-xl bg-surface text-foreground ring-2 ring-line ${big ? "px-3 py-1" : "px-2"}`}>
       {String(v).padStart(2, "0")}
       <span className="ml-0.5 text-xs font-bold text-muted">{u}</span>
     </span>

@@ -1,4 +1,4 @@
-import { CircleAlert, Clock, LogOut } from "lucide-react";
+import { CircleAlert, Clock, LifeBuoy, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/(auth)/actions";
@@ -32,9 +32,14 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
             <Link href="/" className="shrink-0 rounded-xl"><BrandLogo brand={brand} /></Link>
-            <div className="hidden md:block"><NavLinks items={nav} /></div>
+            <div className="hidden min-w-0 md:block"><NavLinks items={nav} /></div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex shrink-0 items-center gap-3 text-sm">
+            {user.role !== "STUDENT" && (
+              <Link href="/manual" title="Manual" aria-label="Manual da plataforma" className="grid h-10 w-10 place-items-center rounded-xl text-muted hover:bg-black/5 hover:text-foreground">
+                <LifeBuoy aria-hidden className="h-5 w-5" />
+              </Link>
+            )}
             {(user.role === "ORG_ADMIN" || user.role === "TEACHER") && (
               <AnnouncementsBell unread={unread.length}>
                 <p className="mb-2 font-display text-lg font-extrabold">Avisos</p>

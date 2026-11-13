@@ -49,7 +49,7 @@ export const mundo1: TrackContent = {
           },
         },
         editor("conheca-o-bloquinho", {
-          objetivo: "Conhecer o editor: área de blocos, palco, Executar e Verificar.",
+          objetivo: "Conhecer o editor: área de blocos, palco, bandeira verde e Verificar.",
           minutos: 10,
           passos: [
             "Projete o editor e mostre cada parte: categorias de blocos, área de montagem, palco e botões.",
@@ -79,7 +79,7 @@ export const mundo1: TrackContent = {
           minutos: 15,
           passos: ["Desenhe o plano cartesiano no quadro com o centro (0,0).", "Peça para a turma “adivinhar” onde fica x: 150, y: 100 antes de testar."],
           errosComuns: ["Trocar x por y.", "Esquecer que y negativo é para baixo."],
-        }, "Faça o Bloquinho visitar os **4 cantos** do palco usando só blocos “ir para x: y:”."),
+        }, "Faça o Bloquinho visitar os **4 cantos** do palco usando só blocos “vá para x: y:”."),
         editor("passeio-com-pausa", {
           objetivo: "Usar espera para controlar o tempo de uma animação.",
           minutos: 10,
@@ -122,7 +122,7 @@ Não existe resposta única: invente a sua!`,
             passos: ["Deixe 10 minutos de criação livre.", "Peça para 2 ou 3 alunos mostrarem a apresentação no projetor."],
             errosComuns: ["Querer escrever textos enormes: o balão mostra até 40 letras."],
           },
-          extra: "Use **ir para x: y:** para o Bloquinho aparecer em 3 lugares diferentes do palco enquanto fala.",
+          extra: "Use **vá para x: y:** para o Bloquinho aparecer em 3 lugares diferentes do palco enquanto fala.",
         },
       ],
     },
@@ -301,12 +301,12 @@ Use no PictoBlox o **sempre** que você aprendeu:
 
 1. Quando a bandeira for clicada, use **sempre**.
 2. Dentro do sempre: **mova 5 passos** e **se tocar na borda, volte**.
-3. Para o guarda não ficar de cabeça para baixo: **mude o estilo de rotação para esquerda-direita**.`,
+3. Para o guarda não ficar de cabeça para baixo: **defina o estilo de rotação para esquerda-direita**.`,
           checks: {
             checks: [
               { type: "inside", parent: ["control_forever"], child: ["motion_movesteps"], label: "O guarda anda dentro de um “sempre”" },
               { type: "inside", parent: ["control_forever"], child: ["motion_ifonedgebounce"], label: "Use “se tocar na borda, volte” dentro do “sempre”" },
-              { type: "usesAnyBlock", opcodes: ["motion_setrotationstyle"], label: "Use “mude o estilo de rotação”", bonus: true },
+              { type: "usesAnyBlock", opcodes: ["motion_setrotationstyle"], label: "Use “defina o estilo de rotação”", bonus: true },
             ],
           },
           guide: {
@@ -397,7 +397,7 @@ Até agora, só o Bloquinho estava no palco. A partir de agora você pode ter **
 Personagens de jogo parecem andar porque **trocam de fantasia** enquanto se movem. O Bloquinho tem duas fantasias: **parado** e **andando**.
 
 Quando a bandeira for clicada, **repita 10 vezes**:
-- **mover 10 passos**
+- **mova 10 passos**
 - **próxima fantasia**
 - **espere 0.2 segundos**`,
           allowedBlocks: VIDA,
@@ -455,7 +455,7 @@ Quando a bandeira for clicada: o Bloquinho diz **“Vamos passear!”** por 2 se
 Os blocos **rosa** tocam sons. Quando a bandeira for clicada:
 
 1. **toque o som Pulo**
-2. **mover 50 passos**
+2. **mova 50 passos**
 3. **toque o som Vitória até o fim**
 
 > Ligue o som do computador (ou use fones de ouvido).`,

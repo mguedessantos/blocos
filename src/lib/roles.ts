@@ -23,6 +23,7 @@ export const AREA_ROLES: Record<string, Role[]> = {
   "/professor": ["TEACHER", "ORG_ADMIN"],
   "/aluno": ["STUDENT"],
   "/jurado": ["JUDGE", "TEACHER", "ORG_ADMIN", "SUPER_ADMIN"],
+  "/manual": ["SUPER_ADMIN", "ORG_ADMIN", "TEACHER", "JUDGE"],
   "/jams": ["SUPER_ADMIN", "ORG_ADMIN", "TEACHER", "STUDENT", "JUDGE"],
 };
 

@@ -141,7 +141,7 @@ Os blocos amarelos de **Eventos** começam scripts:
 
 ## Testando
 
-Clique em **Executar** e depois use o **teclado** e o **mouse** no palco. O jogo fica esperando você até clicar em **Parar**.`,
+Clique na **bandeira verde** e depois use o **teclado** e o **mouse** no palco. O jogo fica esperando você até clicar no **botão vermelho** (parar).`,
           guide: {
             objetivo: "Entender que eventos diferentes disparam scripts diferentes, ao mesmo tempo.",
             minutos: 10,
@@ -157,7 +157,7 @@ Clique em **Executar** e depois use o **teclado** e o **mouse** no palco. O jogo
 
 1. Use **quando a tecla [seta para a direita] for pressionada** → **adicione 10 a x**.
 2. Faça outro script com a **seta para a esquerda** → **adicione -10 a x**.
-3. Clique em **Executar** e teste com o teclado!
+3. Clique na **bandeira verde** e teste com o teclado!
 
 > Na verificação, o site aperta a seta para a direita **3 vezes** e a esquerda **1 vez**. O Bloquinho precisa terminar em **x: 20**.`,
           allowedBlocks: CONTROLE,
@@ -178,7 +178,7 @@ Clique em **Executar** e depois use o **teclado** e o **mouse** no palco. O jogo
             objetivo: "Controlar um ator com eventos de tecla.",
             minutos: 10,
             passos: ["Explique que a verificação “aperta as teclas” sozinha, como um jogador-robô."],
-            errosComuns: ["Usar a mesma tecla nos dois scripts.", "Usar “mover 10 passos”: o ator anda para onde está olhando, não para o lado da seta."],
+            errosComuns: ["Usar a mesma tecla nos dois scripts.", "Usar “mova 10 passos”: o ator anda para onde está olhando, não para o lado da seta."],
           },
         },
         {
@@ -187,7 +187,7 @@ Clique em **Executar** e depois use o **teclado** e o **mouse** no palco. O jogo
           type: "EXERCICIO",
           content: `## Missão: controle completo
 
-Complete o controle: além dos lados, faça a **seta para cima** **adicionar 10 a y** e a **seta para baixo** **adicionar -10 a y**.
+Complete o controle: além dos lados, faça a **seta para cima** **adicione 10 a y** e a **seta para baixo** **adicione -10 a y**.
 
 > Na verificação: cima 2×, baixo 1×, direita 1×, esquerda 2×. O Bloquinho precisa terminar em **x: -10, y: 10**.`,
           allowedBlocks: CONTROLE,
@@ -209,7 +209,7 @@ Complete o controle: além dos lados, faça a **seta para cima** **adicionar 10 
             passos: ["Lembre: y positivo é para cima."],
             errosComuns: ["Trocar x por y."],
           },
-          extra: "Use **aponte para a direção** em cada tecla para o Bloquinho olhar para onde anda (use “mude o estilo de rotação” para ele não ficar de cabeça para baixo).",
+          extra: "Use **aponte para a direção** em cada tecla para o Bloquinho olhar para onde anda (use “defina o estilo de rotação” para ele não ficar de cabeça para baixo).",
         },
         {
           slug: "clique-em-mim",
@@ -234,7 +234,7 @@ Execute e clique no Bloquinho no palco!`,
             objetivo: "Usar o evento de clique — base de botões e menus.",
             minutos: 10,
             passos: ["Conte que botões de “Jogar” em menus funcionam assim."],
-            errosComuns: ["Esquecer de clicar em Executar antes de clicar no ator."],
+            errosComuns: ["Esquecer de clicar na bandeira verde antes de clicar no ator."],
           },
           extra: "A cada clique, faça o Bloquinho **trocar de fantasia** e **tocar um som**.",
         },
@@ -377,7 +377,7 @@ Os blocos **azul-claros** de **Sensores** fazem perguntas ao jogo:
 
 O Bloquinho vai andar até a **Parede**. No **Bloquinho**:
 
-**sempre** → **mover 5 passos** → **se tocando em [Parede]? então** → **diga “Bati!”** e **pare [tudo]**.`,
+**sempre** → **mova 5 passos** → **se tocando em [Parede]? então** → **diga “Bati!”** e **pare [tudo]**.`,
           allowedBlocks: SENSORES,
           starter: game({ sprites: [{ name: "Bloquinho", x: -150 }, { name: "Parede", character: "parede", x: 120 }] }),
           checks: {
@@ -429,7 +429,7 @@ Teste: antes de executar, arraste o Bloquinho para **perto** e depois para **lon
           type: "EXERCICIO",
           content: `## Missão: o Bloquinho e o mouse
 
-**sempre** → **aponte para [ponteiro do mouse]** → **mover 3 passos**.
+**sempre** → **aponte para [ponteiro do mouse]** → **mova 3 passos**.
 
 Execute e passeie com o mouse pelo palco!
 
@@ -487,7 +487,7 @@ O Bloquinho vai dizer **2**!`,
           xp: 35,
           content: `# 🏆 Fuja do Glitch!
 
-1. No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mover 3 passos** → **se tocando em [Bloquinho]? então** → **diga “Peguei você!”** e **pare [tudo]**.
+1. No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mova 3 passos** → **se tocando em [Bloquinho]? então** → **diga “Peguei você!”** e **pare [tudo]**.
 2. No **Bloquinho**: o **controle suave** com as 4 setas para fugir.
 
 Quanto tempo você consegue escapar?`,

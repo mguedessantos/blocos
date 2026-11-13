@@ -55,7 +55,7 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
           <h2 id="categorias" className="text-2xl font-extrabold">Categorias</h2>
           <p className="text-sm font-semibold text-muted">As equipes competem só com equipes da mesma faixa de ano escolar. Os prêmios valem para cada categoria.</p>
           <ul className="flex flex-wrap gap-2">
-            {jam.categories.map((c) => <li key={c.id} className="rounded-full border-2 border-line bg-white px-4 py-1 font-extrabold">{c.name}</li>)}
+            {jam.categories.map((c) => <li key={c.id} className="rounded-full border-2 border-line bg-surface text-foreground px-4 py-1 font-extrabold">{c.name}</li>)}
           </ul>
         </section>
       )}
@@ -96,7 +96,7 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
                 {r.feedback.length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-sm font-extrabold">O que os jurados disseram:</p>
-                    {r.feedback.map((f, i) => <blockquote key={i} className="rounded-xl bg-white px-3 py-2 text-sm">{f}</blockquote>)}
+                    {r.feedback.map((f, i) => <blockquote key={i} className="rounded-xl bg-surface text-foreground px-3 py-2 text-sm">{f}</blockquote>)}
                   </div>
                 )}
                 {r.place !== null && r.place <= 3 && (

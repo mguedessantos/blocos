@@ -25,7 +25,7 @@ Eu sou um robô que obedece **blocos de programação**. Você encaixa os blocos
 
 - Todo programa começa com o bloco **quando 🏁 for clicado**.
 - Os blocos de **Movimento** (azuis) me fazem andar e girar.
-- Quando terminar, clique em **Executar** para me ver em ação.
+- Quando terminar, clique na **bandeira verde** para me ver em ação.
 - Clique em **Verificar** para saber se você completou o desafio e ganhar estrelas.
 
 > Dica: programar é tentar, ver o que acontece e ajustar. Errar faz parte!`,
@@ -38,9 +38,9 @@ Eu sou um robô que obedece **blocos de programação**. Você encaixa os blocos
 
 Faça o Bloquinho andar **100 passos** para a direita.
 
-1. Arraste o bloco **mover 10 passos** e encaixe embaixo do bloco da bandeira.
+1. Arraste o bloco **mova 10 passos** e encaixe embaixo do bloco da bandeira.
 2. Troque o **10** por **100**.
-3. Clique em **Executar** e depois em **Verificar**.`,
+3. Clique na **bandeira verde** e depois em **Verificar**.`,
           allowedBlocks: MOVE,
           startWithFlag: true,
           checks: {
@@ -80,7 +80,7 @@ O palco é como um mapa com **coordenadas**:
 - **y** é a posição na vertical: -180 (embaixo) até 180 (em cima).
 - O centro do palco é **x: 0, y: 0**.
 
-Use o bloco **ir para x: y:** e leve o Bloquinho até **x: 150, y: 100** de uma vez só.`,
+Use o bloco **vá para x: y:** e leve o Bloquinho até **x: 150, y: 100** de uma vez só.`,
           allowedBlocks: [...MOVE, "motion_gotoxy", "motion_changexby", "motion_changeyby"],
           startWithFlag: true,
           checks: {

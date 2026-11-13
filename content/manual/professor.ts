@@ -24,7 +24,7 @@ No topo da página ficam os atalhos:
 - **Minhas turmas**: suas turmas e alunos.
 - **Currículo**: o curso completo, com o guia do professor em cada lição.
 - **Game Jam**: competições de jogos entre escolas.
-- **Manual**: este guia.
+- O ícone de **boia** abre este manual (com o botão **Baixar PDF**).
 - O **sino** mostra avisos da plataforma (um número vermelho indica avisos novos).
 - **Sair** encerra sua sessão. Use sempre em computadores compartilhados.
 
@@ -110,20 +110,37 @@ O aluno vê os mundos liberados, o próprio nível, o XP e as medalhas. O botão
 
 ## A lição
 - **Teoria**: o aluno lê e clica em **Entendi! Próxima →**.
-- **Exercícios e desafios**: o aluno monta os blocos na área da esquerda, clica em **Executar** para ver o personagem no palco e em **Verificar** para receber as estrelas.
+- **Exercícios e desafios**: abrem no editor de blocos, com a mesma cara do Scratch e do PictoBlox. Assim o aluno já aprende na ferramenta que vai usar nas game jams.
 - As lições abrem em sequência: a próxima libera quando a anterior é concluída.
 
 ![Lição no editor de blocos](aluno-licao)
 
+## O editor de blocos
+A tela ocupa a janela inteira, sem precisar rolar:
+- **À esquerda, o editor**: as categorias de blocos, a área onde o aluno monta o programa, o palco com a **bandeira verde** (roda o programa) e o **botão vermelho** (para), e a lista de atores e cenários.
+- **Abas Código, Fantasias e Sons**: o aluno pode desenhar fantasias, mudar cores e gravar ou escolher sons, como no Scratch.
+- **Escolher um ator ou cenário**: mostra primeiro os personagens da plataforma e depois os da biblioteca do editor (pessoas, animais, esportes e mais).
+- **À direita**: a missão, o **Desafio extra (opcional)** e o botão **Verificar**.
+- No topo: **Recomeçar** (volta ao projeto inicial da lição) e **Como funciona cada bloco**.
+
+> Dica: em cada lição, a paleta mostra só os blocos que aquela lição ensina. Os outros aparecem nos mundos seguintes.
+
+O projeto fica guardado sozinho, com os desenhos e sons do aluno. Se ele trocar de computador, a lição abre como ele deixou.
+
 ## Como funciona cada bloco
-O botão amarelo **Como funciona cada bloco**, no topo do editor, abre a explicação de todos os blocos daquela lição.
+O botão amarelo **Como funciona cada bloco** abre a explicação de cada bloco da lição, desenhado do mesmo jeito que aparece no editor.
 
 ![Ajuda dos blocos aberta](aluno-ajuda)
 
 ## O resultado
 Depois de **Verificar**, aparece uma janela com as estrelas (1 a 3), dicas do que falta e o botão **Próxima lição** quando o desafio foi resolvido.
 
+> Atenção: a verificação sempre começa com os atores no lugar inicial da lição. Por isso o aluno pode testar o programa várias vezes com a bandeira verde antes de verificar.
+
 ![Janela de resultado da verificação](aluno-resultado)
+
+## Levar o projeto para o PictoBlox
+No editor, **Arquivo → Baixar para o seu computador** salva o projeto como **.sb3**. Esse arquivo abre direto no PictoBlox e no Scratch.
 
 ## XP, níveis e medalhas
 Cada lição concluída dá XP. O XP sobe o nível do aluno (de Aprendiz de Blocos até Lenda do Torneio), e as conquistas viram medalhas, como "Primeiro passo", "De primeira!" e "Pronto(a) para a Jam".
@@ -211,6 +228,12 @@ O curso precisa estar liberado para a turma: página da turma → **Cursos da tu
 
 ## Uma lição aparece trancada
 As lições abrem em sequência. O aluno precisa concluir a lição obrigatória anterior.
+
+## O editor de blocos fica em "Abrindo o editor…"
+Na primeira vez, o editor é baixado para o computador (alguns segundos). Se não abrir, recarregue a página. Navegadores muito antigos podem não funcionar: use Chrome, Edge ou Firefox atualizados.
+
+## O Verificar diz que um bloco "ainda não é verificado"
+O aluno usou um bloco que não faz parte do curso (por exemplo, copiado de outro projeto). Peça para tirar esse bloco e verificar de novo.
 
 ## O envio do .sb3 foi recusado
 O arquivo precisa terminar em **.sb3** e ter no máximo 25 MB. No PictoBlox, use **Arquivo → Salvar no seu computador**.

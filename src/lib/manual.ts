@@ -15,30 +15,31 @@ export const slug = (s: string) =>
 
 export function parseBlocks(source: string): Block[] {
   const out: Block[] = [];
+  const kind = (l: string) =>
+    /^#{2,3}\s/.test(l) ? "h" : /^!\[[^\]]*\]\([a-z0-9-]+\)$/.test(l) ? "img" : l.startsWith(">") ? "quote" : /^(\d+\.|-)\s+/.test(l) ? "item" : "text";
   for (const raw of source.replace(/\r\n/g, "\n").trim().split(/\n{2,}/)) {
     const lines = raw.split("\n").map((l) => l.trimEnd()).filter(Boolean);
-    if (lines.length === 0) continue;
-    const img = /^!\[([^\]]*)\]\(([a-z0-9-]+)\)$/.exec(lines[0]);
-    if (img && lines.length === 1) {
-      out.push({ t: "img", alt: img[1], id: img[2] });
-      continue;
+    // linhas seguidas do mesmo tipo formam um bloco (ex.: "Você vê:\n- A\n- B" = parágrafo + lista)
+    for (let i = 0; i < lines.length; ) {
+      const k = kind(lines[i]);
+      let j = i + 1;
+      if (k !== "h" && k !== "img") while (j < lines.length && kind(lines[j]) === k) j++;
+      const group = lines.slice(i, j);
+      i = j;
+      if (k === "h") {
+        const [, hashes, text] = /^(#{2,3})\s+(.*)$/.exec(group[0])!;
+        out.push({ t: hashes.length === 2 ? "h2" : "h3", text, id: slug(text) });
+      } else if (k === "img") {
+        const [, alt, id] = /^!\[([^\]]*)\]\(([a-z0-9-]+)\)$/.exec(group[0])!;
+        out.push({ t: "img", alt, id });
+      } else if (k === "quote") {
+        const text = group.map((l) => l.replace(/^>\s?/, "")).join(" ");
+        const m = /^(Dica|Atenção):\s*(.*)$/.exec(text);
+        out.push({ t: "callout", kind: m?.[1] === "Atenção" ? "atencao" : "dica", text: m ? m[2] : text });
+      } else if (k === "item") {
+        out.push({ t: /^\d+\./.test(group[0]) ? "ol" : "ul", items: group.map((l) => l.replace(/^(\d+\.|-)\s+/, "")) });
+      } else out.push({ t: "p", text: group.join(" ") });
     }
-    const h = /^(#{2,3})\s+(.*)$/.exec(lines[0]);
-    if (h && lines.length === 1) {
-      out.push({ t: h[1].length === 2 ? "h2" : "h3", text: h[2], id: slug(h[2]) });
-      continue;
-    }
-    if (lines.every((l) => l.startsWith(">"))) {
-      const text = lines.map((l) => l.replace(/^>\s?/, "")).join(" ");
-      const m = /^(Dica|Atenção):\s*(.*)$/.exec(text);
-      out.push({ t: "callout", kind: m?.[1] === "Atenção" ? "atencao" : "dica", text: m ? m[2] : text });
-      continue;
-    }
-    if (lines.every((l) => /^(\d+\.|-)\s+/.test(l))) {
-      out.push({ t: /^\d+\./.test(lines[0]) ? "ol" : "ul", items: lines.map((l) => l.replace(/^(\d+\.|-)\s+/, "")) });
-      continue;
-    }
-    out.push({ t: "p", text: lines.join(" ") });
   }
   return out;
 }

@@ -85,7 +85,7 @@ Agora é um jogo de reflexo: tente clicar nele!`,
           guide: {
             objetivo: "Usar aleatoriedade para deixar o jogo imprevisível.",
             minutos: 10,
-            passos: ["Mostre a diferença entre “vá para posição aleatória” e “ir para x: (número aleatório) y: (número aleatório)”."],
+            passos: ["Mostre a diferença entre “vá para posição aleatória” e “vá para x: (número aleatório) y: (número aleatório)”."],
             errosComuns: ["Sortear valores que saem do palco (ex.: x até 500)."],
           },
           extra: "Some 1 ponto a cada clique e faça o Bloquinho ficar **menor** a cada acerto.",
@@ -131,7 +131,7 @@ Atores conversam com **mensagens**:
 **Clones** são cópias de um ator criadas durante o jogo — perfeitos para tiros, inimigos e moedas. No **Meteoro**:
 
 1. Quando a bandeira for clicada → **esconda** → **repita 5 vezes**: **crie clone de [este ator]** e **espere 0.5 segundos**.
-2. **quando eu começar como clone** → **mostre** → **ir para x: (número aleatório entre -200 e 200) y: 170** → **repita 35 vezes: adicione -10 a y** → **apague este clone**.`,
+2. **quando eu começar como um clone** → **mostre** → **vá para x: (número aleatório entre -200 e 200) y: 170** → **repita 35 vezes: adicione -10 a y** → **apague este clone**.`,
           allowedBlocks: TODOS,
           starter: game({ backdrops: ["espaco"], sprites: [{ name: "Meteoro", character: "meteoro", y: 170 }] }),
           checks: {
@@ -234,11 +234,11 @@ Todo jogo tem telas: **início**, **jogo** e **fim**. Este projeto já tem os ce
           xp: 25,
           content: `## Missão: clones no PictoBlox
 
-Refaça o **exército de clones** no PictoBlox: **crie clone de [este ator]**, **quando eu começar como clone** e **apague este clone**.`,
+Refaça o **exército de clones** no PictoBlox: **crie clone de [este ator]**, **quando eu começar como um clone** e **apague este clone**.`,
           checks: {
             checks: [
               { type: "usesAnyBlock", opcodes: ["control_create_clone_of"], label: "Use “crie clone de …”" },
-              { type: "usesAnyBlock", opcodes: ["control_start_as_clone"], label: "Use “quando eu começar como clone”" },
+              { type: "usesAnyBlock", opcodes: ["control_start_as_clone"], label: "Use “quando eu começar como um clone”" },
               { type: "usesAnyBlock", opcodes: ["control_delete_this_clone"], label: "Apague o clone quando ele não for mais necessário" },
             ],
           },
@@ -355,9 +355,9 @@ Faça o Bloquinho andar para a **direita** e para a **esquerda** com as setas, u
           type: "EXERCICIO",
           content: `## Etapa 3: a moeda cai do céu
 
-Na **Moeda**: quando a bandeira for clicada → **ir para x: 0 y: 170** → **sempre**:
+Na **Moeda**: quando a bandeira for clicada → **vá para x: 0 y: 170** → **sempre**:
 - **adicione -5 a y**
-- **se** posição y < -170 **então** → **ir para x: (número aleatório entre -200 e 200) y: 170**`,
+- **se** posição y < -170 **então** → **vá para x: (número aleatório entre -200 e 200) y: 170**`,
           allowedBlocks: TODOS,
           starter: game({
             backdrops: ["floresta"],
@@ -500,7 +500,7 @@ Parabéns: você fez um jogo completo! 🎉`,
           type: "EXERCICIO",
           content: `## Etapa 2: perseguição
 
-No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mover 2 passos**.
+No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mova 2 passos**.
 
 > Ajuste a velocidade: rápido demais fica impossível, devagar demais fica sem graça!`,
           allowedBlocks: TODOS,
@@ -530,7 +530,7 @@ No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mover 2 passos**
           content: `## Etapa 3: pegou!
 
 1. No **Glitch**, dentro do sempre: **se tocando em [Bloquinho]** → **transmita [pegou]**.
-2. No **Bloquinho**: **quando eu receber [pegou]** → **diga “Ai!” por 1 segundo** e **ir para x: -150 y: 0**.`,
+2. No **Bloquinho**: **quando eu receber [pegou]** → **diga “Ai!” por 1 segundo** e **vá para x: -150 y: 0**.`,
           allowedBlocks: TODOS,
           starter: game({
             backdrops: ["castelo"],

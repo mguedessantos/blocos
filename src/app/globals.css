@@ -123,77 +123,6 @@ h1, h2, h3, .font-display {
   .no-print { display: none !important; }
 }
 
-/* ───────────── Blockly ─────────────
-   Blockly esconde flyout/barras com o atributo SVG display="none"; o preflight do Tailwind
-   (svg { display: block }) sobrescrevia isso e a barra lateral ficava na tela. */
-svg[display="none"],
-svg [display="none"] {
-  display: none !important;
-}
-
-/* Menu de blocos: coluna estreita clara, categorias como círculos coloridos com ícone e nome embaixo */
-.blocos-editor .blocklyToolboxDiv,
-.blocos-editor .blocklyToolbox {
-  background: #f4f2fb;
-  border-right: 2px solid #e2def5;
-  padding: 10px 4px;
-  width: 84px;
-}
-.blocos-editor .blocklyToolboxCategory,
-.blocos-editor .blocklyTreeRow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  height: auto !important;
-  min-height: 64px;
-  margin: 2px 0;
-  padding: 6px 2px !important;
-  border-radius: 14px;
-  background: transparent !important;
-  border: 0 !important;
-  cursor: pointer;
-}
-.blocos-editor .blocklyToolboxCategory:hover { background: #e9e5fb !important; }
-.blocos-editor .blocklyToolboxCategoryContainer .blocklyTreeRowContentContainer,
-.blocos-editor .blocklyToolboxCategory > div { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.blocos-editor .blocos-cat-icone {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background: var(--cat, #8b6cff);
-  color: #ffffff;
-  box-shadow: 0 3px 0 rgb(0 0 0 / 0.22);
-  transition: transform 150ms ease-out;
-}
-.blocos-editor .blocklyToolboxSelected .blocos-cat-icone,
-.blocos-editor .blocklyTreeSelected .blocos-cat-icone {
-  box-shadow: 0 0 0 3px #f4f2fb, 0 0 0 6px var(--cat, #8b6cff);
-  transform: scale(1.06);
-}
-.blocos-editor .blocklyTreeLabel,
-.blocos-editor .blocklyToolboxCategoryLabel {
-  font-family: var(--font-nunito), system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 12px;
-  line-height: 1.1;
-  text-align: center;
-  color: #1f1d2b !important;
-  padding: 0 !important;
-}
-/* Paleta de blocos com fundo próprio: dá para ver onde termina a paleta e começa a área de programar */
-.blocos-editor .blocklyFlyoutBackground {
-  fill: #ebe7fb;
-  fill-opacity: 1;
-  stroke: #d6cff5;
-  stroke-width: 2px;
-}
-.blocos-editor .blocklyMainBackground {
-  stroke: none;
-}
-
 /* ───────────── Tema "Noite estrelada" (área do aluno) ─────────────
    Contrato de cores em .tastemaker/style-lock.md. As cores da interface ficam fixas aqui
    (cores de escola escuras sumiriam no fundo noturno); logo e nome da escola continuam no topo. */
@@ -266,15 +195,3 @@ svg [display="none"] {
 /* Links/textos "da marca" no escuro: violeta claro (o #7A55F5 é só para fundo de botão) */
 .tema-noite .text-brand { color: #b39cff; }
 
-/* Editor de blocos no modo escuro (botão "Modo escuro" na barra da lição).
-   Só o entorno muda; os blocos mantêm as cores, que as crianças usam para reconhecê-los. */
-.blocos-editor.editor-escuro .blocklyToolboxDiv,
-.blocos-editor.editor-escuro .blocklyToolbox { background: #16123d; border-right-color: #3a3375; }
-.blocos-editor.editor-escuro .blocklyToolboxCategory:hover { background: #2c2466 !important; }
-.blocos-editor.editor-escuro .blocklyToolboxCategoryLabel,
-.blocos-editor.editor-escuro .blocklyTreeLabel { color: #f4f1ff !important; }
-.blocos-editor.editor-escuro .blocklyToolboxSelected .blocos-cat-icone,
-.blocos-editor.editor-escuro .blocklyTreeSelected .blocos-cat-icone { box-shadow: 0 0 0 3px #16123d, 0 0 0 6px var(--cat, #8b6cff); }
-.blocos-editor.editor-escuro .blocklyFlyoutBackground { fill: #1f1a4d; stroke: #3a3375; }
-.blocos-editor.editor-escuro pattern line { stroke: #2c2660; }
-.blocos-editor.editor-escuro .blocklyZoom > image, .blocos-editor.editor-escuro .blocklyTrash > image { filter: invert(1) hue-rotate(180deg) brightness(1.4); }

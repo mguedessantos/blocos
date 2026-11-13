@@ -3,7 +3,8 @@ import { awardBadges } from "./badges";
 import { Prisma } from "@/generated/prisma/client";
 import { compileProject, normalizeProject } from "../blocks/project";
 import { checkModel, checkProject, checksSchema, type CheckResult } from "../checker";
-import { modelFromSb3, Sb3Error } from "../sb3/project";
+import { modelFromSb3, readSb3, Sb3Error } from "../sb3/project";
+import { deleteFile, getFile, putFile } from "../storage";
 import { db } from "../db";
 import type { CurrentUser } from "./auth";
 import { AccessError } from "./classes";
@@ -283,4 +284,38 @@ export async function getCatalogTrack(user: CurrentUser, trackId: string) {
   });
   if (!track) throw new AccessError("Trilha não encontrada.");
   return track;
+}
+
+// ───────────── Projeto do editor de blocos (.sb3 completo, por aluno e lição) ─────────────
+
+/** Guarda o último .sb3 do aluno nesta lição (substitui o anterior). Lança Sb3Error se o arquivo não for um projeto. */
+export async function saveLessonProject(user: CurrentUser, lessonId: string, bytes: Uint8Array) {
+  const { lesson, locked } = await getStudentLesson(user, lessonId);
+  if (locked) throw new AccessError("Conclua a lição anterior primeiro.");
+  await readSb3(bytes); // valida: zip com project.json, dentro do limite
+  const key = await putFile("projetos", bytes);
+  const where = { userId_lessonId: { userId: user.id, lessonId: lesson.id } };
+  const old = await db.progress.findUnique({ where, select: { projectKey: true } });
+  const savedAt = new Date();
+  await db.progress.upsert({ where, create: { userId: user.id, lessonId: lesson.id, projectKey: key, projectSavedAt: savedAt }, update: { projectKey: key, projectSavedAt: savedAt } });
+  if (old?.projectKey) await deleteFile(old.projectKey).catch(() => {});
+  return savedAt;
+}
+
+/** O último .sb3 guardado deste aluno nesta lição, ou null. */
+export async function getLessonProject(user: CurrentUser, lessonId: string) {
+  const { lesson } = await getStudentLesson(user, lessonId);
+  const p = await db.progress.findUnique({ where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } }, select: { projectKey: true, projectSavedAt: true } });
+  if (!p?.projectKey || !p.projectSavedAt) return null;
+  return { bytes: await getFile(p.projectKey), savedAt: p.projectSavedAt };
+}
+
+/** "Recomeçar": apaga o projeto guardado (a lição volta ao projeto inicial). */
+export async function clearLessonProject(user: CurrentUser, lessonId: string) {
+  const { lesson } = await getStudentLesson(user, lessonId);
+  const where = { userId_lessonId: { userId: user.id, lessonId: lesson.id } };
+  const p = await db.progress.findUnique({ where, select: { projectKey: true } });
+  if (!p?.projectKey) return;
+  await db.progress.update({ where, data: { projectKey: null, projectSavedAt: null } });
+  await deleteFile(p.projectKey).catch(() => {});
 }

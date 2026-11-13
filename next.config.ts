@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
-  /* config options here */
+  // o PDF do manual embute as capturas lidas do disco
+  outputFileTracingIncludes: { "/manual/pdf": ["./public/manual/*.png"] },
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {

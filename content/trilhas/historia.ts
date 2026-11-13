@@ -11,7 +11,7 @@ Eu sou o **Bloquinho**, um robô ajudante, e preciso de você! Cada missão que 
 
 ## Como funciona a jornada
 
-- Você aprende e cria **tudo aqui no site**: monte os blocos, clique em **Executar** para ver e em **Verificar** para ganhar estrelas.
+- Você aprende e cria **tudo aqui no site**: monte os blocos, clique na **bandeira verde** para ver e em **Verificar** para ganhar estrelas.
 - Cada missão vale **estrelas** e **XP** — a sua aura!
 - Os **desafios extras** são para quem quer ir além.
 - Tem o **PictoBlox** no computador? No fim de cada mundo há uma missão opcional 🚀 para levar o que você aprendeu para lá.`;

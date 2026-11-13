@@ -18,10 +18,25 @@ const move = (s: number) => ({ type: "motion_movesteps", inputs: { STEPS: n(s) }
 /** Coloca um programa no rascunho local da lição (o editor carrega o rascunho ao abrir). */
 async function openWithProgram(page: Page, state: object) {
   const lessonId = new URL(page.url()).pathname.split("/").pop()!;
-  await page.evaluate(([k, v]) => localStorage.setItem(k, v), [`blocos:licao:${lessonId}`, JSON.stringify(state)]);
+  await page.evaluate(async ([k, v]) => {
+    localStorage.setItem(k, v);
+    await new Promise((r) => { const req = indexedDB.deleteDatabase("blocos-rascunhos"); req.onsuccess = req.onerror = req.onblocked = r; });
+    await fetch(`/api/licoes/${location.pathname.split("/").pop()}/projeto`, { method: "DELETE" }); // cópia do servidor
+  }, [`blocos:licao:${lessonId}`, JSON.stringify(state)]);
   await page.reload();
-  await expect(page.locator(".blocklySvg").first()).toBeVisible();
+  await editorReady(page);
 }
+
+/** O editor de blocos (iframe) abriu com o projeto. */
+const editorFrame = (page: Page) => page.frameLocator("iframe[title='Editor de blocos']");
+async function editorReady(page: Page) {
+  await expect(editorFrame(page).locator(".blocklySvg").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Abrindo o editor de blocos")).toBeHidden({ timeout: 30_000 });
+  await page.waitForTimeout(800); // a área de blocos termina de redesenhar o projeto recém-carregado
+}
+/** Posição x do ator selecionado, como aparece no painel do ator. */
+const spriteX = (page: Page) => editorFrame(page).locator('[class*="sprite-info_sprite-info"] input').nth(1);
+const greenFlag = (page: Page) => editorFrame(page).locator('[class*="green-flag_green-flag"]').first();
 
 async function loginStudent(page: Page, code: string, user: string, pass: string) {
   await page.goto(`${ESCOLA}/entrar-aluno`);
@@ -120,37 +135,42 @@ test("lição inexistente ou fora das trilhas do aluno dá 404", async ({ page }
   await expect(page.getByText(/could not be found|não encontrad/i)).toBeVisible();
 });
 
-test("arrastar um bloco de verdade e executar move o personagem", async ({ page }) => {
+test("arrastar um bloco de verdade e clicar na bandeira move o personagem", async ({ page }) => {
+  test.setTimeout(60_000);
   await loginStudent(page, "ROBO42", "bruno", "gato123");
   await openFirstExercise(page);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  await expect(page.locator(".blocklyBlockCanvas .blocklyDraggable", { hasText: "quando" }).first()).toBeVisible();
+  await editorReady(page);
+  // o projeto salvo pode ter blocos de execuções anteriores: volta ao inicial
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Recomeçar" }).click();
+  await editorReady(page);
 
-  await page.getByRole("treeitem", { name: "Movimento" }).click();
-  const src = page.locator(".blocklyFlyout .blocklyDraggable").first();
+  const ed = editorFrame(page);
+  const hat = ed.locator(".blocklyBlockCanvas .blocklyDraggable", { hasText: "quando" }).first();
+  await expect(hat).toBeVisible();
+  // a paleta só mostra os blocos liberados na lição
+  await expect(ed.locator(".blocklyFlyout .blocklyDraggable", { hasText: "mude x para" })).toHaveCount(0);
+  const src = ed.locator(".blocklyFlyout .blocklyDraggable", { hasText: "mova" }).first();
   await expect(src).toBeVisible();
-  const sb = (await src.boundingBox())!;
-  const hat = (await page.locator(".blocklyBlockCanvas .blocklyDraggable", { hasText: "quando" }).first().boundingBox())!;
-  await page.mouse.move(sb.x + 10, sb.y + 10);
-  await page.mouse.down();
-  await page.mouse.move(hat.x + 12, hat.y + hat.height + 12, { steps: 15 });
-  await page.mouse.up();
+  // arrasta até encaixar embaixo da bandeira (sob carga o editor pode perder o primeiro arraste)
+  await expect(async () => {
+    const sb = (await src.boundingBox())!;
+    const hb = (await hat.boundingBox())!;
+    await page.mouse.move(sb.x + 8, sb.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(hb.x + 10, hb.y + hb.height + 6, { steps: 15 });
+    await page.mouse.up();
+    await expect(hat).toContainText("mova", { timeout: 1500 });
+  }).toPass({ timeout: 20_000 });
 
-  await page.getByRole("button", { name: "Executar", exact: true }).click();
-  await expect(page.getByRole("img", { name: /Bloquinho em x 10, y 0/ })).toBeVisible();
-});
+  await greenFlag(page).click();
+  await expect(spriteX(page)).toHaveValue("10");
 
-test("fechar a categoria esconde a gaveta de blocos e a barra de rolagem", async ({ page }) => {
-  await loginStudent(page, "ROBO42", "bruno", "gato123");
-  await openFirstExercise(page);
-  await expect(page.locator(".blocklyBlockCanvas .blocklyDraggable", { hasText: "quando" }).first()).toBeVisible();
-  const cat = page.getByRole("treeitem", { name: "Movimento" });
-  await cat.click();
-  await expect(page.locator(".blocklyFlyout").first()).toBeVisible();
-  await cat.click(); // fecha
-  await expect(page.locator("svg.blocklyToolboxFlyout")).toBeHidden();
-  await expect(page.locator(".blocklyFlyoutScrollbar[height]")).toBeHidden();
+  // ao verificar, o projeto completo (.sb3) fica guardado no servidor para abrir em outro computador
+  await page.getByRole("button", { name: "Verificar", exact: true }).click();
+  await expect(page.getByRole("status", { name: "Resultado da verificação" })).toBeVisible();
+  const lessonId = new URL(page.url()).pathname.split("/").pop();
+  await expect.poll(() => page.evaluate(async (u) => (await fetch(u)).status, `/api/licoes/${lessonId}/projeto`)).toBe(200);
 });
 
 test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ page }) => {
@@ -164,18 +184,16 @@ test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ p
     await setas.click();
   }
   await expect(page.getByRole("heading", { level: 1, name: "Setas do teclado" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Atores e palco" })).toBeVisible();
 
   const game = project({ sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(-10)], [flag()]] }] });
   await openWithProgram(page, game);
-  await page.getByRole("button", { name: "Executar", exact: true }).click();
-  await expect(page.getByText("Jogando!")).toBeVisible();
+  await greenFlag(page).click();
+  await editorFrame(page).locator('[class*="stage_stage"] canvas').first().click({ position: { x: 20, y: 20 } }); // o palco recebe o teclado
   for (let i = 0; i < 3; i++) {
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(80);
   }
-  await expect(page.getByRole("img", { name: /Bloquinho em x 30, y 0/ })).toBeVisible();
-  await page.getByRole("button", { name: "Parar" }).click();
+  await expect(spriteX(page)).toHaveValue("30");
 
   await page.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toContainText("Perfeito");
