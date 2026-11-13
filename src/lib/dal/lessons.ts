@@ -319,3 +319,33 @@ export async function clearLessonProject(user: CurrentUser, lessonId: string) {
   await db.progress.update({ where, data: { projectKey: null, projectSavedAt: null } });
   await deleteFile(p.projectKey).catch(() => {});
 }
+
+// ───────────── Professor dando aula (projeção) ─────────────
+
+/** Uma lição do currículo para o professor, com a trilha e as vizinhas (para navegar durante a aula). */
+export async function getCatalogLesson(user: CurrentUser, lessonId: string) {
+  const found = await db.lesson.findFirst({ where: { id: lessonId, draft: false }, select: { module: { select: { trackId: true } } } });
+  if (!found) throw new AccessError("Lição não encontrada.");
+  const track = await getCatalogTrack(user, found.module.trackId); // confere o acesso ao curso
+  const all = track.modules.flatMap((m) => m.lessons);
+  const i = all.findIndex((l) => l.id === lessonId);
+  return { track, lesson: all[i], index: i + 1, total: all.length, prevId: all[i - 1]?.id ?? null, nextId: all[i + 1]?.id ?? null };
+}
+
+/** O professor resolvendo junto com a turma: verifica igual ao aluno, mas NÃO grava progresso nem XP. */
+export async function previewAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<{ ok: true; result: CheckResult } | { ok: false; error: string }> {
+  const { lesson } = await getCatalogLesson(user, lessonId);
+  if (lesson.type === "TEORIA" || lesson.mode === "SB3") return { ok: false, error: "Esta lição não tem exercício no editor." };
+  if (typeof workspaceJson !== "string" || workspaceJson.length > MAX_WORKSPACE_BYTES) return { ok: false, error: "Programa grande demais." };
+  let workspace: ReturnType<typeof normalizeProject>;
+  try {
+    const parsed: unknown = JSON.parse(workspaceJson);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+    workspace = normalizeProject(parsed);
+  } catch {
+    return { ok: false, error: "Não consegui ler o programa. Tente de novo." };
+  }
+  const checks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
+  if (!checks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada." };
+  return { ok: true, result: checkProject(compileProject(workspace), checks.data) };
+}

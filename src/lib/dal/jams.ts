@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import type { JamScope, PrizeRecipient } from "@/generated/prisma/enums";
-import { generateKidPassword } from "../credentials";
+import { DEFAULT_STAFF_PASSWORD } from "../credentials";
 import { db } from "../db";
 import { docExtOf, FileError, findIdentityLeaks, MAX_DOC_BYTES, MAX_PROJECT_BYTES, sanitizeDocx, sanitizePdf, sanitizeSb3 } from "../jam-files";
 import {
@@ -278,8 +278,8 @@ export async function addJudge(user: CurrentUser, jamId: string, name: string, e
     if (existing.role === "STUDENT" || existing.deletedAt) throw new AccessError("Esta conta não pode ser jurada.");
     judgeId = existing.id;
   } else {
-    password = `${generateKidPassword()}-${generateKidPassword()}`;
-    const u = await db.user.create({ data: { role: "JUDGE", name, email, passwordHash: await bcrypt.hash(password, 10) } });
+    password = DEFAULT_STAFF_PASSWORD; // troca obrigatória no primeiro login
+    const u = await db.user.create({ data: { role: "JUDGE", name, email, passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true } });
     judgeId = u.id;
   }
   await db.jamJudge.upsert({ where: { jamId_userId: { jamId, userId: judgeId } }, create: { jamId, userId: judgeId }, update: {} });

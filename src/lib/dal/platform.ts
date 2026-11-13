@@ -1,9 +1,8 @@
 import "server-only";
-import { randomInt } from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { Role } from "@/generated/prisma/enums";
 import { cleanCity, isUF, TRASH_DAYS } from "../br";
-import { generateKidPassword } from "../credentials";
+import { DEFAULT_STAFF_PASSWORD } from "../credentials";
 import { slugError } from "../slug";
 import { db } from "../db";
 import {
@@ -286,10 +285,9 @@ export async function markAllAnnouncementsRead(user: CurrentUser) {
 }
 
 // ───────────── Dono cria escolas e contas ─────────────
-
-/** Senha temporária forte (o dono repassa; a pessoa pode trocar depois). */
+/** Senha padrão (o dono repassa); a pessoa é obrigada a trocá-la no primeiro login. */
 function tempPassword() {
-  return `${generateKidPassword()}-${generateKidPassword()}-${randomInt(10, 99)}`;
+  return DEFAULT_STAFF_PASSWORD;
 }
 
 export type NewSchoolInput = {
@@ -321,7 +319,7 @@ export async function createSchoolAsOwner(user: CurrentUser, i: NewSchoolInput) 
         subscription: { create: { planId: i.planId, status: "ACTIVE" } },
       },
     });
-    await tx.user.create({ data: { role: "ORG_ADMIN", name: i.adminName, email: i.adminEmail, passwordHash, organizationId: o.id } });
+    await tx.user.create({ data: { role: "ORG_ADMIN", name: i.adminName, email: i.adminEmail, passwordHash, mustChangePassword: true, organizationId: o.id } });
     await tx.auditLog.create({ data: { organizationId: o.id, actorId: user.id, action: "plataforma.escola.criar", target: o.slug } });
     return o;
   });
@@ -335,7 +333,7 @@ export async function addStaffAsOwner(user: CurrentUser, orgId: string, role: "O
   if (!org || org.deletedAt) throw new AccessError("Escola não encontrada.");
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) throw new AccessError("Já existe uma conta com este email.");
   const password = tempPassword();
-  await db.user.create({ data: { role, name, email, passwordHash: await bcrypt.hash(password, 10), organizationId: org.id } });
+  await db.user.create({ data: { role, name, email, passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true, organizationId: org.id } });
   await audit(user, "plataforma.conta.criar", email, org.id, { role });
   return { email, password };
 }
@@ -346,7 +344,7 @@ export async function resetPasswordAsOwner(user: CurrentUser, userId: string) {
   const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, role: true, email: true, username: true, organizationId: true } });
   if (!target || target.role === "SUPER_ADMIN") throw new AccessError("Conta não encontrada.");
   const password = tempPassword();
-  await db.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(password, 10) } });
+  await db.user.update({ where: { id: userId }, data: { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true } });
   await audit(user, "plataforma.conta.nova-senha", userId, target.organizationId);
   return { login: target.email ?? target.username ?? "", password };
 }

@@ -19,7 +19,7 @@ export function AddJudgeForm({ jamId }: { jamId: string }) {
           {state.ok}
           {state.password && (
             <p className="mt-1 font-semibold">
-              Senha temporária: <code className="rounded bg-white px-2 py-0.5 font-mono text-base">{state.password}</code> — envie ao jurado; ela não será mostrada de novo.
+              Senha padrão: <code className="rounded bg-white px-2 py-0.5 font-mono text-base">{state.password}</code>. Envie ao jurado: no primeiro acesso ele cria a própria senha.
               O acesso é pelo site principal, em “Entrar”.
             </p>
           )}

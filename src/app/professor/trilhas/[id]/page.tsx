@@ -1,9 +1,9 @@
-import { ArrowLeft, Clock, GraduationCap, Map as MapIcon, Rocket, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, GraduationCap, Map as MapIcon, Presentation, Rocket, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LESSON_KIND } from "@/components/lesson-icon";
 import { Markdown } from "@/components/markdown";
-import { PageHeader } from "@/components/ui";
+import { buttonClass, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getCatalogTrack } from "@/lib/dal/lessons";
@@ -33,6 +33,11 @@ export default async function TrilhaProfessorPage(props: PageProps<"/professor/t
         title={track.title}
         subtitle={`${track.description} · cerca de ${Math.max(1, Math.round(total / 50))} aula(s) de 50 min`}
       />
+      {all[0] && (
+        <Link href={`/professor/licoes/${all[0].id}`} className={buttonClass("primary", "md", "w-fit")}>
+          <Presentation aria-hidden className="h-5 w-5" /> Começar a aula deste mundo
+        </Link>
+      )}
       {track.story && <p className="clay border-l-8 !border-l-brand-2 p-5 font-semibold italic text-muted">{track.story}</p>}
 
       {track.modules.map((m) => (
@@ -54,6 +59,9 @@ export default async function TrilhaProfessorPage(props: PageProps<"/professor/t
                     <span className="block font-extrabold">{l.title}</span>
                   </span>
                   {l.mode === "SB3" && <Rocket aria-label="Missão no PictoBlox" className="h-5 w-5 text-brand" />}
+                  <Link href={`/professor/licoes/${l.id}`} className={buttonClass("primary", "sm")} title="Abrir como o aluno vê, para resolver junto com a turma">
+                    <Presentation aria-hidden className="h-4 w-4" /> Dar aula
+                  </Link>
                   {min > 0 && (
                     <span className="inline-flex items-center gap-1 text-sm font-bold text-muted"><Clock aria-hidden className="h-4 w-4" /> {min} min</span>
                   )}

@@ -191,6 +191,13 @@ async function main() {
 
     await shiftJam(jamId, "JULGAMENTO");
     const judge = await staff(browser, ROOT, judgeEmail, judgePassword);
+    // jurado novo entra com a senha padrão e cria a própria senha (também vira captura)
+    await judge.waitForURL(/\/trocar-senha/);
+    await shot(judge, "trocar-senha");
+    await judge.getByLabel(/^Nova senha/).fill("jurada-senha-1");
+    await judge.getByLabel("Repita a nova senha").fill("jurada-senha-1");
+    await judge.getByRole("button", { name: "Salvar e continuar" }).click();
+    await judge.waitForURL(/\/jurado/);
     await judge.goto(`${ROOT}/jurado/${jamId}`);
     await shot(judge, "jurado-lista");
     await judge.getByRole("link", { name: /Projeto [2-9A-Z]{4}/ }).first().click();

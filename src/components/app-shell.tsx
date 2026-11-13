@@ -1,4 +1,4 @@
-import { CircleAlert, Clock, LifeBuoy, LogOut } from "lucide-react";
+import { CircleAlert, Clock, KeyRound, LifeBuoy, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/(auth)/actions";
@@ -29,16 +29,21 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
   return (
     <div className={`flex flex-1 flex-col ${user.role === "STUDENT" ? "tema-noite" : ""}`}>
       <header className="no-print sticky top-0 z-30 border-b-2 border-line bg-[var(--nav-bg)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
-          <div className="flex min-w-0 items-center gap-6">
+        <div className="flex w-full items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-6">
             <Link href="/" className="shrink-0 rounded-xl"><BrandLogo brand={brand} /></Link>
-            <div className="hidden min-w-0 md:block"><NavLinks items={nav} /></div>
+            <div className="hidden min-w-0 flex-1 md:block"><NavLinks items={nav} /></div>
           </div>
           <div className="flex shrink-0 items-center gap-3 text-sm">
             {user.role !== "STUDENT" && (
-              <Link href="/manual" title="Manual" aria-label="Manual da plataforma" className="grid h-10 w-10 place-items-center rounded-xl text-muted hover:bg-black/5 hover:text-foreground">
-                <LifeBuoy aria-hidden className="h-5 w-5" />
-              </Link>
+              <>
+                <Link href="/manual" title="Manual" aria-label="Manual da plataforma" className="grid h-10 w-10 place-items-center rounded-xl text-muted hover:bg-black/5 hover:text-foreground">
+                  <LifeBuoy aria-hidden className="h-5 w-5" />
+                </Link>
+                <Link href="/trocar-senha" title="Trocar a senha" aria-label="Trocar a senha" className="grid h-10 w-10 place-items-center rounded-xl text-muted hover:bg-black/5 hover:text-foreground">
+                  <KeyRound aria-hidden className="h-5 w-5" />
+                </Link>
+              </>
             )}
             {(user.role === "ORG_ADMIN" || user.role === "TEACHER") && (
               <AnnouncementsBell unread={unread.length}>
@@ -55,11 +60,11 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
                 </ul>
               </AnnouncementsBell>
             )}
-            <div className="hidden text-right leading-tight sm:block">
+            <div className="hidden text-right leading-tight 2xl:block">
               <p className="font-extrabold">{user.name}</p>
               <p className="text-xs font-semibold text-muted">{ROLE_LABEL[user.role]}{brand.orgName ? ` · ${brand.orgName}` : ""}</p>
             </div>
-            <span aria-hidden className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-2 font-display text-lg font-extrabold text-night shadow-[0_3px_0_rgb(15_23_42/0.15)]">
+            <span title={user.name} className="grid h-10 w-10 place-items-center rounded-2xl bg-brand-2 font-display text-lg font-extrabold text-night shadow-[0_3px_0_rgb(15_23_42/0.15)]">
               {initial}
             </span>
             <form action={logout}>
@@ -80,7 +85,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
         </div>
       )}
       {banner && <SubscriptionBanner banner={banner} canManage={user.role === "ORG_ADMIN"} />}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+      <main className={`mx-auto w-full flex-1 px-4 py-8 sm:px-6 ${user.role === "STUDENT" ? "max-w-6xl" : "max-w-screen-2xl"}`}>{children}</main>
       <footer className="no-print flex justify-center p-4"><PoweredBy brand={brand} /></footer>
     </div>
   );

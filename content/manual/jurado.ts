@@ -8,8 +8,12 @@ export const JURADO: ManualChapter[] = [
 Obrigado por ajudar a avaliar! Você recebeu um login da organização da game jam.
 
 1. Abra a plataforma e clique em **Sou professor(a), coordenação ou jurado(a)**.
-2. Entre com o **Email** e a **Senha** que recebeu.
-3. No menu, clique em **Avaliar** para ver as jams em que você é jurado(a).
+2. Entre com o **Email** e a **senha padrão** que recebeu.
+3. No primeiro acesso, a plataforma pede para você **criar a sua própria senha** (mínimo 8 caracteres).
+
+![Tela para criar a sua senha no primeiro acesso](trocar-senha)
+
+4. No menu, clique em **Avaliar** para ver as jams em que você é jurado(a).
 
 As entregas aparecem para avaliação quando a jam entra na fase **Em julgamento** (logo depois do fim do prazo de entrega).
 

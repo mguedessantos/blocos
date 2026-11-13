@@ -74,17 +74,17 @@ export function AnnouncementForm({ schools, cities }: { schools: { id: string; n
   );
 }
 
-/** Mostra login + senha temporária UMA vez, com botão de copiar. */
+/** Mostra login + senha padrão, com botão de copiar. */
 function Credentials({ state }: { state: FormState }) {
   if (!state?.password) return null;
   const text = `Login: ${state.login}
-Senha temporária: ${state.password}`;
+Senha padrão: ${state.password} (troque no primeiro acesso)`;
   return (
     <div role="status" className="space-y-2 rounded-2xl border-2 border-green-300 bg-green-50 p-4 text-sm">
       <p className="font-extrabold text-green-900">{state.ok}</p>
       <p>Login: <code className="rounded bg-white px-2 py-0.5 font-mono font-bold">{state.login}</code></p>
-      <p>Senha temporária: <code className="rounded bg-white px-2 py-0.5 font-mono font-bold">{state.password}</code></p>
-      <p className="text-xs font-semibold text-green-900">Copie agora e envie à pessoa: a senha não será mostrada de novo.</p>
+      <p>Senha padrão: <code className="rounded bg-white px-2 py-0.5 font-mono font-bold">{state.password}</code></p>
+      <p className="text-xs font-semibold text-green-900">Envie à pessoa: no primeiro acesso ela é obrigada a criar a própria senha.</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => navigator.clipboard.writeText(text)} className="btn btn-secondary btn-sm"><Copy aria-hidden className="h-4 w-4" /> Copiar</button>
         {state.href && <Link href={state.href} className="btn btn-sm">Abrir a escola</Link>}
@@ -169,7 +169,7 @@ export function ResetPasswordButton({ userId, name }: { userId: string; name: st
   if (state?.password) return <Credentials state={state} />;
   return (
     <form action={action} className="inline">
-      <button className="btn btn-secondary btn-sm" disabled={pending} aria-label={`Nova senha para ${name}`} title="Gerar senha temporária">
+      <button className="btn btn-secondary btn-sm" disabled={pending} aria-label={`Nova senha para ${name}`} title="Voltar para a senha padrão">
         <KeyRound aria-hidden className="h-4 w-4" /> {pending ? "..." : "Nova senha"}
       </button>
       {state?.error && <span className="ml-2 text-xs font-bold text-red-700">{state.error}</span>}

@@ -102,6 +102,8 @@ model User {
   email          String?       @unique // equipe e jurados; alunos não têm email
   username       String? // alunos: único dentro da organização
   passwordHash   String
+  /// Senha padrão (criada pelo dono, organizador de jam ou redefinida): troca obrigatória no próximo login.
+  mustChangePassword Boolean @default(false)
   avatar         String? // id de avatar pré-definido
   xp             Int           @default(0)
   active         Boolean       @default(true)

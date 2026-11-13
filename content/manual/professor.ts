@@ -17,12 +17,13 @@ Bem-vindo(a) à plataforma! Aqui seus alunos aprendem programação em blocos, p
 
 ![Tela de entrada com o botão para professores](login)
 
-> Dica: se você recebeu uma senha temporária, guarde-a num lugar seguro. Esqueceu? Peça à coordenação ou ao suporte uma nova senha.
+> Dica: no primeiro acesso com a senha padrão, a plataforma pede para você criar a sua própria senha. Para trocar depois, use o ícone de **chave** no topo. Esqueceu? Peça ao suporte para voltar à senha padrão.
 
 ## O menu
 No topo da página ficam os atalhos:
 - **Minhas turmas**: suas turmas e alunos.
-- **Currículo**: o curso completo, com o guia do professor em cada lição.
+- **Mundos e aulas**: os mesmos mundos que os alunos veem, com o guia do professor e o botão **Dar aula** em cada lição.
+- O ícone de **chave** troca a sua senha.
 - **Game Jam**: competições de jogos entre escolas.
 - O ícone de **boia** abre este manual (com o botão **Baixar PDF**).
 - O **sino** mostra avisos da plataforma (um número vermelho indica avisos novos).
@@ -77,7 +78,7 @@ Na lista **Alunos**, marque o(s) aluno(s) e clique em **Gerar novas senhas e car
   },
   {
     slug: "curriculo",
-    title: "Currículo e cursos",
+    title: "Mundos, aulas e cursos",
     body: `
 O curso **PictoBlox e Introdução à Programação de Blocos** tem 10 mundos em três níveis: Básico, Intermediário e Avançado. Cada mundo tem lições no site e uma missão extra opcional no PictoBlox.
 
@@ -92,7 +93,13 @@ O curso é liberado **inteiro** para a turma (não trilha por trilha).
 ![Liberar o curso na página da turma](prof-cursos)
 
 ## Guia do professor
-Em **Currículo**, abra qualquer mundo para ver todas as lições com o **guia do professor**: objetivo, como conduzir a aula, erros comuns e como ajudar.
+Em **Mundos e aulas**, abra qualquer mundo para ver todas as lições com o **guia do professor**: objetivo, como conduzir a aula, erros comuns e como ajudar.
+
+## Dar aula resolvendo junto
+No mundo, clique em **Começar a aula deste mundo** ou em **Dar aula** numa lição. Ela abre exatamente como o aluno vê, com o editor de blocos, para você resolver na projeção junto com a turma.
+- As setas ao lado do título passam para a lição anterior ou a próxima.
+- **Verificar** mostra as estrelas e as dicas, mas **não grava** nada: o seu progresso e o dos alunos não mudam.
+- O **Guia do professor** fica fechado no fim da coluna da direita; abra quando precisar.
 
 ![Guia do professor de uma trilha](prof-guia)
 

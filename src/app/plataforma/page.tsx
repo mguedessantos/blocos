@@ -32,7 +32,7 @@ export default async function PlataformaPage(props: PageProps<"/plataforma">) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-extrabold">Criar escola ou professor(a)</h2>
         </div>
-        <p className="text-sm text-muted">As escolas também podem se cadastrar sozinhas em /cadastro. Aqui você cria a conta já ativa e recebe a senha temporária para enviar.</p>
+        <p className="text-sm text-muted">As escolas também podem se cadastrar sozinhas em /cadastro. Aqui você cria a conta já ativa e recebe a senha padrão para enviar (a pessoa troca no primeiro acesso).</p>
         <NewSchoolForm plans={plans} />
       </Card>
 

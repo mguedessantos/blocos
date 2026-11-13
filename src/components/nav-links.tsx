@@ -14,23 +14,21 @@ export function NavLinks({ items }: { items: NavItem[] }) {
     .filter((n) => path === n.href || path.startsWith(n.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
-    <nav aria-label="Principal" className="flex gap-1 overflow-x-auto">
+    <nav aria-label="Principal" className="flex flex-wrap gap-1">
       {items.map((n) => {
         const Icon = n.icon ? NAV_ICONS[n.icon] : null;
         const on = n.href === active;
-        const compact = items.length > 5 && !on;
         return (
           <Link
             key={n.href}
             href={n.href}
             aria-current={on ? "page" : undefined}
-            title={compact ? n.label : undefined}
             className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-extrabold transition-colors ${
               on ? "bg-brand-soft text-brand-shadow" : "text-muted hover:bg-black/5 hover:text-foreground"
             }`}
           >
             <LinkIcon Icon={Icon} />
-            <span className={compact ? "sr-only 2xl:not-sr-only" : undefined}>{n.label}</span>
+            {n.label}
           </Link>
         );
       })}

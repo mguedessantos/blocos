@@ -82,7 +82,7 @@ export default async function EscolaDetalhe(props: PageProps<"/plataforma/escola
       {!org.deletedAt && (
         <Card>
           <h2 className="mb-1 text-lg font-bold">Adicionar pessoa</h2>
-          <p className="mb-3 text-sm text-muted">Cria a conta já ligada a esta escola, com uma senha temporária para você enviar.</p>
+          <p className="mb-3 text-sm text-muted">Cria a conta já ligada a esta escola, com a senha padrão para você enviar (a pessoa troca no primeiro acesso).</p>
           <AddStaffForm orgId={org.id} isSchool={org.type === "ESCOLA"} />
         </Card>
       )}

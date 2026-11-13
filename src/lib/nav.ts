@@ -10,12 +10,12 @@ export function navFor(user: CurrentUser): NavItem[] {
     case "STUDENT":
       return [{ href: "/aluno", label: "Minhas trilhas", icon: "trilhas" }, JAM];
     case "TEACHER":
-      return [{ href: "/professor", label: "Minhas turmas", icon: "turmas" }, { href: "/professor/trilhas", label: "Currículo", icon: "licoes" }, JAM];
+      return [{ href: "/professor", label: "Minhas turmas", icon: "turmas" }, { href: "/professor/trilhas", label: "Mundos e aulas", icon: "licoes" }, JAM];
     case "ORG_ADMIN":
       return [
         { href: "/escola", label: "Visão geral", icon: "painel" },
         { href: "/professor", label: "Turmas", icon: "turmas" },
-        { href: "/professor/trilhas", label: "Currículo", icon: "licoes" },
+        { href: "/professor/trilhas", label: "Mundos e aulas", icon: "licoes" },
         { href: "/escola/equipe", label: "Equipe", icon: "equipe" },
         { href: "/escola/marca", label: "Marca", icon: "marca" },
         JAM,

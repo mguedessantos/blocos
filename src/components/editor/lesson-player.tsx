@@ -29,6 +29,10 @@ type Props = {
   header?: ReactNode;
   mission?: ReactNode;
   extra?: ReactNode;
+  /** "aula": professor resolvendo na projeção; o rascunho fica só neste computador (nada vai para o servidor). */
+  mode?: "aluno" | "aula";
+  /** Conteúdo extra no fim da coluna da direita (ex.: guia do professor). */
+  aside?: ReactNode;
 };
 
 /**
@@ -56,8 +60,9 @@ function legacyDraft(key: string): unknown {
   }
 }
 
-export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra }: Props) {
-  const draftKey = `blocos:licao:${lessonId}`;
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra, mode = "aluno", aside }: Props) {
+  const aula = mode === "aula";
+  const draftKey = aula ? `blocos:aula:${lessonId}` : `blocos:licao:${lessonId}`;
   const editor = useRef<ScratchFrameHandle | null>(null);
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
@@ -68,10 +73,10 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
   // o mais novo entre o rascunho deste computador e o projeto guardado no servidor (ambos com fantasias e sons);
   // senão, o rascunho do editor antigo, os blocos da última tentativa ou o projeto inicial
   const initial = useCallback(async () => {
-    const [local, server] = await Promise.all([readDraft(draftKey), fetchSavedProject(lessonId)]);
+    const [local, server] = await Promise.all([readDraft(draftKey), aula ? undefined : fetchSavedProject(lessonId)]);
     const newest = [local, server].filter((d) => !!d).sort((a, b) => b!.at - a!.at)[0];
     return newest?.sb3 ?? buildSb3(normalizeProject(legacyDraft(draftKey) ?? saved ?? starter));
-  }, [draftKey, lessonId, saved, starter]);
+  }, [aula, draftKey, lessonId, saved, starter]);
 
   // rascunho local a cada mudança; no servidor, no máximo a cada 30 s (e sempre ao verificar)
   const lastUpload = useRef(0);
@@ -79,19 +84,21 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
     const sb3 = await editor.current?.getSb3().catch(() => null);
     if (!sb3) return;
     await writeDraft(draftKey, sb3.slice(0));
-    if (Date.now() - lastUpload.current > 30_000) {
+    if (!aula && Date.now() - lastUpload.current > 30_000) {
       lastUpload.current = Date.now();
       void uploadProject(lessonId, sb3);
     }
-  }, [draftKey, lessonId]);
+  }, [aula, draftKey, lessonId]);
 
   const onVerify = () => {
     startTransition(async () => {
       try {
         const sb3 = await editor.current!.getSb3();
         await writeDraft(draftKey, sb3.slice(0));
-        lastUpload.current = Date.now();
-        void uploadProject(lessonId, sb3.slice(0));
+        if (!aula) {
+          lastUpload.current = Date.now();
+          void uploadProject(lessonId, sb3.slice(0));
+        }
         const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
         setOutcome(await verify(JSON.stringify(project)));
       } catch (e) {
@@ -103,7 +110,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
 
   const restart = async () => {
     if (!confirm("Apagar seus blocos e começar de novo?")) return;
-    await Promise.all([clearDraft(draftKey), deleteSavedProject(lessonId)]);
+    await Promise.all([clearDraft(draftKey), aula ? undefined : deleteSavedProject(lessonId)]);
     try {
       localStorage.removeItem(draftKey); // rascunho do editor antigo
     } catch {
@@ -197,6 +204,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
               <span className="text-sm text-star">Ver resultado</span>
             </button>
           )}
+          {aside}
           {/* o editor é um fork GPL-3.0 do TurboWarp: o código-fonte fica público */}
           <p className="pt-2 text-center text-xs font-semibold text-muted">
             Editor baseado no TurboWarp ·{" "}

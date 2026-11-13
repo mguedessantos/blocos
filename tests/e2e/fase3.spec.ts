@@ -157,7 +157,7 @@ test("coordenação convida professor e ele cria a conta pelo link", async ({ pa
   await p.getByLabel(/Crie uma senha/).fill("senhaforte123");
   await p.getByRole("button", { name: "Criar conta" }).click();
   await expect(p).toHaveURL(`${ESCOLA}/professor`);
-  await expect(p.getByText("Nina Nova")).toBeVisible();
+  await expect(p.getByTitle("Nina Nova")).toBeVisible();
 
   // o link não serve duas vezes
   await p.goto(link);

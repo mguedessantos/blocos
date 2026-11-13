@@ -138,7 +138,7 @@ test("coordenação vê conclusão por turma e atividade da equipe", async ({ pa
   await expect(page.getByRole("cell", { name: "Paulo Professor" }).first()).toBeVisible();
 });
 
-test("dono cria escola e professor(a) com senha temporária", async ({ page, browser }) => {
+test("dono cria escola e professor(a) com a senha padrão, trocada no primeiro login", async ({ page, browser }) => {
   await loginStaff(page, ROOT, "admin@blocos.dev", "admin123");
   await page.goto(`${ROOT}/plataforma`);
   await page.getByRole("button", { name: "Nova escola" }).click();
@@ -149,13 +149,14 @@ test("dono cria escola e professor(a) com senha temporária", async ({ page, bro
   await page.getByLabel("Nome da coordenação").fill("Bia");
   await page.getByLabel("Email da pessoa responsável").fill(`bia-${run}@teste.dev`);
   await page.getByRole("button", { name: "Criar conta" }).click();
-  const box = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  const box = page.getByRole("status").filter({ hasText: "Senha padrão" });
   await expect(box).toBeVisible();
   const coordPw = (await box.locator("code").nth(1).innerText()).trim();
 
   // a coordenação entra com a senha temporária
   const coord = await (await browser.newContext()).newPage();
   await loginStaff(coord, ROOT, `bia-${run}@teste.dev`, coordPw);
+  await firstPassword(coord, "bia-senha-nova");
   await expect(coord).toHaveURL(/\/escola/);
 
   // o dono adiciona um professor na página da escola
@@ -163,19 +164,30 @@ test("dono cria escola e professor(a) com senha temporária", async ({ page, bro
   await page.getByLabel("Nome", { exact: true }).fill("Teo");
   await page.getByLabel("Email", { exact: true }).fill(`teo-${run}@teste.dev`);
   await page.getByRole("button", { name: "Adicionar pessoa" }).click();
-  const tbox = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  const tbox = page.getByRole("status").filter({ hasText: "Senha padrão" });
   const teoPw = (await tbox.locator("code").nth(1).innerText()).trim();
   const teo = await (await browser.newContext()).newPage();
+  expect(teoPw).toBe("blocos123");
   await loginStaff(teo, ROOT, `teo-${run}@teste.dev`, teoPw);
+  await firstPassword(teo, "teo-senha-nova");
   await expect(teo).toHaveURL(/\/professor/);
 
   // nova senha invalida a anterior
   await page.reload();
   await page.getByRole("button", { name: "Nova senha para Teo" }).click();
-  const nbox = page.getByRole("status").filter({ hasText: "Senha temporária" });
+  const nbox = page.getByRole("status").filter({ hasText: "Senha padrão" });
   const newPw = (await nbox.locator("code").nth(1).innerText()).trim();
-  expect(newPw).not.toBe(teoPw);
+  // a senha que o professor criou deixa de valer; volta a padrão, com troca obrigatória
   const again = await (await browser.newContext()).newPage();
   await loginStaff(again, ROOT, `teo-${run}@teste.dev`, newPw);
-  await expect(again).toHaveURL(/\/professor/);
+  await expect(again).toHaveURL(/\/trocar-senha/);
 });
+
+/** Primeiro login com a senha padrão: a pessoa precisa criar a própria senha. */
+async function firstPassword(page: Page, password: string) {
+  await expect(page).toHaveURL(/\/trocar-senha/);
+  await page.getByLabel(/^Nova senha/).fill(password);
+  await page.getByLabel("Repita a nova senha").fill(password);
+  await page.getByRole("button", { name: "Salvar e continuar" }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith("/trocar-senha"));
+}

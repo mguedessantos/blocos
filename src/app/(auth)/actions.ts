@@ -8,6 +8,8 @@ import { getTenant } from "@/lib/tenant";
 import { createSession, deleteSession } from "@/lib/session";
 import { clear, clientIp, hit, LIMITS } from "@/lib/rate-limit";
 import { ROLE_HOME } from "@/lib/roles";
+import { DEFAULT_STAFF_PASSWORD } from "@/lib/credentials";
+import { getCurrentUser } from "@/lib/dal/auth";
 
 export type LoginState = { error?: string; values?: Record<string, string> } | undefined;
 
@@ -57,6 +59,7 @@ export async function loginStaff(_: LoginState, formData: FormData): Promise<Log
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   await clear("login-staff-email", parsed.data.email); // acertou: zera o contador da conta
   await createSession({ userId: user.id, role: user.role, orgId: user.organizationId });
+  if (user.mustChangePassword) redirect("/trocar-senha");
   redirect(safeRedirectTarget(formData.get("voltar"), ROLE_HOME[user.role]));
 }
 
@@ -113,4 +116,20 @@ async function isOrgDeleted(orgId: string) {
 export async function logout() {
   await deleteSession();
   redirect("/");
+}
+
+// ───────────── Trocar a senha (obrigatório depois de receber a senha padrão) ─────────────
+export type PasswordState = { error?: string } | undefined;
+const newPasswordSchema = z
+  .object({ password: z.string().min(8, "A nova senha precisa ter pelo menos 8 caracteres.").max(100), confirm: z.string() })
+  .refine((v) => v.password === v.confirm, { message: "As duas senhas não são iguais.", path: ["confirm"] })
+  .refine((v) => v.password !== DEFAULT_STAFF_PASSWORD, { message: "Escolha uma senha diferente da senha padrão.", path: ["password"] });
+
+export async function changePassword(_: PasswordState, formData: FormData): Promise<PasswordState> {
+  const user = await getCurrentUser();
+  if (!user || user.role === "STUDENT") redirect("/entrar?perfil=equipe");
+  const parsed = newPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(parsed.data.password, 10), mustChangePassword: false } });
+  redirect(ROLE_HOME[user.role]);
 }

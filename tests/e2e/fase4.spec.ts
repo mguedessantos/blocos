@@ -245,7 +245,7 @@ test("professor vê o currículo com o guia do professor; aluno não", async ({ 
   await page.getByLabel("Senha").fill("senha123");
   await page.getByRole("button", { name: "Entrar" }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/entrar"));
-  await page.getByRole("link", { name: "Currículo" }).first().click();
+  await page.getByRole("link", { name: "Mundos e aulas" }).first().click();
   await expect(page.getByRole("heading", { name: "Nível Básico" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Nível Avançado" })).toBeVisible();
   await page.getByRole("link", { name: /Grande Torneio/ }).click();

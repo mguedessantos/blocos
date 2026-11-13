@@ -136,6 +136,12 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
 
   const judge = await newPage(browser);
   await loginStaff(judge, ROOT, judgeEmail, password);
+  // jurado novo: senha padrão, troca no primeiro acesso
+  await expect(judge).toHaveURL(/\/trocar-senha/);
+  await judge.getByLabel(/^Nova senha/).fill("jurada-senha-1");
+  await judge.getByLabel("Repita a nova senha").fill("jurada-senha-1");
+  await judge.getByRole("button", { name: "Salvar e continuar" }).click();
+  await judge.waitForURL(/\/jurado/);
   await judge.goto(`${ROOT}/jurado/${jamId}`);
   await judge.getByRole("link", { name: new RegExp(`Projeto ${code}`) }).click();
   await expect(judge.getByRole("heading", { name: "Gato Invertido" })).toBeVisible();

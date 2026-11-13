@@ -79,3 +79,7 @@ export function parseStudentList(text: string): ParsedNames {
   }
   return { names, errors };
 }
+
+/** Senha padrão de professores, coordenação e jurados criados pela plataforma: simples de passar,
+ *  e a pessoa é obrigada a trocá-la no primeiro login (User.mustChangePassword). */
+export const DEFAULT_STAFF_PASSWORD = process.env.SENHA_PADRAO_EQUIPE || "blocos123";

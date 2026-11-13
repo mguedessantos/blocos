@@ -19,7 +19,7 @@ export const getCurrentUser = cache(async () => {
   const user = await db.user.findUnique({
     where: { id: session.userId },
     select: {
-      id: true, name: true, role: true, organizationId: true, active: true, avatar: true, xp: true, deletedAt: true, canOrganizeJams: true,
+      id: true, name: true, role: true, organizationId: true, active: true, avatar: true, xp: true, deletedAt: true, canOrganizeJams: true, mustChangePassword: true,
       organization: { select: { deletedAt: true } },
     },
   });
@@ -29,7 +29,7 @@ export const getCurrentUser = cache(async () => {
   // Num domínio de escola, só valem usuários dessa escola (exceto super admin e jurados externos).
   const tenant = await getTenant();
   if (tenant && user.organizationId && user.organizationId !== tenant.id) return null;
-  return { id: user.id, name: user.name, role: user.role, organizationId: user.organizationId, active: user.active, avatar: user.avatar, xp: user.xp, canOrganizeJams: user.canOrganizeJams };
+  return { id: user.id, name: user.name, role: user.role, organizationId: user.organizationId, active: user.active, avatar: user.avatar, xp: user.xp, canOrganizeJams: user.canOrganizeJams, mustChangePassword: user.mustChangePassword };
 });
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
@@ -39,5 +39,7 @@ export async function requireUser(roles?: Role[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect(roles && !roles.includes("STUDENT") ? "/entrar?perfil=equipe" : "/entrar");
   if (roles && !roles.includes(user.role)) redirect("/sem-acesso");
+  // senha padrão: só segue depois de trocar
+  if (user.mustChangePassword) redirect("/trocar-senha");
   return user;
 }
