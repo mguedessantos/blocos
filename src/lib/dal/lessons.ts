@@ -119,13 +119,24 @@ export async function getStudentLesson(user: CurrentUser, lessonId: string) {
     position: { index: idx + 1, total: lessons.length },
     nextLessonId: lessons.slice(idx + 1).find((l) => !l.optional)?.id ?? null,
     savedWorkspace: lastSubmission?.workspace ?? null,
+    extraDone: (await db.progress.findUnique({ where: { userId_lessonId: { userId: user.id, lessonId } }, select: { extraDone: true } }))?.extraDone ?? false,
   };
 }
 
 const MAX_WORKSPACE_BYTES = 200_000;
 
 export type NewBadge = { id: string; name: string; icon: string };
-export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; newBadges: NewBadge[] } | { ok: false; error: string };
+/** XP bônus do desafio extra (só na primeira vez). */
+export const EXTRA_XP = 10;
+export type ExtraOutcome = { done: boolean; xpGained: number } | null;
+export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; newBadges: NewBadge[]; extra?: ExtraOutcome } | { ok: false; error: string };
+
+/** Confere o desafio extra no mesmo programa; null quando a lição não tem verificação de extra. */
+function checkExtra(lesson: { extraChecks: unknown }, project: Parameters<typeof checkProject>[0]) {
+  if (!lesson.extraChecks) return null;
+  const parsed = checksSchema.safeParse(lesson.extraChecks);
+  return parsed.success ? checkProject(project, parsed.data).passed : null;
+}
 
 /** Verifica no SERVIDOR (o resultado do navegador nunca é confiável) e registra o progresso. */
 export async function submitAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<AttemptOutcome> {
@@ -145,13 +156,25 @@ export async function submitAttempt(user: CurrentUser, lessonId: string, workspa
 
   const parsedChecks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
   if (!parsedChecks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada. Avise seu professor." };
-  const result = checkProject(compileProject(workspace), parsedChecks.data);
-
+  const compiled = compileProject(workspace);
+  const result = checkProject(compiled, parsedChecks.data);
   const xpGained = await recordProgress(user, lesson.id, lesson.xp, result.passed, result.stars, {
     workspace,
     result: { passed: result.passed, stars: result.stars, items: result.items },
   });
-  return { ok: true, result, xpGained, newBadges: await awardBadges(user) };
+  const extraPassed = checkExtra(lesson, compiled);
+  let extra: ExtraOutcome = null;
+  if (extraPassed !== null) {
+    // vale depois de a missão estar concluída (agora ou antes: o extra pode pedir outro programa);
+    // o XP bônus vem uma única vez (updateMany com extraDone: false evita contar duas vezes)
+    const won = extraPassed
+      ? (await db.progress.updateMany({ where: { userId: user.id, lessonId: lesson.id, status: "CONCLUIDO", extraDone: false }, data: { extraDone: true } })).count === 1
+      : false;
+    if (won) await db.user.update({ where: { id: user.id }, data: { xp: { increment: EXTRA_XP } } });
+    const done = won || (await db.progress.findUnique({ where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } }, select: { extraDone: true } }))?.extraDone === true;
+    extra = { done, xpGained: won ? EXTRA_XP : 0 };
+  }
+  return { ok: true, result, xpGained, newBadges: await awardBadges(user), extra };
 }
 
 /** Missões feitas no PictoBlox: o aluno envia o .sb3 e o servidor verifica a estrutura do projeto. */
@@ -333,7 +356,7 @@ export async function getCatalogLesson(user: CurrentUser, lessonId: string) {
 }
 
 /** O professor resolvendo junto com a turma: verifica igual ao aluno, mas NÃO grava progresso nem XP. */
-export async function previewAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<{ ok: true; result: CheckResult } | { ok: false; error: string }> {
+export async function previewAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<{ ok: true; result: CheckResult; extra: ExtraOutcome } | { ok: false; error: string }> {
   const { lesson } = await getCatalogLesson(user, lessonId);
   if (lesson.type === "TEORIA" || lesson.mode === "SB3") return { ok: false, error: "Esta lição não tem exercício no editor." };
   if (typeof workspaceJson !== "string" || workspaceJson.length > MAX_WORKSPACE_BYTES) return { ok: false, error: "Programa grande demais." };
@@ -347,5 +370,8 @@ export async function previewAttempt(user: CurrentUser, lessonId: string, worksp
   }
   const checks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
   if (!checks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada." };
-  return { ok: true, result: checkProject(compileProject(workspace), checks.data) };
+  const compiled = compileProject(workspace);
+  const result = checkProject(compiled, checks.data);
+  const extraPassed = checkExtra(lesson, compiled);
+  return { ok: true, result, extra: extraPassed === null ? null : { done: extraPassed, xpGained: 0 } };
 }

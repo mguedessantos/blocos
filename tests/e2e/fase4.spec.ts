@@ -122,12 +122,29 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   await expect(result).toContainText("Perfeito");
   await expect(result.getByLabel("3 de 3 estrelas")).toBeVisible();
   await expect(kid.getByText("+10 XP!")).toBeVisible();
+
+  // desafio extra (outro programa, depois da missão): caixinha marcada e XP bônus uma vez só
+  await kid.getByRole("button", { name: "Ficar nesta lição" }).click();
+  await openWithProgram(kid, program(move(200), move(40)));
+  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
+  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
+  await expect(result).toContainText("Desafio extra feito! +10 XP bônus");
+  await kid.getByRole("button", { name: "Voltar aos blocos" }).click(); // a missão em si não passa com este programa
+  await expect(kid.getByText("Desafio extra feito!", { exact: true })).toBeAttached();
+  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
+  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
+  await expect(result).toContainText("Desafio extra feito!");
+  await expect(result).not.toContainText("XP bônus");
+  await openWithProgram(kid, program(move(100)));
+  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
+  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
+  await expect(result).toContainText("Perfeito");
   await kid.getByRole("link", { name: "Próxima lição" }).click();
   await expect(kid.getByRole("heading", { level: 1, name: "Virando a esquina" })).toBeVisible();
 
   await kid.goto(`${ESCOLA}/aluno`);
   await expect(kid.getByText(/3 de 12 lições/)).toBeVisible();
-  await expect(kid.getByText("20 XP", { exact: true })).toBeVisible();
+  await expect(kid.getByText("30 XP", { exact: true })).toBeVisible(); // + 10 do desafio extra
   await ctx.close();
 });
 

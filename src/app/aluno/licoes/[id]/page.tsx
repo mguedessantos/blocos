@@ -8,7 +8,7 @@ import { LESSON_KIND, Stars } from "@/components/lesson-icon";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
-import { getStudentLesson } from "@/lib/dal/lessons";
+import { getStudentLesson, EXTRA_XP } from "@/lib/dal/lessons";
 import { verifyLessonAction } from "./actions";
 import { TheoryDone } from "./theory-done";
 import { objectivesOf } from "@/lib/checker";
@@ -67,17 +67,9 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
           </div>
         }
         mission={<Markdown source={lesson.content} />}
-        extra={
-          lesson.extra && (
-            <details className="clay group p-4">
-              <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
-                <Sparkles aria-hidden className="h-5 w-5 text-star" /> Desafio extra (opcional)
-                <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
-              </summary>
-              <div className="mt-3"><Markdown source={lesson.extra} /></div>
-            </details>
-          )
-        }
+        extra={lesson.extra && <Markdown source={lesson.extra} />}
+        extraBonus={lesson.extraChecks ? EXTRA_XP : undefined}
+        extraDone={data.extraDone}
       />
     );
   }

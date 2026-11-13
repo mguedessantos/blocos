@@ -33,7 +33,7 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "pule-para-a-direita": one(gotoXY(240, 0)),
   "pule-para-o-canto": one(gotoXY(150, 100), gotoXY(240, 180)),
   "passeio-com-pausa": one(move(50), wait(1), move(50)),
-  "diga-ola": one(sayFor("Olá!", 2), sayFor("Eu sou o Bloquinho", 2), move(50), sayFor("Tchau!", 2)),
+  "diga-ola": one(sayFor("Olá, eu sou o Bloquinho!", 2), move(50), sayFor("Tchau!", 2)),
   apresentacao: one(sayFor("Oi, eu sou o Bloquinho!"), move(60), wait(1), sayFor("Tchau!")),
   // Mundo 2
   "quadrado-magico": one(repeat(4, move(100), wait(0.5), left(90)), move(50)),
@@ -337,6 +337,32 @@ describe("quem anda não termina onde começou (senão parece que não se mexeu)
         if (!s0 || t.steps === 0) continue;
         expect(Math.hypot(t.x - s0.x, t.y - s0.y), `${t.name} andou e voltou para o mesmo lugar`).toBeGreaterThan(5);
       }
+    });
+  }
+});
+
+// ───────────── Desafio extra com verificação (XP bônus) ─────────────
+const EXTRA_SOLUTIONS: Record<string, GameSpec> = {
+  "primeiros-passos": one(move(200), move(40)),
+  "virando-a-esquina": one(move(100), left(90), move(100), left(90), move(100), left(90), move(100)),
+  "pule-para-cima": one(gotoXY(0, 90)),
+  "pule-para-baixo": one(gotoXY(0, -90)),
+  "pule-para-o-canto": one(gotoXY(240, 180), gotoXY(-240, 180), gotoXY(-240, -180), gotoXY(240, -180)),
+  "diga-ola": one(say("1"), say("2"), say("3"), say("4"), say("5")),
+  apresentacao: one(gotoXY(0, 0), gotoXY(50, 50), gotoXY(-50, 50)),
+};
+
+describe("desafio extra verificado", () => {
+  const withExtra = lessons.filter((l) => l.extraChecks);
+  it("toda lição com extra verificado tem solução de referência", () => {
+    expect(withExtra.map((l) => l.slug).sort()).toEqual(Object.keys(EXTRA_SOLUTIONS).sort());
+  });
+  for (const l of withExtra) {
+    it(l.slug, () => {
+      const extra = checksSchema.parse(l.extraChecks);
+      const runExtra = (spec: object) => checkProject(compileProject(normalizeProject("sprites" in spec && !("v" in spec) ? project(spec as GameSpec) : spec)), extra);
+      expect(runExtra(EXTRA_SOLUTIONS[l.slug]).passed).toBe(true);
+      expect(runExtra(l.starter ?? (l.startWithFlag ? { sprites: [{ name: "Bloquinho", code: [[flag()]] }] } : {})).passed).toBe(false);
     });
   }
 });

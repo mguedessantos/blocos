@@ -211,8 +211,7 @@ Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga*
               {
                 type: "visits",
                 points: [
-                  { say: "olá", goal: "Diga **Olá!**" },
-                  { say: "bloquinho", goal: "Diga **Eu sou o Bloquinho**" },
+                  { say: "bloquinho", goal: "Diga **Olá, eu sou o Bloquinho!**" },
                   { x: 50, y: 0, goal: "Ande **50 passos**" },
                   { say: "tchau", goal: "Diga **Tchau!**" },
                 ],

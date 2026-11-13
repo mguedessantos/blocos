@@ -12,7 +12,7 @@ export async function previewVerifyAction(lessonId: string, workspaceJson: strin
     const r = await previewAttempt(user, lessonId, workspaceJson);
     if (!r.ok) return r;
     const { passed, stars, summary, items } = r.result;
-    return { ok: true, passed, stars, summary, items, xpGained: 0 };
+    return { ok: true, passed, stars, summary, items, xpGained: 0, extra: r.extra };
   } catch (err) {
     if (err instanceof AccessError) return { ok: false, error: err.message };
     throw err;

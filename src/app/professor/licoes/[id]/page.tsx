@@ -7,7 +7,7 @@ import { Markdown } from "@/components/markdown";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
-import { getCatalogLesson } from "@/lib/dal/lessons";
+import { EXTRA_XP, getCatalogLesson } from "@/lib/dal/lessons";
 import { previewVerifyAction } from "./actions";
 import { objectivesOf } from "@/lib/checker";
 
@@ -93,7 +93,8 @@ export default async function AulaPage(props: PageProps<"/professor/licoes/[id]"
           verify={previewVerifyAction.bind(null, lesson.id)}
           header={header}
           mission={<Markdown source={lesson.content} />}
-          extra={extra}
+          extra={lesson.extra && <Markdown source={lesson.extra} />}
+          extraBonus={lesson.extraChecks ? EXTRA_XP : undefined}
           aside={guide}
         />
       </div>

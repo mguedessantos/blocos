@@ -33,6 +33,8 @@ export type LessonContent = {
   guide?: TeacherGuide;
   /** Desafio extra opcional (markdown), para quem termina antes ou alunos mais velhos. */
   extra?: string;
+  /** Verificação do desafio extra: quando passa, o aluno ganha XP bônus (uma vez). */
+  extraChecks?: Checks;
 };
 
 export type TrackContent = {

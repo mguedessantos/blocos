@@ -201,6 +201,7 @@ async function main() {
           title: l.title, type: l.type, mode: l.mode ?? "EDITOR", order: li, content: l.content, xp: l.xp ?? 10,
           teacherGuide: l.guide ? guideMarkdown(l.guide) : null,
           extra: l.extra ?? null,
+          extraChecks: l.extraChecks ?? Prisma.DbNull,
           allowedBlocks: l.allowedBlocks ?? [],
           starterWorkspace: l.starter ?? (l.startWithFlag ? FLAG_STARTER : Prisma.DbNull),
           optional: l.optional ?? false,

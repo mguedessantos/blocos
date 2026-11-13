@@ -296,6 +296,7 @@ model Lesson {
   content           String // markdown
   teacherGuide      String? // markdown, só para professores
   extra             String? // desafio extra opcional (alunos mais velhos/rápidos)
+  extraChecks       Json? // verificação do desafio extra (mesmo formato de checks); feito = XP bônus
   optional          Boolean    @default(false) // missão extra (ex.: levar ao PictoBlox): não bloqueia a trilha
   starterWorkspace  Json?
   allowedBlocks     String[] // opcodes Scratch liberados na caixa de blocos
@@ -353,6 +354,8 @@ model Progress {
   status    ProgressStatus @default(NAO_INICIADO)
   stars     Int            @default(0)
   attempts  Int            @default(0)
+  /// Desafio extra verificado (o XP bônus só é dado uma vez).
+  extraDone Boolean @default(false)
   /// Último projeto do editor de blocos (.sb3 com fantasias e sons do aluno), no armazenamento privado.
   projectKey     String?
   projectSavedAt DateTime?

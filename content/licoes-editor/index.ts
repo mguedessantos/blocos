@@ -10,8 +10,8 @@ const POOL = new Map(
   [primeirosPassos, repeticao, condicionais, variaveis].flatMap((t) => t.modules.flatMap((m) => m.lessons)).map((l) => [l.slug, l]),
 );
 
-export function editor(slug: string, guide: TeacherGuide, extra?: string): LessonContent {
+export function editor(slug: string, guide: TeacherGuide, extra?: string, extraChecks?: LessonContent["extraChecks"]): LessonContent {
   const l = POOL.get(slug);
   if (!l) throw new Error(`Lição do editor não encontrada: ${slug}`);
-  return { ...l, mode: "EDITOR", guide, extra };
+  return { ...l, mode: "EDITOR", guide, extra, extraChecks };
 }

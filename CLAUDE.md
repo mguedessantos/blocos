@@ -56,6 +56,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).
 - Projetos do editor: `src/lib/blocks/project.ts` (vários atores + palco + variáveis globais); motor em `interpreter.ts` (`World`: teclas, cliques, mensagens, clones, sons). Biblioteca original de personagens/cenários/sons em `library.ts` + desenhos em `components/editor/art.ts`.
 - Objetivos da missão: `goal` em cada checagem (checagens com o mesmo `goal` viram um objetivo) e `visits` (pontos do caminho, na ordem; cada ponto é um objetivo). `objectivesOf` mostra a lista; os objetivos marcam sozinhos (checagem no navegador a cada mudança) e o ✗ só aparece depois de Verificar. O Verificar só libera depois de rodar o programa (mensagem `run` do editor). Mundo 1 já usa.
+- Desafio extra verificado: `extraChecks` na lição (4º argumento de `editor()`). Depois da missão concluída, se o programa passar no extra, `Progress.extraDone` e +`EXTRA_XP` uma vez só. Toda lição com `extraChecks` precisa de solução em `EXTRA_SOLUTIONS` (content.test).
 - Lições de jogos usam `starter: game({...})` (de `src/lib/blocks/build.ts`) e podem simular teclas/cliques na verificação (`checks.inputs`).
 - `tests/unit/content.test.ts` exige: guia do professor em toda lição, solução de referência com 3 estrelas e que o projeto inicial NÃO passe sem o aluno fazer nada.
 - Depois de mudar o schema do Prisma, REINICIE o `npm run dev` (ele mantém o client antigo em memória).
