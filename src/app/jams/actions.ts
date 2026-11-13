@@ -167,7 +167,7 @@ export async function submitEntryAction(teamId: string, _: JamFormState, fd: For
     .safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   try {
-    const r = await submitEntry(user, teamId, { ...parsed.data, project: fd.get("project") as File | null, doc: fd.get("doc") as File | null });
+    const r = await submitEntry(user, teamId, { ...parsed.data, project: fd.get("source") === "estudio" ? null : (fd.get("project") as File | null), doc: fd.get("doc") as File | null, fromStudio: fd.get("source") === "estudio" });
     revalidatePath("/jams", "layout");
     return { ok: "Entrega salva! Você pode atualizar até o fim do prazo.", leaks: r.leaks };
   } catch (e) {

@@ -21,7 +21,8 @@ import {
   type CategoryRange,
   type JamPhase,
 } from "../jams";
-import { deleteFile, putFile } from "../storage";
+import { deleteFile, getFile, putFile } from "../storage";
+import { readSb3 } from "../sb3/project";
 import type { CurrentUser } from "./auth";
 import { AccessError } from "./classes";
 
@@ -384,7 +385,7 @@ export async function getTeam(user: CurrentUser, teamId: string) {
   const phase = jamPhase(team.jam);
   const e = team.origin?.entry ?? null;
   return {
-    team: { id: team.id, name: team.name, category: team.category?.name ?? null, members: team.members.map((m) => ({ ...m.user, schoolYear: m.schoolYear })) },
+    team: { id: team.id, name: team.name, category: team.category?.name ?? null, members: team.members.map((m) => ({ ...m.user, schoolYear: m.schoolYear })), studioSavedAt: team.studioSavedAt },
     jam: { id: team.jam.id, slug: team.jam.slug, title: team.jam.title, theme: team.jam.theme, endsAt: team.jam.endsAt, startsAt: team.jam.startsAt },
     phase,
     canSubmit: canSubmit(phase),
@@ -404,7 +405,7 @@ export async function deleteTeam(user: CurrentUser, teamId: string) {
 
 export const MAX_DESCRIPTION = 600;
 
-export type EntryInput = { title: string; description: string; youtubeUrl: string; project?: File | null; doc?: File | null };
+export type EntryInput = { title: string; description: string; youtubeUrl: string; project?: File | null; doc?: File | null; fromStudio?: boolean };
 
 /** Grava/atualiza a entrega. Arquivos são limpos (metadados) e guardados com nome aleatório. */
 export async function submitEntry(user: CurrentUser, teamId: string, input: EntryInput) {
@@ -414,14 +415,21 @@ export async function submitEntry(user: CurrentUser, teamId: string, input: Entr
   if (!youtubeId) throw new AccessError("Cole o link do vídeo do YouTube (youtube.com ou youtu.be).");
   const existing = team.origin?.entry ?? null;
   const project = input.project && input.project.size > 0 ? input.project : null;
+  if (input.fromStudio && !team.studioKey) throw new AccessError("O estúdio da equipe ainda não tem um projeto salvo.");
+  const studio = input.fromStudio && !project ? await getFile(team.studioKey!) : null;
   const doc = input.doc && input.doc.size > 0 ? input.doc : null;
-  if (!existing && (!project || !doc)) throw new AccessError("Envie o projeto (.sb3) e o arquivo de documentação.");
+  if (!existing && ((!project && !studio) || !doc)) throw new AccessError("Envie o projeto (.sb3 ou o do estúdio) e o arquivo de documentação.");
 
   const texts = [input.title, input.description];
   let projectBytes: Uint8Array | null = null;
   let docBytes: Uint8Array | null = null;
   let docExt = existing?.docExt ?? "pdf";
   try {
+    if (studio) {
+      const r = await sanitizeSb3(studio);
+      projectBytes = r.bytes;
+      texts.push(r.text);
+    }
     if (project) {
       if (!/\.sb3$/i.test(project.name)) throw new FileError("O projeto precisa ser um arquivo .sb3 (no PictoBlox: Arquivo → Salvar no seu computador).");
       if (project.size > MAX_PROJECT_BYTES) throw new FileError("O projeto é grande demais (máximo 25 MB).");
@@ -586,4 +594,25 @@ export { audit as auditJam };
 export async function listSchoolsForJam(user: CurrentUser) {
   requireManager(user);
   return db.organization.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true, city: true, state: true } });
+}
+
+// ───────────── Estúdio da equipe (o jogo feito no editor do site) ─────────────
+
+/** Último projeto do estúdio da equipe, ou null. Qualquer membro, o professor e a coordenação podem abrir. */
+export async function getTeamStudio(user: CurrentUser, teamId: string) {
+  const team = await requireTeam(user, teamId);
+  if (!team.studioKey || !team.studioSavedAt) return null;
+  return { bytes: await getFile(team.studioKey), savedAt: team.studioSavedAt };
+}
+
+/** Guarda o projeto do estúdio (substitui o anterior; vale o último que salvou). */
+export async function saveTeamStudio(user: CurrentUser, teamId: string, bytes: Uint8Array) {
+  const team = await requireTeam(user, teamId);
+  if (jamPhase(team.jam) === "ENCERRADA") throw new AccessError("A jam já terminou.");
+  await readSb3(bytes); // valida: zip com project.json, dentro do limite
+  const key = await putFile("projetos", bytes);
+  const savedAt = new Date();
+  await db.jamTeam.update({ where: { id: team.id }, data: { studioKey: key, studioSavedAt: savedAt } });
+  if (team.studioKey) await deleteFile(team.studioKey).catch(() => {});
+  return savedAt;
 }

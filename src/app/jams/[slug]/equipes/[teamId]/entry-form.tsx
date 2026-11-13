@@ -6,9 +6,10 @@ import { submitEntryAction, type JamFormState } from "../../../actions";
 
 const file = "block w-full rounded-2xl border-2 border-dashed border-line bg-surface text-foreground px-4 py-3 text-sm font-semibold file:mr-3 file:rounded-xl file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:font-extrabold";
 
-export function EntryForm({ teamId, hasEntry, maxDescription, initial }: { teamId: string; hasEntry: boolean; maxDescription: number; initial: { title: string; description: string; youtubeUrl: string } | null }) {
+export function EntryForm({ teamId, hasEntry, hasStudio, maxDescription, initial }: { teamId: string; hasEntry: boolean; hasStudio: boolean; maxDescription: number; initial: { title: string; description: string; youtubeUrl: string } | null }) {
   const [state, action, pending] = useActionState<JamFormState, FormData>(submitEntryAction.bind(null, teamId), undefined);
   const [desc, setDesc] = useState(initial?.description ?? "");
+  const [source, setSource] = useState<"estudio" | "arquivo">(hasStudio ? "estudio" : "arquivo");
 
   return (
     <form action={action} className="space-y-4">
@@ -22,10 +23,23 @@ export function EntryForm({ teamId, hasEntry, maxDescription, initial }: { teamI
         <span className="text-xs font-semibold text-muted">{desc.length}/{maxDescription} · Conte do que se trata o jogo e como se joga.</span>
       </label>
       <Input label="Link do vídeo no YouTube" name="youtubeUrl" type="url" required defaultValue={initial?.youtubeUrl} placeholder="https://youtu.be/..." hint="Grave o jogo funcionando. Pode publicar como “não listado”, num canal que não tenha o nome da escola." />
-      <label className="flex flex-col gap-1.5 text-sm font-bold">
-        Projeto (.sb3 do PictoBlox ou Scratch){hasEntry && <span className="font-semibold text-muted"> — deixe vazio para manter o atual</span>}
-        <input type="file" name="project" accept=".sb3" required={!hasEntry} className={file} />
-      </label>
+      <fieldset className="space-y-2 text-sm font-bold">
+        <legend className="mb-1">Projeto do jogo</legend>
+        <label className="flex items-center gap-2 font-semibold">
+          <input type="radio" name="source" value="estudio" checked={source === "estudio"} disabled={!hasStudio} onChange={() => setSource("estudio")} />
+          Usar o jogo do estúdio da equipe{!hasStudio && " (salve o jogo no estúdio primeiro)"}
+        </label>
+        <label className="flex items-center gap-2 font-semibold">
+          <input type="radio" name="source" value="arquivo" checked={source === "arquivo"} onChange={() => setSource("arquivo")} />
+          Enviar um arquivo .sb3 (do PictoBlox ou Scratch)
+        </label>
+        {source === "arquivo" && (
+          <label className="flex flex-col gap-1.5">
+            <span>Arquivo .sb3{hasEntry && <span className="font-semibold text-muted"> (deixe vazio para manter o atual)</span>}</span>
+            <input type="file" name="project" accept=".sb3" required={!hasEntry} className={file} />
+          </label>
+        )}
+      </fieldset>
       <label className="flex flex-col gap-1.5 text-sm font-bold">
         Documentação com as etapas de desenvolvimento (PDF ou Word){hasEntry && <span className="font-semibold text-muted"> — deixe vazio para manter a atual</span>}
         <input type="file" name="doc" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required={!hasEntry} className={file} />

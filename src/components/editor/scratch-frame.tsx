@@ -14,13 +14,15 @@ export type ScratchFrameHandle = {
 
 type Msg = { type: string; id?: number; sb3?: ArrayBuffer; message?: string };
 
-export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError }: {
+export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError, player = false }: {
   handle: Ref<ScratchFrameHandle>;
   /** .sb3 inicial (só é lido uma vez). */
   initial: () => Promise<ArrayBuffer>;
   allowedBlocks: string[];
   onChange?: () => void;
   onError?: (message: string) => void;
+  /** Só o palco para jogar (sem blocos), como o jurado avalia. */
+  player?: boolean;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [state, setState] = useState<"carregando" | "pronto" | "erro">("carregando");
@@ -36,8 +38,8 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError
   const post = useCallback((msg: object, transfer?: Transferable[]) => frame.current?.contentWindow?.postMessage(msg, location.origin, transfer ?? []), []);
   const load = useCallback((sb3: ArrayBuffer) => {
     setState("carregando");
-    post({ type: "load", sb3, allowedBlocks: latest.current.allowedBlocks }, [sb3]);
-  }, [post]);
+    post({ type: "load", sb3, allowedBlocks: latest.current.allowedBlocks, player }, [sb3]);
+  }, [post, player]);
 
   useImperativeHandle(handle, () => ({
     load,
@@ -90,7 +92,7 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError
       />
       {state !== "pronto" && (
         <div className="absolute inset-0 grid place-items-center font-bold text-muted" role="status">
-          {state === "erro" ? "Não foi possível abrir o editor. Recarregue a página." : "Abrindo o editor de blocos…"}
+          {state === "erro" ? (player ? "Não foi possível abrir este jogo aqui. Baixe o .sb3 para abrir no PictoBlox ou no Scratch." : "Não foi possível abrir o editor. Recarregue a página.") : (player ? "Abrindo o jogo…" : "Abrindo o editor de blocos…")}
         </div>
       )}
     </div>

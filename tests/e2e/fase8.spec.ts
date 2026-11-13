@@ -112,13 +112,22 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await ana.getByLabel("Nome do jogo").fill("Gato Invertido");
   await ana.getByLabel("Descrição breve").fill("Um gato que anda no teto. Feito no Colégio Aurora!");
   await ana.getByLabel("Link do vídeo no YouTube").fill("https://youtu.be/dQw4w9WgXcQ");
-  await ana.getByLabel(/^Projeto/).setInputFiles({ name: "meu jogo da escola.sb3", mimeType: "application/octet-stream", buffer: Buffer.from(await sb3Bytes({ sprites: [{ name: "Gato" }] })) });
+  await ana.getByLabel(/^Arquivo .sb3/).setInputFiles({ name: "meu jogo da escola.sb3", mimeType: "application/octet-stream", buffer: Buffer.from(await sb3Bytes({ sprites: [{ name: "Gato" }] })) });
   await ana.getByLabel(/^Documentação/).setInputFiles({ name: "doc Colegio Aurora.pdf", mimeType: "application/pdf", buffer: Buffer.from(await pdf.save()) });
   await ana.getByRole("button", { name: "Enviar entrega" }).click();
   await expect(ana.getByRole("status")).toContainText("Entrega salva");
   await expect(ana.locator("p[role=alert]")).toContainText("Colégio Aurora"); // aviso de nome que revela a origem
 
-  // corrige a descrição (arquivos ficam os mesmos)
+  // estúdio da equipe: faz o jogo no site e salva para a equipe
+  await ana.getByRole("link", { name: "Abrir o estúdio" }).click();
+  await expect(ana.frameLocator("iframe[title='Editor de blocos']").locator(".blocklySvg").first()).toBeVisible({ timeout: 30_000 });
+  await expect(ana.getByText("Abrindo o editor de blocos")).toBeHidden({ timeout: 30_000 });
+  await ana.getByRole("button", { name: "Salvar o jogo da equipe" }).click();
+  await expect(ana.getByRole("status").filter({ hasText: "Salvo às" })).toBeVisible();
+  await ana.getByRole("link", { name: "Entrega da equipe" }).click();
+
+  // corrige a descrição e troca o projeto pelo jogo do estúdio
+  await ana.getByLabel("Usar o jogo do estúdio da equipe").check();
   await ana.getByLabel("Descrição breve").fill("Um gato que anda no teto e pega estrelas.");
   await ana.getByRole("button", { name: "Atualizar entrega" }).click();
   await expect(ana.getByRole("status")).toContainText("Entrega salva");
@@ -161,6 +170,11 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   for (const c of ["Criatividade", "Uso do tema", "Jogabilidade", "Programação", "Documentação"]) {
     await judge.getByLabel(new RegExp(`Nota para ${c}`)).fill("8");
   }
+  // o jurado joga o projeto na própria página
+  await judge.getByRole("button", { name: new RegExp(`Jogar aqui: Projeto ${code}`) }).click();
+  await expect(judge.getByText("Abrindo o jogo")).toBeHidden({ timeout: 30_000 });
+  await expect(judge.frameLocator("iframe[title='Editor de blocos']").locator("canvas").first()).toBeVisible();
+  await expect(judge.getByText("Não foi possível abrir este jogo")).toHaveCount(0);
   await judge.getByLabel(/Comentário para a equipe/).fill("Adorei o gato no teto!");
   await judge.getByRole("button", { name: "Salvar avaliação" }).click();
   await expect(judge.getByRole("status")).toContainText("Avaliação salva");

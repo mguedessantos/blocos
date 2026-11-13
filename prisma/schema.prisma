@@ -497,6 +497,9 @@ model JamTeam {
   categoryId     String?
   category       JamCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt      DateTime        @default(now())
+  /// Jogo feito no estúdio da equipe (editor do site), no armazenamento privado.
+  studioKey      String?
+  studioSavedAt  DateTime?
   members        JamTeamMember[]
   origin         JamEntryOrigin?
 }

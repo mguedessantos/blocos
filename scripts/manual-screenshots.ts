@@ -180,11 +180,22 @@ async function main() {
     await ana.getByLabel("Nome do jogo").fill("Gato no Teto");
     await ana.getByLabel("Descrição breve").fill("Um gato que anda no teto e pega estrelas antes do tempo acabar.");
     await ana.getByLabel("Link do vídeo no YouTube").fill("https://youtu.be/dQw4w9WgXcQ");
-    await ana.getByLabel(/^Projeto/).setInputFiles({ name: "gato.sb3", mimeType: "application/octet-stream", buffer: Buffer.from(await sb3Bytes({ sprites: [{ name: "Gato" }] })) });
+    await ana.getByLabel(/^Arquivo .sb3/).setInputFiles({ name: "gato.sb3", mimeType: "application/octet-stream", buffer: Buffer.from(await sb3Bytes({ sprites: [{ name: "Gato" }] })) });
     const doc = await PDFDocument.create();
     doc.addPage();
     await ana.getByLabel(/^Documentação/).setInputFiles({ name: "documentacao.pdf", mimeType: "application/pdf", buffer: Buffer.from(await doc.save()) });
     await ana.getByRole("button", { name: "Enviar entrega" }).click();
+    await ana.getByRole("status").filter({ hasText: "Entrega salva" }).waitFor();
+    await ana.reload();
+    await ana.getByRole("link", { name: "Abrir o estúdio" }).click();
+    await ana.getByText("Abrindo o editor de blocos").waitFor({ state: "hidden", timeout: 60_000 });
+    await ana.waitForTimeout(1500);
+    await shot(ana, "jam-estudio", ana.getByRole("button", { name: "Salvar o jogo da equipe" }));
+    await ana.getByRole("button", { name: "Salvar o jogo da equipe" }).click();
+    await ana.getByRole("status").filter({ hasText: "Salvo às" }).waitFor();
+    await ana.getByRole("link", { name: "Entrega da equipe" }).click();
+    await ana.getByLabel("Usar o jogo do estúdio da equipe").check();
+    await ana.getByRole("button", { name: "Atualizar entrega" }).click();
     await ana.getByRole("status").filter({ hasText: "Entrega salva" }).waitFor();
     await ana.reload();
     await shot(ana, "jam-entrega");
@@ -205,6 +216,10 @@ async function main() {
     for (const label of await judge.getByLabel(/Nota para/).all()) await label.fill("8");
     await judge.getByLabel(/Comentário para a equipe/).fill("Adorei a ideia do gato no teto! Dica: mostre o placar na tela.");
     await shot(judge, "jurado-avaliar", judge.getByRole("button", { name: "Salvar avaliação" }));
+    await judge.getByRole("button", { name: /Jogar aqui/ }).click();
+    await judge.getByText("Abrindo o jogo").waitFor({ state: "hidden", timeout: 60_000 });
+    await judge.waitForTimeout(1500);
+    await shot(judge, "jurado-jogar");
   } finally {
     await browser.close();
     // limpeza: jam (apaga equipes, entregas e notas em cascata), jurado, turma e alunos criados aqui

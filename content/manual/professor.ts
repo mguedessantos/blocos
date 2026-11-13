@@ -211,9 +211,16 @@ A Game Jam é uma competição em que as equipes criam um jogo sobre um tema, de
 
 ![Inscrição de equipe com o ano escolar dos alunos](jam-equipe)
 
+## Estúdio da equipe
+Depois de inscrita, cada equipe tem um **estúdio**: o editor de blocos completo, com todos os blocos, para fazer o jogo aqui no site. Na página da equipe, clique em **Abrir o estúdio**.
+- O jogo fica salvo para a equipe inteira (a cada 30 segundos e no botão **Salvar o jogo da equipe**). Qualquer aluno da equipe, ou você, pode continuar de outro computador.
+- Se dois alunos editarem ao mesmo tempo, vale o último que salvou: combinem quem está no computador.
+
+![Estúdio da equipe com o editor de blocos](jam-estudio)
+
 ## A entrega
 Você ou os alunos da equipe abrem a equipe e clicam em **Entregar**. A entrega tem quatro partes:
-1. O **projeto** do jogo (arquivo .sb3 do PictoBlox ou do Scratch).
+1. O **projeto** do jogo: escolha **Usar o jogo do estúdio da equipe** ou envie um arquivo .sb3 do PictoBlox ou do Scratch.
 2. Uma **descrição breve** do jogo.
 3. O **link do YouTube** com o jogo funcionando. Pode ser um vídeo "não listado".
 4. A **documentação** com as etapas de desenvolvimento (PDF ou Word).

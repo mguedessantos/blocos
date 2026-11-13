@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { Download, Puzzle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Countdown, PhaseBadge } from "@/components/jams";
@@ -53,10 +53,24 @@ export default async function TeamPage(props: PageProps<"/jams/[slug]/equipes/[t
         </Card>
       )}
 
+      {d.phase !== "ENCERRADA" && (
+        <Card className="flex flex-wrap items-center gap-4">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand text-brand-text" aria-hidden><Puzzle className="h-6 w-6" /></span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-extrabold">Estúdio da equipe</h2>
+            <p className="text-sm font-semibold text-muted">
+              Façam o jogo aqui no site, com todos os blocos. O projeto fica salvo para a equipe inteira
+              {d.team.studioSavedAt ? ` (último salvamento: ${fmtDateTime(d.team.studioSavedAt)})` : ""}. Na entrega, é só escolher “usar o jogo do estúdio”.
+            </p>
+          </div>
+          <Link href={`/jams/${d.jam.slug}/equipes/${d.team.id}/estudio`} className={buttonClass("primary", "md")}>Abrir o estúdio</Link>
+        </Card>
+      )}
+
       {d.canSubmit ? (
         <Card>
           <h2 className="mb-3 text-xl font-extrabold">{d.entry ? "Atualizar entrega" : "Fazer a entrega"}</h2>
-          <EntryForm teamId={d.team.id} hasEntry={Boolean(d.entry)} maxDescription={MAX_DESCRIPTION} initial={d.entry ? { title: d.entry.title, description: d.entry.description, youtubeUrl: `https://youtu.be/${d.entry.youtubeId}` } : null} />
+          <EntryForm teamId={d.team.id} hasStudio={Boolean(d.team.studioSavedAt)} hasEntry={Boolean(d.entry)} maxDescription={MAX_DESCRIPTION} initial={d.entry ? { title: d.entry.title, description: d.entry.description, youtubeUrl: `https://youtu.be/${d.entry.youtubeId}` } : null} />
         </Card>
       ) : (
         <Card>

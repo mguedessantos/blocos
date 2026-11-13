@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getJudgeEntry } from "@/lib/dal/jams";
 import { youtubeEmbed } from "@/lib/jams";
+import { GamePlayer } from "@/components/editor/game-player";
 import { ScoreForm } from "./score-form";
 
 export const metadata = { title: "Avaliar projeto" };
@@ -32,6 +33,7 @@ export default async function JudgeEntryPage(props: PageProps<"/jurado/[jamId]/[
           <div className="aspect-video overflow-hidden rounded-2xl bg-black">
             <iframe src={youtubeEmbed(e.youtubeId)} title={`Vídeo do projeto ${e.anonCode}`} className="h-full w-full" allow="encrypted-media; picture-in-picture" allowFullScreen />
           </div>
+          <GamePlayer src={`/jams/arquivo/${e.id}/projeto`} title={`Projeto ${e.anonCode}`} />
           <Card>
             <h2 className="mb-1 font-extrabold">Descrição da equipe</h2>
             <p className="whitespace-pre-line">{e.description}</p>
@@ -40,7 +42,7 @@ export default async function JudgeEntryPage(props: PageProps<"/jurado/[jamId]/[
             <a href={`/jams/arquivo/${e.id}/projeto`} className={buttonClass("secondary", "sm")}><Download aria-hidden className="h-4 w-4" /> Baixar projeto-{e.anonCode}.sb3</a>
             <a href={`/jams/arquivo/${e.id}/documentacao`} className={buttonClass("secondary", "sm")}><Download aria-hidden className="h-4 w-4" /> Baixar documentacao-{e.anonCode}.{e.docExt}</a>
           </div>
-          <p className="text-sm text-muted">Abra o .sb3 no PictoBlox ou no Scratch para jogar.</p>
+          <p className="text-sm text-muted">Jogue aqui na página ou baixe o .sb3 para abrir no PictoBlox ou no Scratch.</p>
         </div>
         <Card>
           <h2 className="mb-3 text-lg font-extrabold">Sua avaliação</h2>
