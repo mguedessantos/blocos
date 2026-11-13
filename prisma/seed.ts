@@ -68,12 +68,12 @@ async function main() {
     ];
     const ids: Record<string, string> = {};
     for (const u of staff) {
-      ids[u.role] = (await db.user.upsert({ where: { email: u.email }, update: {}, create: { ...u, passwordHash, organizationId: org.id } })).id;
+      ids[u.role] = (await db.user.upsert({ where: { email: u.email }, update: { passwordHash }, create: { ...u, passwordHash, organizationId: org.id } })).id;
     }
     turma = await db.class.upsert({ where: { code: "TESTE1" }, update: {}, create: { name: "Turma de Teste", code: "TESTE1", organizationId: org.id, teacherId: ids.TEACHER } });
     const aluno = await db.user.upsert({
       where: { organizationId_username: { organizationId: org.id, username: "aluno" } },
-      update: {},
+      update: { passwordHash }, // contas de teste seguem sempre o DEMO_PASSWORD atual
       create: { role: "STUDENT", name: "Aluno Teste", username: "aluno", passwordHash, organizationId: org.id },
     });
     await db.enrollment.upsert({ where: { classId_userId: { classId: turma.id, userId: aluno.id } }, update: {}, create: { classId: turma.id, userId: aluno.id } });
