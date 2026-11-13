@@ -11,6 +11,7 @@ import { AccessError } from "@/lib/dal/classes";
 import { getStudentLesson } from "@/lib/dal/lessons";
 import { verifyLessonAction } from "./actions";
 import { TheoryDone } from "./theory-done";
+import { objectivesOf } from "@/lib/checker";
 
 export const metadata = { title: "Lição" };
 
@@ -46,6 +47,8 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
       <LessonPlayer
         lessonId={lesson.id}
         allowedBlocks={lesson.allowedBlocks}
+        objectives={objectivesOf(lesson.checks)}
+        checks={lesson.checks}
         starter={lesson.starterWorkspace}
         saved={data.savedWorkspace}
         nextHref={nextHref}

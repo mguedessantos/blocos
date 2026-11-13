@@ -137,3 +137,41 @@ describe("entrada maliciosa", () => {
     }
   });
 });
+
+describe("visits (objetivos de caminho)", () => {
+  it("marca cada ponto visitado na ordem e mostra o que faltou", async () => {
+    const { checkProject, objectivesOf } = await import("@/lib/checker");
+    const { compileProject, normalizeProject } = await import("@/lib/blocks/project");
+    const { project, one, move, gotoXY } = await import("@/lib/blocks/build").then((m) => ({ ...m, one: (...b: ReturnType<typeof m.b>[]) => ({ sprites: [{ name: "Bloquinho", code: [[m.flag(), ...b]] }] }) }));
+    const checks = checksSchema.parse({
+      checks: [{ type: "visits", points: [{ y: 180, goal: "topo" }, { y: -180, goal: "baixo" }, { x: 240, goal: "direita" }] }],
+    });
+    const run = (spec: object) => checkProject(compileProject(normalizeProject(project(spec as never))), checks);
+    // pula o "baixo": topo e direita contam, baixo falta
+    const r = run(one(gotoXY(0, 180), gotoXY(240, 0)));
+    expect(r.items.map((i) => [i.goal, i.ok])).toEqual([["topo", true], ["baixo", false], ["direita", true]]);
+    expect(r.passed).toBe(false);
+    // ordem errada: baixo antes do topo não vale para o topo... mas o baixo depois dele também não
+    expect(run(one(gotoXY(0, -180), gotoXY(0, 180), gotoXY(240, 0))).items.map((i) => i.ok)).toEqual([true, false, true]);
+    expect(run(one(gotoXY(0, 180), gotoXY(0, -180), move(0), gotoXY(240, 0))).passed).toBe(true);
+    expect(objectivesOf(checks)).toEqual([{ goal: "topo", bonus: false }, { goal: "baixo", bonus: false }, { goal: "direita", bonus: false }]);
+  });
+});
+
+describe("visits com giro, pausa e fala", () => {
+  it("cada ação é um passo próprio, na ordem", async () => {
+    const { checkProject } = await import("@/lib/checker");
+    const { compileProject, normalizeProject } = await import("@/lib/blocks/project");
+    const m = await import("@/lib/blocks/build");
+    const one = (...b: ReturnType<typeof m.b>[]) => ({ sprites: [{ name: "Bloquinho", code: [[m.flag(), ...b]] }] });
+    const checks = checksSchema.parse({
+      checks: [{ type: "visits", tolerance: 5, points: [
+        { x: 50, y: 0, goal: "ande" }, { wait: 1, goal: "espere" }, { dir: 0, goal: "gire" }, { x: 50, y: 50, goal: "suba" }, { say: "tchau", goal: "fale" },
+      ] }],
+    });
+    const run = (spec: object) => checkProject(compileProject(normalizeProject(m.project(spec as never))), checks).items.map((i) => i.ok);
+    expect(run(one(m.move(50), m.wait(1), m.left(90), m.move(50), m.sayFor("Tchau!", 1)))).toEqual([true, true, true, true, true]);
+    // sem a pausa e sem a fala
+    expect(run(one(m.move(50), m.left(90), m.move(50)))).toEqual([true, false, true, true, false]);
+  });
+});

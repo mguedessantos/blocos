@@ -119,19 +119,30 @@ O bloco **junte ▢ com ▢** gruda dois textos. Faça o Bloquinho dizer **Olá,
           xp: 15,
           content: `## Missão: passos que crescem
 
-Variáveis podem controlar o movimento! Desenhe uma espiral:
+Variáveis podem controlar o movimento! Faça o Bloquinho andar em **espiral**:
 
-1. Abaixe a caneta e comece com **pontos = 10**.
-2. Repita **5 vezes**: **mova pontos passos**, gire **90 graus** e **adicione 10 a pontos**.
+- Comece com **pontos = 10**.
+- Repita **5 vezes**: **mova pontos passos**, gire **↻ 90 graus**, **adicione 10 a pontos** e **espere** um pouco.
 
-Cada linha fica 10 passos maior que a anterior. 🌀`,
-          allowedBlocks: [...BASE, ...VARS, "control_repeat", "pen_penDown", "pen_penUp", "pen_clear"],
+Cada caminhada fica 10 passos maior que a anterior. 🌀`,
+          allowedBlocks: [...BASE, ...VARS, "control_repeat", "control_wait"],
           startWithFlag: true,
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "data_variable", message: "Encaixe o bloco “pontos” dentro do “mover”." },
-              { type: "drawnLength", min: 150, max: 150, message: "As linhas da espiral devem ter 10, 20, 30, 40 e 50 passos." },
-              { type: "variableEquals", name: "pontos", value: 60 },
+              { type: "usesBlock", opcode: "data_variable", message: "Encaixe o bloco “pontos” dentro do “mova”.", goal: "Use a variável **pontos** dentro do **mova**" },
+              { type: "inside", parent: ["control_repeat"], child: ["control_wait"], label: "Coloque um bloco “espere” dentro do repita", goal: "Coloque um **espere** dentro do **repita**, para ver o Bloquinho andando" },
+              {
+                type: "visits",
+                points: [
+                  { x: 10, y: 0, goal: "1ª caminhada: **10 passos** para a direita" },
+                  { x: 10, y: -20, goal: "2ª caminhada: **20 passos** para baixo" },
+                  { x: -20, y: -20, goal: "3ª caminhada: **30 passos** para a esquerda" },
+                  { x: -20, y: 20, goal: "4ª caminhada: **40 passos** para cima" },
+                  { x: 30, y: 20, goal: "5ª caminhada: **50 passos** para a direita" },
+                ],
+                tolerance: 3,
+              },
+              { type: "variableEquals", name: "pontos", value: 60, goal: "No fim, **pontos** vale **60**" },
             ],
           },
         },

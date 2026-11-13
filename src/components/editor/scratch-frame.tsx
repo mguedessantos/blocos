@@ -8,18 +8,24 @@ import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref
 export type ScratchFrameHandle = {
   /** O projeto atual do aluno, como arquivo .sb3. */
   getSb3: () => Promise<ArrayBuffer>;
+  /** Para o programa e põe os atores nestes lugares, sem mexer nos blocos. */
+  center: (sprites: { name: string; x: number; y: number; direction: number; visible: boolean }[]) => void;
   /** Troca o projeto aberto (ex.: "Recomeçar"). */
   load: (sb3: ArrayBuffer) => void;
 };
 
 type Msg = { type: string; id?: number; sb3?: ArrayBuffer; message?: string };
 
-export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError, player = false }: {
+export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onLoaded, onRun, onError, player = false }: {
   handle: Ref<ScratchFrameHandle>;
   /** .sb3 inicial (só é lido uma vez). */
   initial: () => Promise<ArrayBuffer>;
   allowedBlocks: string[];
   onChange?: () => void;
+  /** O projeto terminou de abrir no editor. */
+  onLoaded?: () => void;
+  /** O aluno clicou na bandeira verde. */
+  onRun?: () => void;
   onError?: (message: string) => void;
   /** Só o palco para jogar (sem blocos), como o jurado avalia. */
   player?: boolean;
@@ -30,9 +36,9 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError
   const seq = useRef(0);
   const started = useRef(false);
   // as funções mudam a cada render; o ouvinte de mensagens usa sempre a mais nova
-  const latest = useRef({ initial, allowedBlocks, onChange, onError });
+  const latest = useRef({ initial, allowedBlocks, onChange, onLoaded, onRun, onError });
   useEffect(() => {
-    latest.current = { initial, allowedBlocks, onChange, onError };
+    latest.current = { initial, allowedBlocks, onChange, onLoaded, onRun, onError };
   });
 
   const post = useCallback((msg: object, transfer?: Transferable[]) => frame.current?.contentWindow?.postMessage(msg, location.origin, transfer ?? []), []);
@@ -43,6 +49,7 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError
 
   useImperativeHandle(handle, () => ({
     load,
+    center: (sprites) => post({ type: "center", sprites }),
     getSb3: () =>
       new Promise<ArrayBuffer>((resolve, reject) => {
         const id = ++seq.current;
@@ -64,8 +71,12 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onError
         } catch {
           setState("erro");
         }
-      } else if (msg.type === "loaded") setState("pronto");
+      } else if (msg.type === "loaded") {
+        setState("pronto");
+        latest.current.onLoaded?.();
+      }
       else if (msg.type === "changed") latest.current.onChange?.();
+      else if (msg.type === "run") latest.current.onRun?.();
       else if (msg.type === "project" && msg.id && msg.sb3) {
         pending.current.get(msg.id)?.(msg.sb3);
         pending.current.delete(msg.id);

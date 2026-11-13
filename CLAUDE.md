@@ -55,6 +55,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - 10 mundos em 3 níveis (`content/trilhas/{basico,intermediario,avancado}.ts`). Toda habilidade é ensinada e verificada NO EDITOR DO SITE; o PictoBlox aparece só em missões `optional: true` (“Leve para o PictoBlox”), que nunca bloqueiam a trilha.
 - Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).
 - Projetos do editor: `src/lib/blocks/project.ts` (vários atores + palco + variáveis globais); motor em `interpreter.ts` (`World`: teclas, cliques, mensagens, clones, sons). Biblioteca original de personagens/cenários/sons em `library.ts` + desenhos em `components/editor/art.ts`.
+- Objetivos da missão: `goal` em cada checagem (checagens com o mesmo `goal` viram um objetivo) e `visits` (pontos do caminho, na ordem; cada ponto é um objetivo). `objectivesOf` mostra a lista; os objetivos marcam sozinhos (checagem no navegador a cada mudança) e o ✗ só aparece depois de Verificar. O Verificar só libera depois de rodar o programa (mensagem `run` do editor). Mundo 1 já usa.
 - Lições de jogos usam `starter: game({...})` (de `src/lib/blocks/build.ts`) e podem simular teclas/cliques na verificação (`checks.inputs`).
 - `tests/unit/content.test.ts` exige: guia do professor em toda lição, solução de referência com 3 estrelas e que o projeto inicial NÃO passe sem o aluno fazer nada.
 - Depois de mudar o schema do Prisma, REINICIE o `npm run dev` (ele mantém o client antigo em memória).

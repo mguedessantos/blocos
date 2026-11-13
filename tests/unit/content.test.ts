@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { OFFICIAL_TRACKS, type LessonContent } from "../../content/trilhas";
 import {
   b, backdrop, broadcast, c, changeVar, changeX, changeY, createClone, deleteClone, distanceTo, effect, eq, flag, forever, getVar, goTo, gotoXY,
-  gt, hide, iff, ifElse, join, keyPressed, left, lt, move, n, nextCostume, pen, playUntilDone, pointTowards, project, r, random, repeat,
+  gt, hide, iff, ifElse, join, keyPressed, left, lt, move, n, nextCostume, playUntilDone, pointTowards, project, r, random, repeat,
   resetTimer, right, roundOf, say, sayFor, setVar, show, sound, stopAll, t, timer, touching, wait, whenClicked, whenClone, whenKey,
   whenReceive, xpos, ypos, type GameSpec,
 } from "@/lib/blocks/build";
@@ -27,19 +27,20 @@ const SOLUTIONS: Record<string, GameSpec> = {
   // Mundo 1
   "primeiros-passos": one(move(100)),
   "virando-a-esquina": one(move(100), left(90), move(100)),
-  "pule-para-o-canto": one(gotoXY(150, 100)),
+  "pule-para-cima": one(gotoXY(0, 180)),
+  "pule-para-baixo": one(gotoXY(0, -180)),
+  "pule-para-a-esquerda": one(gotoXY(-240, 0)),
+  "pule-para-a-direita": one(gotoXY(240, 0)),
+  "pule-para-o-canto": one(gotoXY(150, 100), gotoXY(240, 180)),
   "passeio-com-pausa": one(move(50), wait(1), move(50)),
-  "diga-ola": one(sayFor("Olá!", 2), move(50)),
+  "diga-ola": one(sayFor("Olá!", 2), sayFor("Eu sou o Bloquinho", 2), move(50), sayFor("Tchau!", 2)),
   apresentacao: one(sayFor("Oi, eu sou o Bloquinho!"), move(60), wait(1), sayFor("Tchau!")),
   // Mundo 2
-  "quadrado-magico": one(pen(), repeat(4, move(100), left(90))),
+  "quadrado-magico": one(repeat(4, move(100), wait(0.5), left(90)), move(50)),
   "dez-passinhos": one(repeat(10, move(10))),
-  triangulo: one(pen(), repeat(3, move(100), left(120))),
-  escada: one(repeat(4, move(30), left(90), move(30), right(90))),
-  "flor-de-quadrados": one(pen(), repeat(4, repeat(4, move(50), right(90)), right(90))),
-  estrela: one(pen(), repeat(5, move(100), right(144))),
+  triangulo: one(repeat(3, move(100), wait(0.5), left(120)), move(50)),
+  escada: one(repeat(4, move(30), left(90), move(30), right(90), wait(0.3))),
   "para-sempre": one(b("motion_pointindirection", { DIRECTION: n(45) }), forever(move(5), b("motion_ifonedgebounce"))),
-  "arte-com-repeticao": one(pen(), repeat(4, repeat(4, move(50), right(90)), right(90))),
   // Mundo 3
   "um-amigo-no-palco": { sprites: [
     { name: "Bloquinho", x: -100, code: [[flag(), sayFor("Oi, tudo bem?", 2)]] },
@@ -90,7 +91,7 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "contando-passos": { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(0)), repeat(5, move(20), changeVar("pontos", n(1))), say(r(getVar("pontos")))]] }] },
   calculadora: one(say(r(b("operator_multiply", { NUM1: n(7), NUM2: n(8) })))),
   "juntando-palavras": one(say(r(join(t("Olá, "), t("mundo!"))))),
-  espiral: { variables: ["pontos"], sprites: [{ code: [[flag(), pen(), setVar("pontos", n(10)), repeat(5, b("motion_movesteps", { STEPS: r(getVar("pontos")) }), right(90), changeVar("pontos", n(10)))]] }] },
+  espiral: { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(10)), repeat(5, b("motion_movesteps", { STEPS: r(getVar("pontos")) }), right(90), changeVar("pontos", n(10)), wait(0.3))]] }] },
   "tabuada-do-3": { variables: ["pontos"], sprites: [{ code: [[flag(), setVar("pontos", n(0)), repeat(10, changeVar("pontos", n(3)), b("looks_sayforsecs", { MESSAGE: r(getVar("pontos")), SECS: n(0.5) }))]] }] },
   "placar-do-jogo": { variables: ["pontos"], sprites: [
     { name: "Bloquinho", x: -150, code: [[flag(), forever(changeX(4), b("motion_ifonedgebounce"))]] },
@@ -173,9 +174,8 @@ const SOLUTIONS: Record<string, GameSpec> = {
 
 // Erros comuns que NÃO podem passar.
 const WRONG: [string, GameSpec][] = [
-  ["quadrado-magico", one(pen(), move(100), left(90), move(100), left(90), move(100), left(90), move(100), left(90))],
-  ["triangulo", one(pen(), repeat(3, move(100), left(90)))],
-  ["flor-de-quadrados", one(pen(), repeat(16, move(50), right(90)))],
+  ["quadrado-magico", one(move(100), left(90), move(100), left(90), move(100), left(90), move(100), left(90))],
+  ["triangulo", one(repeat(3, move(100), left(90)))],
   ["para-sempre", one(forever(move(5)))],
   ["bate-e-volta", one(repeat(30, move(10)))],
   ["direita-ou-esquerda", one(say(t("Direita!")))],
@@ -322,4 +322,21 @@ describe("cursos oficiais", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs.sort()).toEqual(OFFICIAL_TRACKS.map((t) => t.slug).sort());
   });
+});
+
+describe("quem anda não termina onde começou (senão parece que não se mexeu)", async () => {
+  const { World } = await import("@/lib/blocks/interpreter");
+  for (const [slug, spec] of Object.entries(SOLUTIONS)) {
+    it(slug, () => {
+      const l = bySlug.get(slug)!;
+      const w = new World(compileProject(normalizeProject(project(spec))));
+      const start = structuredClone(w.state.targets.filter((t) => !t.isClone));
+      w.runToEnd(checksSchema.parse(l.checks).maxSeconds ?? 30, checksSchema.parse(l.checks).inputs ?? []);
+      for (const t of w.state.targets.filter((t) => !t.isClone)) {
+        const s0 = start.find((s) => s.name === t.name);
+        if (!s0 || t.steps === 0) continue;
+        expect(Math.hypot(t.x - s0.x, t.y - s0.y), `${t.name} andou e voltou para o mesmo lugar`).toBeGreaterThan(5);
+      }
+    });
+  }
 });

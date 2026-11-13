@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowRight, BookOpen, CircleCheck, CircleX, Lightbulb, RotateCcw, X } from "lucide-react";
+import { ArrowRight, BookOpen, Circle, CircleCheck, CircleX, Flag, LocateFixed, Lightbulb, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { Stars } from "@/components/lesson-icon";
 import { buttonClass } from "@/components/ui";
 import { BLOCKS } from "@/lib/blocks/catalog";
-import { normalizeProject, type ProjectState } from "@/lib/blocks/project";
-import type { CheckItem } from "@/lib/checker";
+import { compileProject, normalizeProject, type ProjectState } from "@/lib/blocks/project";
+import { checkProject, checksSchema, type CheckItem } from "@/lib/checker";
 import { ConvertError } from "@/lib/sb3/convert";
 import { buildSb3, clearDraft, deleteSavedProject, fetchSavedProject, projectFromSb3, readDraft, uploadProject, writeDraft } from "@/lib/sb3/pack";
 import { BlockPreview } from "./block-preview";
@@ -31,6 +31,10 @@ type Props = {
   extra?: ReactNode;
   /** "aula": professor resolvendo na projeção; o rascunho fica só neste computador (nada vai para o servidor). */
   mode?: "aluno" | "aula";
+  /** Objetivos da missão (de `objectivesOf`): marcados sozinhos enquanto o aluno monta. */
+  objectives?: { goal: string; bonus: boolean }[];
+  /** Checagens da lição, para marcar os objetivos ao vivo. Só mostra; quem dá estrelas é o Verificar (servidor). */
+  checks?: unknown;
   /** Conteúdo extra no fim da coluna da direita (ex.: guia do professor). */
   aside?: ReactNode;
 };
@@ -60,7 +64,7 @@ function legacyDraft(key: string): unknown {
   }
 }
 
-export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra, mode = "aluno", aside }: Props) {
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra, mode = "aluno", aside, objectives, checks }: Props) {
   const aula = mode === "aula";
   const draftKey = aula ? `blocos:aula:${lessonId}` : `blocos:licao:${lessonId}`;
   const editor = useRef<ScratchFrameHandle | null>(null);
@@ -90,6 +94,35 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
     }
   }, [aula, draftKey, lessonId]);
 
+  // objetivos ao vivo: confere no navegador pouco depois de cada mudança (ou quando o projeto abre)
+  const [live, setLive] = useState<CheckItem[] | null>(null);
+  const [verified, setVerified] = useState(false); // ✗ só aparece depois de Verificar
+  // Verificar só depois de rodar o programa (bandeira verde) desde a última mudança
+  const [ran, setRan] = useState(false);
+  const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const parsedChecks = useMemo(() => checksSchema.safeParse(checks ?? { checks: [] }), [checks]);
+  const runLive = useCallback(() => {
+    if (!parsedChecks.success || !objectives?.length) return;
+    clearTimeout(liveTimer.current);
+    liveTimer.current = setTimeout(async () => {
+      try {
+        const sb3 = await editor.current?.getSb3();
+        if (!sb3) return;
+        const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
+        setLive(checkProject(compileProject(project), parsedChecks.data).items);
+        setVerified(false);
+      } catch {
+        /* bloco que o verificador ainda não entende: deixa como estava */
+      }
+    }, 700);
+  }, [parsedChecks, objectives, starter]);
+  useEffect(() => () => clearTimeout(liveTimer.current), []);
+  const onChange = useCallback(() => {
+    setRan(false);
+    void saveDraft();
+    runLive();
+  }, [saveDraft, runLive]);
+
   const onVerify = () => {
     startTransition(async () => {
       try {
@@ -100,12 +133,23 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
           void uploadProject(lessonId, sb3.slice(0));
         }
         const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
-        setOutcome(await verify(JSON.stringify(project)));
+        const result = await verify(JSON.stringify(project));
+        setOutcome(result);
+        if (result.ok) {
+          setLive(result.items);
+          setVerified(true);
+        }
       } catch (e) {
         setOutcome({ ok: false, error: e instanceof ConvertError ? e.message : "Não foi possível verificar agora. Tente de novo." });
       }
       setResultOpen(true);
     });
+  };
+
+  // a criança perdeu o ator no palco: volta cada um para o lugar do começo da lição, sem apagar o código
+  const recenter = () => {
+    const placed = normalizeProject(starter).sprites.map((s) => ({ name: s.name, x: s.x, y: s.y, direction: s.direction, visible: s.visible }));
+    editor.current?.center(placed);
   };
 
   const restart = async () => {
@@ -118,6 +162,8 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
     }
     editor.current?.load(await starterSb3());
     setOutcome(null);
+    setLive(null);
+    setRan(false);
   };
 
   const allowed = useMemo(() => (allowedBlocks.length ? BLOCKS.filter((b) => allowedBlocks.includes(b.opcode)) : BLOCKS), [allowedBlocks]);
@@ -145,8 +191,11 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
     <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col border-t-2 border-line bg-background" style={{ top }}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-line bg-surface px-4 py-2">
         <div className="min-w-0 flex-1">{header}</div>
+        <button type="button" onClick={recenter} title="Para o programa e traz o personagem de volta. Seus blocos continuam lá." className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-muted hover:text-foreground">
+          <LocateFixed aria-hidden className="h-4 w-4" /> Trazer personagem de volta
+        </button>
         <button type="button" onClick={restart} className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-muted hover:text-foreground">
-          <RotateCcw aria-hidden className="h-4 w-4" /> Recomeçar
+          <RotateCcw aria-hidden className="h-4 w-4" /> Recomeçar (apaga os blocos)
         </button>
         <button
           type="button"
@@ -162,7 +211,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_clamp(280px,22vw,380px)] lg:grid-rows-1">
         {/* Editor de blocos (esquerda) */}
         <div className="relative min-h-0">
-          <ScratchFrame handle={editor} initial={initial} allowedBlocks={allowedBlocks} onChange={saveDraft} />
+          <ScratchFrame handle={editor} initial={initial} allowedBlocks={allowedBlocks} onChange={onChange} onLoaded={runLive} onRun={() => setRan(true)} />
           {helpOpen && (
             <aside
               id="ajuda-blocos"
@@ -190,8 +239,14 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
         {/* Coluna da direita: missão, desafio extra e Verificar */}
         <aside className="max-h-[40dvh] space-y-3 overflow-y-auto border-t-2 border-line p-3 lg:max-h-none lg:border-l-2 lg:border-t-0" aria-label="Missão">
           {mission && <div className="clay p-4 text-[0.95rem]">{mission}</div>}
+        {objectives && objectives.length > 0 && <Objectives objectives={objectives} items={live} verified={verified} />}
           {extra}
-          <button onClick={onVerify} disabled={pending} className={buttonClass("primary", "md", "w-full text-lg")}>
+          {!ran && (
+          <p className="flex items-center gap-2 rounded-2xl border-2 border-dashed border-line px-3 py-2 text-sm font-bold text-muted">
+            <Flag aria-hidden className="h-4 w-4 shrink-0 text-go" /> Clique na bandeira verde para testar seu programa. Depois, o Verificar fica liberado.
+          </p>
+        )}
+        <button onClick={onVerify} disabled={pending || !ran} className={buttonClass("primary", "md", "w-full text-lg disabled:opacity-50")}>
             <CircleCheck aria-hidden className="h-5 w-5" /> {pending ? "Verificando…" : "Verificar"}
           </button>
           {outcome?.ok && outcome.passed && nextHref && !resultOpen && (
@@ -214,6 +269,36 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
       </div>
       {outcome && resultOpen && <ResultDialog outcome={outcome} nextHref={nextHref} onClose={() => setResultOpen(false)} />}
     </div>
+  );
+}
+
+/** Lista de objetivos: vazios antes de verificar; depois, ✓ nos que o aluno cumpriu e ✗ nos que faltam. */
+function Objectives({ objectives, items, verified }: { objectives: { goal: string; bonus: boolean }[]; items: CheckItem[] | null; verified: boolean }) {
+  const checked = items;
+  const allDone = !!checked && checked.filter((i) => !i.bonus).every((i) => i.ok);
+  return (
+    <section className="clay p-4" aria-label="Objetivos">
+      <h2 className="mb-2 font-extrabold">Objetivos</h2>
+      <ol className="space-y-2 text-[0.95rem] font-semibold">
+        {objectives.map((o, k) => {
+          const mine = checked?.filter((i) => i.goal === o.goal) ?? [];
+          const state = !checked || mine.length === 0 ? "todo" : mine.every((i) => i.ok) ? "ok" : verified ? "miss" : "todo";
+          const Icon = state === "ok" ? CircleCheck : state === "miss" ? (o.bonus ? Lightbulb : CircleX) : Circle;
+          const color = state === "ok" ? "text-go" : state === "miss" ? (o.bonus ? "text-star" : "text-[#ff6b6b]") : "text-muted";
+          return (
+            <li key={k} className="flex items-start gap-2">
+              <Icon aria-hidden className={`mt-0.5 h-5 w-5 shrink-0 ${color}`} />
+              <span>
+                {o.goal.split("**").map((part, j) => (j % 2 ? <strong key={j} className="font-extrabold">{part}</strong> : part))}
+                {o.bonus && <span className="ml-1 text-xs font-extrabold text-star">(bônus)</span>}
+                <span className="sr-only">{state === "ok" ? " (feito)" : state === "miss" ? " (falta)" : ""}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {allDone && !verified && <p role="status" className="mt-3 font-extrabold text-star">Tudo pronto! Clique em Verificar para ganhar as estrelas.</p>}
+    </section>
   );
 }
 

@@ -73,8 +73,8 @@ export const mundo4: TrackContent = {
         editor("robo-aspirador", {
           objetivo: "Resolver um problema aberto com laço infinito + condição.",
           minutos: 20,
-          passos: ["Deixe a turma testar ângulos diferentes e comparar qual robô “limpa” mais o palco.", "Ative a caneta para ver o caminho."],
-          errosComuns: ["Girar 180 sempre: o robô fica preso indo e voltando na mesma linha."],
+          passos: ["Deixe a turma testar ângulos diferentes e comparar qual aspirador “limpa” mais o palco.", "Peça para observarem o caminho do Bloquinho no palco."],
+          errosComuns: ["Girar 180 sempre: o aspirador fica preso indo e voltando na mesma linha."],
         }, "Use **número aleatório entre 90 e 180** no giro e compare o caminho."),
       ],
     },
@@ -592,9 +592,9 @@ export const mundo7: TrackContent = {
         editor("espiral", {
           objetivo: "Usar variável para controlar o movimento.",
           minutos: 15,
-          passos: ["Antes de rodar, peça para a turma prever o desenho."],
-          errosComuns: ["Mudar a variável antes de mover: a primeira linha fica com 20."],
-        }, "Troque o giro de 90 por 91 e aumente as repetições para 100. 🌀"),
+          passos: ["Antes de rodar, peça para a turma prever o caminho."],
+          errosComuns: ["Mudar a variável antes de mover: a primeira caminhada fica com 20."],
+        }, "Troque o giro de 90 por 120. Que forma o caminho faz? 🌀"),
         editor("tabuada-do-3", {
           objetivo: "Combinar variável, laço e operação.",
           minutos: 15,

@@ -138,24 +138,24 @@ Faça o Bloquinho andar **5 passos** **até que** esteja **tocando na borda**. D
         },
         {
           slug: "robo-aspirador",
-          title: "Robô aspirador",
+          title: "Aspirador de pó",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Desafio: o robô aspirador
+          content: `# 🏆 Desafio: o aspirador de pó
 
-Robôs aspiradores andam reto até bater na parede, aí giram e continuam limpando.
+Alguns aspiradores de pó andam sozinhos: vão reto até bater na parede, aí giram e continuam limpando.
 
 Programe o Bloquinho para andar **para sempre**: a cada passo, **se** estiver **tocando na borda**, ele **gira** (você escolhe quanto!) e continua.
 
 Ele precisa andar pelo palco sem ficar preso na parede.`,
-          allowedBlocks: [...MOVE, "control_forever", "control_if", "control_if_else", "sensing_touchingobject", "operator_random", ...PEN_BLOCKS()],
+          allowedBlocks: [...MOVE, "control_forever", "control_if", "control_if_else", "sensing_touchingobject", "operator_random"],
           startWithFlag: true,
           checks: {
             maxSeconds: 10,
             checks: [
               { type: "usesBlock", opcode: "control_forever" },
               { type: "usesBlock", opcode: "sensing_touchingobject" },
-              { type: "walked", min: 1500, message: "O robô ficou preso! Quando tocar na borda, gire o suficiente para sair dela." },
+              { type: "walked", min: 1500, message: "O Bloquinho ficou preso! Quando tocar na borda, gire o suficiente para sair dela." },
               { type: "noBlock", opcode: "motion_ifonedgebounce", message: "Faça sem o bloco “se tocar na borda, volte” — use o “se” e o sensor." },
             ],
           },
@@ -164,7 +164,3 @@ Ele precisa andar pelo palco sem ficar preso na parede.`,
     },
   ],
 };
-
-function PEN_BLOCKS() {
-  return ["pen_penDown", "pen_penUp", "pen_clear"];
-}

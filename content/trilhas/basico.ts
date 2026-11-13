@@ -65,20 +65,44 @@ export const mundo1: TrackContent = {
         editor("primeiros-passos", {
           objetivo: "Usar evento + movimento e entender que a ordem dos blocos importa.",
           minutos: 10,
-          passos: ["Mostre que o bloco precisa ficar encaixado embaixo da bandeira.", "Deixe errar: “e se colocar 10?”. Depois peça 100."],
+          passos: ["Mostre que o bloco precisa ficar encaixado embaixo da bandeira.", "Deixe errar: “e se colocar 10?”. Depois peça 100.", "Mostre que o objetivo fica marcado sozinho quando o programa está certo."],
           errosComuns: ["Bloco solto ao lado da bandeira.", "Digitar 100 no bloco errado (girar)."],
-        }, "Faça o Bloquinho ir até x: 100 e **voltar** para o começo."),
+        }, "Faça o Bloquinho andar **200 passos** e depois mais **40**. Onde ele parou?"),
         editor("virando-a-esquina", {
           objetivo: "Combinar andar e girar; entender 90 graus como uma esquina.",
           minutos: 10,
           passos: ["Peça para um aluno “ser o robô” na sala enquanto a turma dá os comandos.", "Pergunte: girar para a direita ou para a esquerda?"],
           errosComuns: ["Girar para o lado errado (↻ em vez de ↺)."],
-        }, "Leve o Bloquinho de volta ao centro fazendo o caminho ao contrário."),
+        }, "Continue virando e andando até o Bloquinho dar a volta e chegar de novo no centro."),
+        editor("pule-para-cima", {
+          objetivo: "Entender o palco como um mapa e o y positivo (para cima).",
+          minutos: 10,
+          passos: ["Desenhe o plano cartesiano no quadro com o centro (0,0) e mostre o topo (y: 180)."],
+          errosComuns: ["Mudar o x em vez do y."],
+        }, "Pule para **y: 90**. Onde o Bloquinho parou?"),
+        editor("pule-para-baixo", {
+          objetivo: "Entender o y negativo (para baixo).",
+          minutos: 10,
+          passos: ["Pergunte: se o topo é 180, o que é o chão?"],
+          errosComuns: ["Esquecer o sinal de menos."],
+        }, "Pule para **y: -90**, no meio do caminho até o chão."),
+        editor("pule-para-a-esquerda", {
+          objetivo: "Entender o x negativo (para a esquerda).",
+          minutos: 10,
+          passos: ["Peça para a turma apontar no quadro onde fica x: -240."],
+          errosComuns: ["Colocar o -240 no y."],
+        }),
+        editor("pule-para-a-direita", {
+          objetivo: "Entender o x positivo (para a direita).",
+          minutos: 10,
+          passos: ["Compare com a lição anterior: o que muda é só o sinal."],
+          errosComuns: ["Colocar 240 no y."],
+        }),
         editor("pule-para-o-canto", {
-          objetivo: "Entender coordenadas x e y do palco.",
-          minutos: 15,
-          passos: ["Desenhe o plano cartesiano no quadro com o centro (0,0).", "Peça para a turma “adivinhar” onde fica x: 150, y: 100 antes de testar."],
-          errosComuns: ["Trocar x por y.", "Esquecer que y negativo é para baixo."],
+          objetivo: "Combinar x e y num mesmo pulo.",
+          minutos: 10,
+          passos: ["Peça para a turma “adivinhar” onde fica x: 150, y: 100 antes de testar."],
+          errosComuns: ["Trocar x por y."],
         }, "Faça o Bloquinho visitar os **4 cantos** do palco usando só blocos “vá para x: y:”."),
         editor("passeio-com-pausa", {
           objetivo: "Usar espera para controlar o tempo de uma animação.",
@@ -110,10 +134,10 @@ Não existe resposta única: invente a sua!`,
           startWithFlag: true,
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "looks_sayforsecs", min: 2, message: "O Bloquinho precisa falar pelo menos 2 frases com “diga … por … segundos”." },
-              { type: "usesAnyBlock", opcodes: ["motion_movesteps", "motion_gotoxy"], label: "Faça o Bloquinho andar pelo palco" },
-              { type: "usesBlock", opcode: "control_wait" },
-              { type: "walked", min: 30, message: "O Bloquinho precisa sair do lugar." },
+              { type: "usesBlock", opcode: "looks_sayforsecs", min: 2, message: "O Bloquinho precisa falar pelo menos 2 frases com “diga … por … segundos”.", goal: "Fale pelo menos **2 frases** com **diga … por … segundos**" },
+              { type: "usesAnyBlock", opcodes: ["motion_movesteps", "motion_gotoxy"], label: "Faça o Bloquinho andar pelo palco", goal: "Faça o Bloquinho **andar** pelo palco" },
+              { type: "walked", min: 30, message: "O Bloquinho precisa sair do lugar.", goal: "Faça o Bloquinho **andar** pelo palco" },
+              { type: "usesBlock", opcode: "control_wait", goal: "Use uma **espera** em algum momento" },
             ],
           },
           guide: {
@@ -175,9 +199,9 @@ Faça no PictoBlox o que você já fez aqui: o ator **anda** e diz **Olá, mundo
 4. Teste, salve e envie o arquivo .sb3.`,
           checks: {
             checks: [
-              { type: "inScript", hat: [FLAG], opcodes: ["motion_movesteps"], label: "Use “mova … passos” embaixo da bandeira verde" },
-              { type: "inScript", hat: [FLAG], opcodes: ["looks_say", "looks_sayforsecs"], label: "Use um bloco “diga” embaixo da bandeira verde" },
-              { type: "textContains", opcodes: ["looks_say", "looks_sayforsecs"], text: "mundo", label: "A frase precisa ter a palavra “mundo”" },
+              { type: "inScript", hat: [FLAG], opcodes: ["motion_movesteps"], label: "Use “mova … passos” embaixo da bandeira verde", goal: "Use **mova … passos** embaixo da bandeira verde" },
+              { type: "inScript", hat: [FLAG], opcodes: ["looks_say", "looks_sayforsecs"], label: "Use um bloco “diga” embaixo da bandeira verde", goal: "Use um bloco **diga** embaixo da bandeira verde" },
+              { type: "textContains", opcodes: ["looks_say", "looks_sayforsecs"], text: "mundo", label: "A frase precisa ter a palavra “mundo”", goal: "A frase precisa ter a palavra **mundo**" },
             ],
           },
           guide: {
@@ -218,15 +242,15 @@ export const mundo2: TrackContent = {
         editor("quadrado-magico", {
           objetivo: "Descobrir o padrão de um quadrado (4 × andar + girar 90).",
           minutos: 15,
-          passos: ["Peça para desenharem o quadrado no caderno e contarem quantas vezes repetem os mesmos movimentos."],
-          errosComuns: ["Esquecer de abaixar a caneta.", "Girar 45 em vez de 90."],
-        }, "Desenhe um quadrado **maior**, de 150 passos, e depois um **pequeno dentro dele**."),
+          passos: ["Peça para desenharem o caminho no caderno e contarem quantas vezes repetem os mesmos movimentos."],
+          errosComuns: ["Colocar o giro fora do repita.", "Girar 45 em vez de 90."],
+        }, "Faça um quadrado **maior**, de 150 passos. O que muda no programa?"),
         editor("triangulo", {
           objetivo: "Generalizar: em um polígono, a soma dos giros é 360.",
           minutos: 10,
           passos: ["Pergunte: se o quadrado gira 4 × 90 = 360, quanto o triângulo gira em cada canto?"],
           errosComuns: ["Girar 60 (ângulo interno) em vez de 120 (ângulo externo)."],
-        }, "Desenhe um **hexágono** (6 lados). Qual é o giro?"),
+        }, "Ande em um **hexágono** (6 lados). Qual é o giro?"),
         editor("escada", {
           objetivo: "Repetir uma sequência de vários blocos.",
           minutos: 10,
@@ -236,55 +260,14 @@ export const mundo2: TrackContent = {
       ],
     },
     {
-      title: "Laços dentro de laços",
+      title: "Repetir para sempre",
       lessons: [
-        editor("flor-de-quadrados", {
-          objetivo: "Usar laços aninhados (repita dentro de repita).",
-          minutos: 15,
-          passos: ["Comece com o quadrado pronto e pergunte: como desenhar 4 deles girando?", "Mostre que o laço de fora repete o laço de dentro inteiro."],
-          errosComuns: ["Colocar o giro de 90 do laço de fora dentro do laço de dentro."],
-        }, "Faça uma flor com **8 quadrados**, girando 45 graus entre eles."),
-        editor("estrela", {
-          objetivo: "Aplicar laços a um padrão novo.",
-          minutos: 15,
-          passos: ["Deixe a turma testar ângulos e descobrir sozinha antes de revelar o 144."],
-          errosComuns: ["Usar 72 graus (desenha um pentágono, não uma estrela)."],
-        }),
         editor("para-sempre", {
           objetivo: "Usar o laço infinito e o bloco de quicar.",
           minutos: 10,
           passos: ["Explique que jogos rodam dentro de um “sempre”: o jogo nunca para sozinho."],
           errosComuns: ["Apontar para 90: o Bloquinho fica só indo e voltando na horizontal."],
         }),
-        {
-          slug: "arte-com-repeticao",
-          title: "Crie: arte com repetição",
-          type: "DESAFIO",
-          xp: 30,
-          content: `# 🏆 Crie: o seu padrão
-
-Use a **caneta** e **repetições** para criar um desenho seu: uma flor, um sol, uma espiral de quadrados, uma estrela gigante...
-
-Regras:
-- Use **pelo menos 2 blocos repita** (um pode estar dentro do outro).
-- O desenho precisa ser **grande**: pelo menos 600 passos de linha.`,
-          allowedBlocks: [FLAG, "motion_movesteps", "motion_turnright", "motion_turnleft", "motion_gotoxy", "motion_pointindirection", "control_repeat", "pen_penDown", "pen_penUp", "pen_clear", "looks_hide", "looks_show"],
-          startWithFlag: true,
-          checks: {
-            checks: [
-              { type: "usesBlock", opcode: "control_repeat", min: 2, message: "Use pelo menos 2 blocos “repita”." },
-              { type: "drawnLength", min: 600, message: "O desenho precisa ser maior: pelo menos 600 passos de linha. Abaixou a caneta?" },
-              { type: "inside", parent: ["control_repeat"], child: ["control_repeat"], label: "Bônus: um repita dentro de outro", bonus: true },
-            ],
-          },
-          guide: {
-            objetivo: "Criar livremente com laços e caneta.",
-            minutos: 20,
-            passos: ["Faça uma “galeria”: cada aluno mostra o desenho no projetor e explica o padrão."],
-            errosComuns: ["Desenhos que saem do palco: diminua os passos."],
-          },
-          extra: "Esconda o Bloquinho no início (**esconda**) para o desenho ficar mais bonito.",
-        },
       ],
     },
     {

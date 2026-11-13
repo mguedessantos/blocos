@@ -28,6 +28,7 @@ test("professor dá aula: abre a lição como o aluno, verifica e nada é gravad
   await db.connect();
   const count = async () => Number((await db.query(`select count(*) from "Progress" p join "User" u on u.id = p."userId" where u.email = 'prof@aurora.dev'`)).rows[0].count);
   const before = await count();
+  await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await page.getByRole("button", { name: "Verificar" }).click();
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toBeVisible();
   expect(await count()).toBe(before);

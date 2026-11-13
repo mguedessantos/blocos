@@ -1,7 +1,6 @@
 import type { TrackContent } from "../trilhas/types";
 
 const BASE = ["event_whenflagclicked", "motion_movesteps", "motion_turnright", "motion_turnleft", "control_repeat"];
-const PEN = ["pen_penDown", "pen_penUp", "pen_clear"];
 
 export const repeticao: TrackContent = {
   slug: "repeticao",
@@ -55,19 +54,30 @@ No final ele vai estar em **x: 100**.`,
           slug: "triangulo",
           title: "Triângulo",
           type: "EXERCICIO",
-          content: `## Missão: desenhe um triângulo
+          content: `## Missão: ande em triângulo
 
 Um triângulo tem **3 lados**. Para fechar a figura, o Bloquinho precisa girar **120 graus** em cada canto (3 × 120 = 360, uma volta inteira!).
 
-Abaixe a caneta e desenhe um triângulo com lados de **100 passos**.`,
-          allowedBlocks: [...BASE, ...PEN],
+Faça o Bloquinho andar em um triângulo com lados de **100 passos**, usando **repita**. No fim, ele **sai** do triângulo.
+
+Coloque um **espere** dentro do repita para ver o Bloquinho andando, em vez de pular.`,
+          allowedBlocks: [...BASE, "control_wait"],
           startWithFlag: true,
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "control_repeat" },
-              { type: "drawnLength", min: 300, max: 300, message: "O triângulo precisa ter 3 lados de 100 passos." },
-              { type: "finalPosition", x: 0, y: 0, message: "Volte ao ponto de partida para fechar o triângulo." },
-              { type: "maxBlocks", max: 5, bonus: true },
+              { type: "usesBlock", opcode: "control_repeat", goal: "Use o bloco **repita**" },
+              { type: "inside", parent: ["control_repeat"], child: ["control_wait"], label: "Coloque um bloco “espere” dentro do repita", goal: "Coloque um **espere** dentro do **repita**, para ver o Bloquinho andando" },
+              {
+                type: "visits",
+                points: [
+                  { x: 100, y: 0, goal: "Chegue no **1º canto** (x: 100, y: 0)" },
+                  { x: 50, y: 87, goal: "Chegue no **2º canto**, lá em cima" },
+                  { x: 0, y: 0, goal: "Volte para o **começo** e feche o triângulo" },
+                  { x: 50, y: 0, goal: "Depois do **repita**, ande **50 passos** para sair do triângulo" },
+                ],
+                tolerance: 5,
+              },
+              { type: "maxBlocks", max: 6, bonus: true, goal: "Use só **6 blocos** no total" },
             ],
           },
         },
@@ -81,15 +91,25 @@ Cada degrau é assim: **anda 30 para a direita, sobe 30**. Faça o Bloquinho sub
 
 Ele precisa terminar em **x: 120, y: 120**, olhando para a **direita** (direção 90).
 
-> Dica: para subir, gire para a esquerda; depois, gire de volta para a direita.`,
-          allowedBlocks: [...BASE, ...PEN],
+> Dica: para subir, gire para a esquerda; depois, gire de volta para a direita. Coloque um **espere** dentro do repita para ver cada degrau.`,
+          allowedBlocks: [...BASE, "control_wait"],
           startWithFlag: true,
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "control_repeat" },
-              { type: "finalPosition", x: 120, y: 120 },
-              { type: "finalDirection", direction: 90 },
-              { type: "maxBlocks", max: 6, bonus: true },
+              { type: "usesBlock", opcode: "control_repeat", goal: "Use o bloco **repita**" },
+              { type: "inside", parent: ["control_repeat"], child: ["control_wait"], label: "Coloque um bloco “espere” dentro do repita", goal: "Coloque um **espere** dentro do **repita**, para ver o Bloquinho subindo" },
+              {
+                type: "visits",
+                points: [
+                  { x: 30, y: 30, goal: "Suba o **1º degrau** (x: 30, y: 30)" },
+                  { x: 60, y: 60, goal: "Suba o **2º degrau** (x: 60, y: 60)" },
+                  { x: 90, y: 90, goal: "Suba o **3º degrau** (x: 90, y: 90)" },
+                  { x: 120, y: 120, goal: "Suba o **4º degrau** (x: 120, y: 120)" },
+                ],
+                tolerance: 5,
+              },
+              { type: "finalDirection", direction: 90, goal: "Termine olhando para a **direita**" },
+              { type: "maxBlocks", max: 7, bonus: true, goal: "Use só **7 blocos** no total" },
             ],
           },
         },
@@ -111,7 +131,7 @@ Dá para colocar um **repita dentro de outro repita**!
 2. Coloque esse quadrado dentro de **outro repita 4 vezes**, girando **90 graus** depois de cada quadrado.
 
 Você vai ver 4 quadrados formando uma flor. 🌸`,
-          allowedBlocks: [...BASE, ...PEN],
+          allowedBlocks: [...BASE, "control_wait"],
           startWithFlag: true,
           checks: {
             checks: [
@@ -131,7 +151,7 @@ Você vai ver 4 quadrados formando uma flor. 🌸`,
 Uma estrela de 5 pontas é um caminho com **5 linhas de 100 passos**. O segredo é o ângulo: em cada ponta, o Bloquinho gira **144 graus**.
 
 Desenhe a estrela e volte ao ponto de partida.`,
-          allowedBlocks: [...BASE, ...PEN],
+          allowedBlocks: [...BASE, "control_wait"],
           startWithFlag: true,
           checks: {
             checks: [

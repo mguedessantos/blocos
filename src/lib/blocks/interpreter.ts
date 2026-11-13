@@ -17,6 +17,10 @@ const MAX_CLONES = 300;
 const MAX_THREADS = 2000;
 
 export type Line = [number, number, number, number];
+const MAX_PATH = 2000;
+
+export type PathStep = { x: number; y: number; d: number; t: number; say?: string };
+
 export type RotationStyle = "all around" | "left-right" | "don't rotate";
 
 export type TargetState = {
@@ -37,6 +41,8 @@ export type TargetState = {
   penDown: boolean;
   /** Distância realmente percorrida (útil para checagens). */
   steps: number;
+  /** O que o ator fez, em ordem (para checar os objetivos passo a passo): posição, direção, tempo e falas. */
+  path: PathStep[];
 };
 
 export type WorldState = {
@@ -146,6 +152,7 @@ export class World {
     return {
       uid: ++this.uid, name, character, isClone: false, x: s.x ?? 0, y: s.y ?? 0, direction: s.direction ?? 90, size: s.size ?? 100,
       visible: s.visible ?? true, costume: 0, rotationStyle: "all around", ghost: 0, color: 0, bubble: null, penDown: false, steps: 0,
+      path: [{ x: s.x ?? 0, y: s.y ?? 0, d: s.direction ?? 90, t: 0 }],
     };
   }
 
@@ -326,14 +333,22 @@ export class World {
     const ny = round(Math.max(-STAGE_H / 2, Math.min(STAGE_H / 2, y)));
     if (t.penDown && (nx !== t.x || ny !== t.y) && this.state.lines.length < MAX_LINES) this.state.lines.push([t.x, t.y, nx, ny]);
     t.steps += Math.hypot(nx - t.x, ny - t.y);
+    const moved = nx !== t.x || ny !== t.y;
     t.x = nx;
     t.y = ny;
+    if (moved) this.mark(t);
+  }
+
+  // shortcut: guarda só os primeiros MAX_PATH passos; basta para as lições passo a passo (jogos longos não usam)
+  private mark(t: TargetState, say?: string) {
+    if (t.path.length < MAX_PATH) t.path.push({ x: t.x, y: t.y, d: t.direction, t: this.state.time, ...(say ? { say } : {}) });
   }
 
   private say(t: TargetState, text: number | string) {
     const s = String(text).slice(0, MAX_TEXT);
     t.bubble = s === "" ? null : s;
     if (s !== "" && this.state.said.length < 1000) this.state.said.push(s);
+    if (s !== "") this.mark(t, s);
   }
 
   private *wait(seconds: number): Generator<void, void, void> {
@@ -351,7 +366,7 @@ export class World {
     if (clones >= MAX_CLONES) return;
     const src = !of || of === "_myself_" ? parent : this.state.targets.find((t) => t.name === of && !t.isClone);
     if (!src || src === this.stageTarget) return;
-    const clone: TargetState = { ...src, uid: ++this.uid, isClone: true, bubble: null, steps: 0 };
+    const clone: TargetState = { ...src, uid: ++this.uid, isClone: true, bubble: null, steps: 0, path: [] };
     this.state.targets.splice(this.state.targets.indexOf(src), 0, clone); // clones ficam atrás do original
     this.state.maxClones = Math.max(this.state.maxClones, clones + 1);
     this.state.clonesCreated++;
@@ -371,8 +386,8 @@ export class World {
           this.moveTo(t, t.x + steps * Math.cos(rad), t.y + steps * Math.sin(rad));
           break;
         }
-        case "motion_turnright": t.direction = normDir(t.direction + n(a.DEGREES)); break;
-        case "motion_turnleft": t.direction = normDir(t.direction - n(a.DEGREES)); break;
+        case "motion_turnright": t.direction = normDir(t.direction + n(a.DEGREES)); this.mark(t); break;
+        case "motion_turnleft": t.direction = normDir(t.direction - n(a.DEGREES)); this.mark(t); break;
         case "motion_gotoxy": this.moveTo(t, n(a.X), n(a.Y)); break;
         case "motion_goto": {
           const p = this.pointOf(st.fields.TO ?? "_random_", t);
@@ -393,7 +408,7 @@ export class World {
         case "motion_changeyby": this.moveTo(t, t.x, t.y + n(a.DY)); break;
         case "motion_setx": this.moveTo(t, n(a.X), t.y); break;
         case "motion_sety": this.moveTo(t, t.x, n(a.Y)); break;
-        case "motion_pointindirection": t.direction = normDir(n(a.DIRECTION)); break;
+        case "motion_pointindirection": t.direction = normDir(n(a.DIRECTION)); this.mark(t); break;
         case "motion_pointtowards": {
           const p = this.pointOf(st.fields.TOWARDS ?? "_mouse_", t);
           if (p && (p.x !== t.x || p.y !== t.y)) t.direction = normDir(90 - (Math.atan2(p.y - t.y, p.x - t.x) * 180) / Math.PI);

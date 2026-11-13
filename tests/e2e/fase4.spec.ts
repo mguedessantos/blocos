@@ -97,7 +97,7 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   const kid = await ctx.newPage();
   await loginStudent(kid, cred.code, cred.username, cred.password);
   await expect(kid.getByRole("heading", { name: "PictoBlox e Introdução à Programação de Blocos" })).toBeVisible();
-  await expect(kid.getByText(/0 de 8 lições · \+2 extras/)).toBeVisible();
+  await expect(kid.getByText(/0 de 12 lições · \+2 extras/)).toBeVisible();
 
   await kid.getByRole("link", { name: "Ver trilha Mundo 1 · Vila do Palco" }).click();
   await expect(kid.getByLabel("Ande 100 passos (trancada)")).toBeVisible();
@@ -110,12 +110,14 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   // programa errado → sem estrelas e dica amigável
   const result = kid.getByRole("status", { name: "Resultado da verificação" });
   await openWithProgram(kid, program(move(10)));
+  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await kid.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(result).toContainText("Quase lá");
   await expect(result).toContainText("x: 100");
 
   // programa certo → 3 estrelas, XP e botão para a próxima
   await openWithProgram(kid, program(move(100)));
+  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await kid.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(result).toContainText("Perfeito");
   await expect(result.getByLabel("3 de 3 estrelas")).toBeVisible();
@@ -124,7 +126,7 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   await expect(kid.getByRole("heading", { level: 1, name: "Virando a esquina" })).toBeVisible();
 
   await kid.goto(`${ESCOLA}/aluno`);
-  await expect(kid.getByText(/3 de 8 lições/)).toBeVisible();
+  await expect(kid.getByText(/3 de 12 lições/)).toBeVisible();
   await expect(kid.getByText("20 XP", { exact: true })).toBeVisible();
   await ctx.close();
 });
@@ -167,6 +169,7 @@ test("arrastar um bloco de verdade e clicar na bandeira move o personagem", asyn
   await expect(spriteX(page)).toHaveValue("10");
 
   // ao verificar, o projeto completo (.sb3) fica guardado no servidor para abrir em outro computador
+  await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await page.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toBeVisible();
   const lessonId = new URL(page.url()).pathname.split("/").pop();
@@ -195,6 +198,7 @@ test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ p
   }
   await expect(spriteX(page)).toHaveValue("30");
 
+  await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await page.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toContainText("Perfeito");
 });

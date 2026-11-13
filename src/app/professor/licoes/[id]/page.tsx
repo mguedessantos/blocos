@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getCatalogLesson } from "@/lib/dal/lessons";
 import { previewVerifyAction } from "./actions";
+import { objectivesOf } from "@/lib/checker";
 
 export const metadata = { title: "Aula" };
 
@@ -84,6 +85,8 @@ export default async function AulaPage(props: PageProps<"/professor/licoes/[id]"
           mode="aula"
           lessonId={lesson.id}
           allowedBlocks={lesson.allowedBlocks}
+          objectives={objectivesOf(lesson.checks)}
+          checks={lesson.checks}
           starter={lesson.starterWorkspace}
           saved={null}
           nextHref={nextId ? `/professor/licoes/${nextId}` : null}

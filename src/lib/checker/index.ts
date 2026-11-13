@@ -11,7 +11,8 @@ import type { Program } from "../blocks/program";
 import { singleSpriteProject, type ProjectProgram } from "../blocks/project";
 import { modelFromProject, type StaticModel } from "../blocks/static-model";
 
-const base = { message: z.string().max(300).optional(), bonus: z.boolean().optional() };
+/** goal: objetivo mostrado ao aluno na missão (checagens com o mesmo goal formam um objetivo só). */
+const base = { message: z.string().max(300).optional(), bonus: z.boolean().optional(), goal: z.string().max(160).optional() };
 /** Ator observado pelas checagens de execução (padrão: o primeiro ator). */
 const sprite = { sprite: z.string().max(30).optional() };
 const ops = z.array(z.string()).min(1).max(20);
@@ -33,6 +34,16 @@ export const checkSpecSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("textContains"), opcodes: ops, text: z.string().min(1), label: z.string().max(120), ...base }),
   // de execução (só editor)
   z.object({ type: z.literal("finalPosition"), x: z.number(), y: z.number(), tolerance: z.number().nonnegative().optional(), ...sprite, ...base }),
+  // passos NA ORDEM; cada passo é um objetivo. Um passo pode pedir: lugar (x e/ou y; sem x vale qualquer x,
+  // ex. { y: 180 } = topo), direção (dir), uma fala (say, trecho do texto) ou uma pausa antes do próximo movimento (wait, segundos)
+  z.object({
+    type: z.literal("visits"),
+    points: z.array(z.object({
+      x: z.number().optional(), y: z.number().optional(), dir: z.number().optional(), say: z.string().max(60).optional(),
+      wait: z.number().positive().optional(), goal: z.string().max(160),
+    })).min(1).max(16),
+    tolerance: z.number().nonnegative().optional(), ...sprite, bonus: z.boolean().optional(),
+  }),
   z.object({ type: z.literal("finalDirection"), direction: z.number(), ...sprite, ...base }),
   z.object({ type: z.literal("said"), text: z.string(), ...base }),
   z.object({ type: z.literal("variableEquals"), name: z.string(), value: z.union([z.number(), z.string()]), ...base }),
@@ -59,11 +70,11 @@ export const checksSchema = z.object({
 
 export type CheckSpec = z.infer<typeof checkSpecSchema>;
 export type Checks = z.infer<typeof checksSchema>;
-export type CheckItem = { ok: boolean; message: string; bonus: boolean };
+export type CheckItem = { ok: boolean; message: string; bonus: boolean; goal?: string };
 export type CheckResult = { passed: boolean; stars: number; items: CheckItem[]; summary: string };
 
 const RUNTIME_TYPES = new Set([
-  "finalPosition", "finalDirection", "said", "variableEquals", "drawnLength", "visible", "walked",
+  "finalPosition", "visits", "finalDirection", "said", "variableEquals", "drawnLength", "visible", "walked",
   "movedBy", "variableAtLeast", "backdropIs", "clonesAtLeast", "stopped", "playedSound",
 ]);
 export const needsRuntime = (spec: CheckSpec) => RUNTIME_TYPES.has(spec.type);
@@ -218,7 +229,46 @@ function finish(items: CheckItem[]): CheckResult {
   return { passed: requiredOk, stars, items, summary };
 }
 
-const item = (spec: CheckSpec, r: Eval): CheckItem => ({ ok: r.ok, bonus: !!spec.bonus, message: r.ok ? r.pass : (spec.message ?? r.fail) });
+const item = (spec: CheckSpec, r: Eval): CheckItem => ({
+  ok: r.ok, bonus: !!spec.bonus, message: r.ok ? r.pass : ("message" in spec && spec.message ? spec.message : r.fail),
+  ...("goal" in spec && spec.goal ? { goal: spec.goal } : {}),
+});
+
+type VisitsSpec = Extract<CheckSpec, { type: "visits" }>;
+
+/** Um item por passo: procura cada passo no que o ator fez, depois do passo anterior encontrado. */
+function visitItems(spec: VisitsSpec, w: WorldState): CheckItem[] {
+  const s = spec.sprite ? w.targets.find((t) => t.name === spec.sprite && !t.isClone) : w.targets.find((t) => !t.isClone);
+  const path = s?.path ?? [];
+  const tol = spec.tolerance ?? 10;
+  let from = 1; // path[0] é como o ator começou
+  return spec.points.map((p) => {
+    const hit = (i: number) => {
+      const e = path[i];
+      if (p.wait !== undefined) return e.t - path[i - 1].t >= p.wait - 0.05;
+      if (p.say !== undefined) return !!e.say && e.say.toLowerCase().includes(p.say.toLowerCase());
+      return (p.x === undefined || Math.abs(e.x - p.x) <= tol) && (p.y === undefined || Math.abs(e.y - p.y) <= tol) && (p.dir === undefined || sameAngle(e.d, p.dir));
+    };
+    let i = from;
+    while (i < path.length && !hit(i)) i++;
+    const ok = i < path.length;
+    // a pausa acontece ANTES do passo i, então o próximo objetivo ainda pode ser esse mesmo passo
+    if (ok) from = p.wait !== undefined ? i : i + 1;
+    return { ok, bonus: !!spec.bonus, goal: p.goal, message: ok ? `Feito: ${p.goal.replaceAll("**", "")}.` : `Ainda falta (ou está fora de ordem): ${p.goal.replaceAll("**", "")}.` };
+  });
+}
+
+/** Objetivos da missão, na ordem, para mostrar ao aluno antes e depois de verificar. */
+export function objectivesOf(raw: unknown): { goal: string; bonus: boolean }[] {
+  const parsed = checksSchema.safeParse(raw ?? { checks: [] });
+  if (!parsed.success) return [];
+  const out = new Map<string, boolean>();
+  for (const spec of parsed.data.checks) {
+    const goals = spec.type === "visits" ? spec.points.map((p) => p.goal) : spec.goal ? [spec.goal] : [];
+    for (const g of goals) if (!out.has(g)) out.set(g, !!spec.bonus);
+  }
+  return [...out].map(([goal, bonus]) => ({ goal, bonus }));
+}
 
 /** Verificação de um projeto do editor do site (estática + execução com entradas simuladas). */
 export function checkProject(project: ProjectProgram, checks: Checks): CheckResult {
@@ -236,6 +286,10 @@ export function checkProject(project: ProjectProgram, checks: Checks): CheckResu
     world.runToEnd(checks.maxSeconds ?? 30, checks.inputs ?? []);
   }
   for (const spec of checks.checks) {
+    if (spec.type === "visits") {
+      items.push(...visitItems(spec, world!.state));
+      continue;
+    }
     items.push(item(spec, evaluateStatic(spec, model) ?? evaluateRuntime(spec, world!.state, initial!)));
   }
   return finish(items);
@@ -248,7 +302,8 @@ export function check(program: Program, checks: Checks): CheckResult {
 
 /** Verificação de um projeto .sb3 (só checagens estáticas). */
 export function checkModel(model: StaticModel, checks: Checks): CheckResult {
-  const items = checks.checks.map((spec) => {
+  const items = checks.checks.flatMap((spec) => {
+    if (spec.type === "visits") return spec.points.map((p) => ({ ok: false, bonus: !!spec.bonus, goal: p.goal, message: "Esta parte só pode ser verificada no editor do site." }));
     const r = evaluateStatic(spec, model);
     return r ? item(spec, r) : { ok: false, bonus: !!spec.bonus, message: "Esta parte só pode ser verificada no editor do site." };
   });
