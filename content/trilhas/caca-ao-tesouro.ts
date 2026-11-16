@@ -113,7 +113,6 @@ Há **4 moedas** espalhadas pela vila. Pegue **todas** para ver a tela de **CONC
         passos: ["Peça para planejarem a rota no caderno antes de montar os blocos.", "Compare rotas: quem chegou com menos blocos?"],
         errosComuns: ["Trocar x e y.", "Esquecer a espera e uma moeda ficar no palco."],
       },
-      extra: "Volte para o **centro** depois de pegar a última moeda.",
     },
   ],
 };

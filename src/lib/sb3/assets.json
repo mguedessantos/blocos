@@ -4,15 +4,15 @@
     "bloquinho": [
       {
         "name": "parado",
-        "md5ext": "276dcca46c9ac7fb25ddcdddb5d7d840.png",
-        "rotationCenterX": 100,
-        "rotationCenterY": 100
+        "md5ext": "3b1c014ab5c4ac25b808ab671e5bd054.svg",
+        "rotationCenterX": 50,
+        "rotationCenterY": 50
       },
       {
         "name": "andando",
-        "md5ext": "fab5bc0c0f1f306fbe8618bec892c5db.png",
-        "rotationCenterX": 100,
-        "rotationCenterY": 100
+        "md5ext": "dc138ef0467945d99f51f3e6ebcd1abe.svg",
+        "rotationCenterX": 50,
+        "rotationCenterY": 50
       }
     ],
     "moeda": [
@@ -46,13 +46,13 @@
     "glitch": [
       {
         "name": "bravo",
-        "md5ext": "a3bff515f48cfa10b36ca4b81773d9e6.png",
+        "md5ext": "fd8d217a12f61733f159286d6f4be96d.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       },
       {
         "name": "piscando",
-        "md5ext": "394b2d7efb6db6f7482cf68be145bb40.png",
+        "md5ext": "b1389b7a4c435a8450e3911f6b31c797.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       }

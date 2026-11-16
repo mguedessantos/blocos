@@ -10,7 +10,7 @@ import { BLOCKS } from "@/lib/blocks/catalog";
 import { compileProject, normalizeProject, type ProjectState } from "@/lib/blocks/project";
 import { checkProject, checksSchema, type CheckItem } from "@/lib/checker";
 import { ConvertError } from "@/lib/sb3/convert";
-import { buildSb3, clearDraft, deleteSavedProject, fetchSavedProject, projectFromSb3, readDraft, uploadProject, writeDraft } from "@/lib/sb3/pack";
+import { buildSb3, clearDraft, refreshArt, deleteSavedProject, fetchSavedProject, projectFromSb3, readDraft, uploadProject, writeDraft } from "@/lib/sb3/pack";
 import { BlockPreview } from "./block-preview";
 import { ScratchFrame, type ScratchFrameHandle } from "./scratch-frame";
 
@@ -85,7 +85,8 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
   const initial = useCallback(async () => {
     const [local, server] = await Promise.all([readDraft(draftKey), aula ? undefined : fetchSavedProject(lessonId)]);
     const newest = [local, server].filter((d) => !!d).sort((a, b) => b!.at - a!.at)[0];
-    return newest?.sb3 ?? buildSb3(normalizeProject(legacyDraft(draftKey) ?? saved ?? starter));
+    if (newest?.sb3) return refreshArt(newest.sb3); // desenho novo da biblioteca, mesmo código
+    return buildSb3(normalizeProject(legacyDraft(aula ? `blocos:aula:${lessonId}` : `blocos:licao:${lessonId}`) ?? saved ?? starter));
   }, [aula, draftKey, lessonId, saved, starter]);
 
   // rascunho local a cada mudança; no servidor, no máximo a cada 30 s (e sempre ao verificar)
@@ -108,7 +109,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const parsedChecks = useMemo(() => checksSchema.safeParse(checks ?? { checks: [] }), [checks]);
   const runLive = useCallback(() => {
-    if (!parsedChecks.success || !objectives?.length) return;
+    if (!parsedChecks.success || !parsedChecks.data.checks.length) return; // também sem objetivos: a tela de CONCLUÍDO usa o resultado
     clearTimeout(liveTimer.current);
     liveTimer.current = setTimeout(async () => {
       try {
@@ -121,13 +122,13 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
         /* bloco que o verificador ainda não entende: deixa como estava */
       }
     }, 700);
-  }, [parsedChecks, objectives, starter]);
+  }, [parsedChecks, starter]);
   useEffect(() => () => clearTimeout(liveTimer.current), []);
   // missão cumprida (objetivos ao vivo, depois de rodar): tela verde de CONCLUÍDO no palco
   const liveDone = !!live?.length && live.filter((i) => !i.bonus).every((i) => i.ok);
   useEffect(() => {
-    if (liveDone && ran) editor.current?.concluido();
-  }, [liveDone, ran]);
+    if (liveDone && ran) editor.current?.concluido(parsedChecks.success ? parsedChecks.data.maxSeconds : undefined);
+  }, [liveDone, ran, parsedChecks]);
   const onChange = useCallback(() => {
     setRan(false);
     void saveDraft();
@@ -146,7 +147,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
         const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
         const result = await verify(JSON.stringify(project));
         setOutcome(result);
-        if (result.ok && result.passed) editor.current?.concluido();
+        if (result.ok && result.passed) editor.current?.concluido(parsedChecks.success ? parsedChecks.data.maxSeconds : undefined);
         if (result.ok) {
           setLive(result.items);
           setVerified(true);

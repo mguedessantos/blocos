@@ -21,7 +21,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
   `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > prisma/migrations/<pasta>/migration.sql`, depois `npx prisma migrate deploy` e `npx prisma generate`.
 - Banco local instável ("Connection terminated"/ECONNRESET): `npx prisma dev stop blocos` e `npx prisma dev --name blocos --detach` (os dados são mantidos). Use `DATABASE_POOL_MAX="1"` no .env local.
 - Stripe: `npm run stripe:setup` (cria produtos/preços a partir da tabela Plan; preços em prisma/seed.ts) · `npm run stripe:listen` (webhooks locais → STRIPE_WEBHOOK_SECRET)
-- `npm run dev` · `npm test` (Vitest) · `npm run test:e2e` (Playwright) · `npm run typecheck` · `npm run lint`
+- `npm run dev` (scripts/dev.mjs: além do site, refaz a arte quando `scripts/arte` muda e roda o seed quando `content/` muda) · `npm test` (Vitest) · `npm run test:e2e` (Playwright) · `npm run typecheck` · `npm run lint`
 - Subdomínios locais: http://escola-demo.localhost:3000 (Escola+, white-label), http://prof-marina.localhost:3000 (plano Professor)
 
 ## Contas de demonstração (seed)
@@ -46,7 +46,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - O aluno programa no editor do TurboWarp (fork GPL-3.0 em `../blocos-editor`, compilado em `public/editor/` com `npm run editor:build`). O site é fechado e só conversa por `postMessage` (`src/components/editor/scratch-frame.tsx` ↔ `blocos-editor/src/lib/blocos-bridge.js`): `load` (sb3 + blocos liberados), `getProject`, `hello/ready/loaded/changed`.
 - No fork, tudo que é nosso fica atrás de `window.__BLOCOS__` (sem nome/gato do Scratch, sem "Novo", sem configurações avançadas, bibliotecas e arte vindas de `/editor-assets`).
 - Biblioteca original do editor (Scratch/TurboWarp): `npm run editor:mirror` copia os ~1.300 arquivos para `public/editor-assets` (LGPD: o navegador do aluno não acessa servidores de terceiros). O worker de downloads do editor exige endereço completo (`location.origin`).
-- Arte e sons da biblioteca: `npm run editor:assets` desenha `components/editor/art.ts` em PNG/WAV (`public/editor-assets/`) e gera `src/lib/sb3/assets.json` + as listas da biblioteca do editor. Imagens em `scripts/arte/<ator>.png|jpg` (e `<ator>-2` para a 2ª fantasia) substituem o desenho em código; o fundo branco vira transparente.
+- Arte e sons da biblioteca: `npm run editor:assets` desenha `components/editor/art.ts` em PNG/WAV (`public/editor-assets/`) e gera `src/lib/sb3/assets.json` + as listas da biblioteca do editor. Imagens em `scripts/arte/<ator>/1-nome.png, 2-nome.png...` (uma por fantasia) substituem o desenho em código; o fundo branco vira transparente. `npm run dev` refaz a arte sozinho quando a pasta muda; projetos salvos recebem a arte atual ao abrir (`refreshArt`). Detalhes na skill `trocar-ator`.
 - Conversores em `src/lib/sb3/convert.ts`: `projectToSb3Json` (projeto inicial → .sb3) e `sb3JsonToProject` (.sb3 do editor → nosso `ProjectState`, entrada não confiável). A verificação continua no SERVIDOR com o nosso interpretador; `tests/unit/content.test.ts` confere a ida e volta de todas as lições.
 - Ao verificar, os atores que existem no projeto inicial voltam à posição inicial (`withStarterPlacement`): no editor, rodar o programa move os atores.
 - O .sb3 completo do aluno fica no armazenamento privado (`Progress.projectKey`, rota `/api/licoes/[id]/projeto`) e no IndexedDB; abre o mais novo.

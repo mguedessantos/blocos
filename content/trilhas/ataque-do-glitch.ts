@@ -187,7 +187,6 @@ Clique na bandeira verde, clique no palco e fuja dos raios! Ao chegar em **10 de
             ],
             errosComuns: ["Mexer nos programas do Glitch ou do Raio: o desafio é programar só o Bloquinho.", "Esquecer de clicar no palco antes de apertar as setas."],
           },
-          extra: "Faça o Bloquinho mais **rápido**: troque 20 por um número maior. Ficou mais fácil desviar?",
         },
       ],
     },

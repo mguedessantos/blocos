@@ -231,8 +231,44 @@ function finish(items: CheckItem[]): CheckResult {
 
 const item = (spec: CheckSpec, r: Eval): CheckItem => ({
   ok: r.ok, bonus: !!spec.bonus, message: r.ok ? r.pass : ("message" in spec && spec.message ? spec.message : r.fail),
-  ...("goal" in spec && spec.goal ? { goal: spec.goal } : {}),
+  ...(spec.type === "visits" ? {} : { goal: goalOf(spec) }),
 });
+
+const ator = (s?: string) => (s ? `**${s}**` : "o personagem");
+const bloco = (op: string) => `**${blockLabel(op).replaceAll("{bandeira}", "bandeira verde")}**`;
+
+/** Objetivo mostrado no checklist: o `goal` escrito na lição ou, sem ele, um texto gerado a partir da checagem. */
+export function goalOf(spec: Exclude<CheckSpec, { type: "visits" }>): string {
+  const g = spec.goal ?? ("label" in spec ? spec.label : undefined);
+  if (g) return (spec.bonus && !spec.goal ? "Bônus: " : "") + g;
+  const txt = ((): string => {
+    switch (spec.type) {
+      case "usesBlock": return `Use o bloco ${bloco(spec.opcode)}${spec.min && spec.min > 1 ? ` (${spec.min} vezes)` : ""}`;
+      case "noBlock": return `Não use o bloco ${bloco(spec.opcode)}`;
+      case "maxBlocks": return `Use no máximo **${spec.max} blocos**`;
+      case "sprites": return `Tenha pelo menos **${spec.min} atores**`;
+      case "backdrops": return `Tenha pelo menos **${spec.min} cenários**`;
+      case "costumes": return `Tenha pelo menos **${spec.min} fantasias**`;
+      case "sounds": return `Tenha pelo menos **${spec.min} sons**`;
+      case "variables": return `Crie pelo menos **${spec.min} variável(is)**`;
+      case "keys": return `Use **${spec.min} tecla(s)** do teclado`;
+      case "finalPosition": return `${ator(spec.sprite)} termina em **x: ${spec.x}, y: ${spec.y}**`;
+      case "finalDirection": return `${ator(spec.sprite)} termina na direção **${spec.direction}**`;
+      case "said": return `Diga **${spec.text}**`;
+      case "variableEquals": return `A variável **${spec.name}** termina valendo **${spec.value}**`;
+      case "variableAtLeast": return `A variável **${spec.name}** chega a **${spec.min}**`;
+      case "drawnLength": return "Desenhe no palco";
+      case "visible": return `${ator(spec.sprite)} termina ${spec.value ? "visível" : "escondido"}`;
+      case "walked": return `${ator(spec.sprite)} anda pelo palco`;
+      case "backdropIs": return `Termine no cenário **${spec.backdrop}**`;
+      case "clonesAtLeast": return `Crie pelo menos **${spec.min} clones**`;
+      case "stopped": return "O programa para no fim";
+      case "playedSound": return spec.sound ? `Toque o som **${spec.sound}**` : "Toque um **som**";
+      default: return "Cumpra a missão";
+    }
+  })();
+  return (spec.bonus ? "Bônus: " : "") + txt;
+}
 
 type VisitsSpec = Extract<CheckSpec, { type: "visits" }>;
 
@@ -264,7 +300,7 @@ export function objectivesOf(raw: unknown): { goal: string; bonus: boolean }[] {
   if (!parsed.success) return [];
   const out = new Map<string, boolean>();
   for (const spec of parsed.data.checks) {
-    const goals = spec.type === "visits" ? spec.points.map((p) => p.goal) : spec.goal ? [spec.goal] : [];
+    const goals = spec.type === "visits" ? spec.points.map((p) => p.goal) : [goalOf(spec)];
     for (const g of goals) if (!out.has(g)) out.set(g, !!spec.bonus);
   }
   return [...out].map(([goal, bonus]) => ({ goal, bonus }));

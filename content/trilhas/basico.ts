@@ -1,5 +1,7 @@
 import { flag, game } from "../../src/lib/blocks/build";
 import { editor } from "../licoes-editor";
+import { modulo as bola } from "./bola-quicando";
+import { modulo as corrida } from "./corrida-animada";
 import { modulo as tesouro } from "./caca-ao-tesouro";
 import { ABERTURA } from "./historia";
 import type { TrackContent } from "./types";
@@ -62,25 +64,25 @@ export const mundo1: TrackContent = {
           minutos: 10,
           passos: ["Mostre que o bloco precisa ficar encaixado embaixo da bandeira.", "Deixe errar: “e se colocar 10?”. Depois peça 100.", "Mostre que o objetivo fica marcado sozinho quando o programa está certo."],
           errosComuns: ["Bloco solto ao lado da bandeira.", "Digitar 100 no bloco errado (girar)."],
-        }, "Faça o Bloquinho andar **200 passos** e depois mais **40**. Onde ele parou?", { checks: [{ type: "visits", tolerance: 5, points: [{ x: 200, y: 0, goal: "Ande 200 passos" }, { x: 240, y: 0, goal: "Ande mais 40" }] }] }),
+        }),
         editor("virando-a-esquina", {
           objetivo: "Combinar andar e girar; entender 90 graus como uma esquina.",
           minutos: 10,
           passos: ["Peça para um aluno “ser o robô” na sala enquanto a turma dá os comandos.", "Pergunte: girar para a direita ou para a esquerda?"],
           errosComuns: ["Girar para o lado errado (↻ em vez de ↺)."],
-        }, "Continue virando e andando até o Bloquinho dar a volta e chegar de novo no centro.", { checks: [{ type: "visits", tolerance: 5, points: [{ x: 100, y: 0, goal: "1" }, { x: 100, y: 100, goal: "2" }, { x: 0, y: 100, goal: "3" }, { x: 0, y: 0, goal: "4" }] }] }),
+        }),
         editor("pule-para-cima", {
           objetivo: "Entender o palco como um mapa e o y positivo (para cima).",
           minutos: 10,
           passos: ["Desenhe o plano cartesiano no quadro com o centro (0,0) e mostre o topo (y: 180)."],
           errosComuns: ["Mudar o x em vez do y."],
-        }, "Pule para **y: 90**. Onde o Bloquinho parou?", { checks: [{ type: "visits", tolerance: 5, points: [{ y: 90, goal: "y 90" }] }] }),
+        }),
         editor("pule-para-baixo", {
           objetivo: "Entender o y negativo (para baixo).",
           minutos: 10,
           passos: ["Pergunte: se o topo é 180, o que é o chão?"],
           errosComuns: ["Esquecer o sinal de menos."],
-        }, "Pule para **y: -90**, no meio do caminho até o chão.", { checks: [{ type: "visits", tolerance: 5, points: [{ y: -90, goal: "y -90" }] }] }),
+        }),
         editor("pule-para-a-esquerda", {
           objetivo: "Entender o x negativo (para a esquerda).",
           minutos: 10,
@@ -98,8 +100,6 @@ export const mundo1: TrackContent = {
           minutos: 10,
           passos: ["Peça para a turma “adivinhar” onde fica x: 150, y: 100 antes de testar."],
           errosComuns: ["Trocar x por y."],
-        }, "Faça o Bloquinho visitar os **4 cantos** do palco usando só blocos “vá para x: y:”.", {
-          checks: [[240, 180], [-240, 180], [-240, -180], [240, -180]].map(([x, y]) => ({ type: "visits" as const, points: [{ x, y, goal: `${x},${y}` }] })),
         }),
         editor("passeio-com-pausa", {
           objetivo: "Usar espera para controlar o tempo de uma animação.",
@@ -112,7 +112,7 @@ export const mundo1: TrackContent = {
           minutos: 10,
           passos: ["Compare “diga” e “diga por 2 segundos”: qual espera antes de continuar?"],
           errosComuns: ["Usar “diga” (sem segundos) e o movimento acontecer junto com a fala."],
-        }, "Crie um diálogo maior: o Bloquinho fala **5 frases** diferentes.", { checks: [{ type: "usesAnyBlock", opcodes: ["looks_say", "looks_sayforsecs"], min: 5, label: "Use 5 blocos diga" }] }),
+        }),
       ],
     },
     tesouro,
@@ -147,13 +147,13 @@ export const mundo2: TrackContent = {
           minutos: 15,
           passos: ["Peça para desenharem o caminho no caderno e contarem quantas vezes repetem os mesmos movimentos."],
           errosComuns: ["Colocar o giro fora do repita.", "Girar 45 em vez de 90."],
-        }, "Faça um quadrado **maior**, de 150 passos. O que muda no programa?"),
+        }),
         editor("triangulo", {
           objetivo: "Generalizar: em um polígono, a soma dos giros é 360.",
           minutos: 10,
           passos: ["Pergunte: se o quadrado gira 4 × 90 = 360, quanto o triângulo gira em cada canto?"],
           errosComuns: ["Girar 60 (ângulo interno) em vez de 120 (ângulo externo)."],
-        }, "Ande em um **hexágono** (6 lados). Qual é o giro?"),
+        }),
         editor("escada", {
           objetivo: "Repetir uma sequência de vários blocos.",
           minutos: 10,
@@ -162,17 +162,7 @@ export const mundo2: TrackContent = {
         }),
       ],
     },
-    {
-      title: "Repetir para sempre",
-      lessons: [
-        editor("para-sempre", {
-          objetivo: "Usar o laço infinito e o bloco de quicar.",
-          minutos: 10,
-          passos: ["Explique que jogos rodam dentro de um “sempre”: o jogo nunca para sozinho."],
-          errosComuns: ["Apontar para 90: o Bloquinho fica só indo e voltando na horizontal."],
-        }),
-      ],
-    },
+    bola,
   ],
 };
 
@@ -229,9 +219,9 @@ Até agora, só o Bloquinho estava no palco. A partir de agora você pode ter **
           starter: game({ sprites: [{ name: "Bloquinho", x: -100, code: [[flag()]] }] }),
           checks: {
             checks: [
-              { type: "sprites", min: 2, message: "Adicione um amigo com o botão “+ Ator”." },
-              { type: "usesAnyBlock", opcodes: ["looks_sayforsecs", "looks_say"], min: 2, label: "Os dois atores precisam falar (um bloco “diga” em cada)" },
-              { type: "usesBlock", opcode: "control_wait", message: "Use uma espera para o amigo responder depois." },
+              { type: "sprites", min: 2, message: "Adicione um amigo com o botão “+ Ator”.", goal: "Adicione um **amigo** no palco" },
+              { type: "usesAnyBlock", opcodes: ["looks_sayforsecs", "looks_say"], min: 2, label: "Os dois atores precisam falar (um bloco “diga” em cada)", goal: "Os **dois atores** falam (um **diga** em cada)" },
+              { type: "usesBlock", opcode: "control_wait", message: "Use uma espera para o amigo responder depois.", goal: "Use **espere** para o amigo responder depois" },
             ],
           },
           guide: {
@@ -240,7 +230,6 @@ Até agora, só o Bloquinho estava no palco. A partir de agora você pode ter **
             passos: ["Mostre como selecionar cada ator para montar o código dele.", "Pergunte: por que o amigo precisa esperar?"],
             errosComuns: ["Colocar os dois “diga” no mesmo ator.", "Falas sobrepostas por falta da espera."],
           },
-          extra: "Faça uma conversa com **3 falas** de cada ator.",
         },
         {
           slug: "animacao-de-caminhada",
@@ -259,10 +248,10 @@ Quando a bandeira for clicada, **repita 10 vezes**:
           starter: game({ sprites: [{ name: "Bloquinho", x: -180, code: [[flag()]] }] }),
           checks: {
             checks: [
-              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["looks_nextcostume"], label: "Coloque “próxima fantasia” dentro do repita" },
-              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["motion_movesteps", "motion_changexby"], label: "Coloque um bloco de movimento dentro do repita" },
-              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["control_wait"], label: "Use uma espera dentro do repita para a animação não ficar rápida demais" },
-              { type: "walked", min: 80, message: "O Bloquinho precisa andar enquanto troca de fantasia." },
+              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["looks_nextcostume"], label: "Coloque “próxima fantasia” dentro do repita", goal: "Use **próxima fantasia** dentro do **repita**" },
+              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["motion_movesteps", "motion_changexby"], label: "Coloque um bloco de movimento dentro do repita", goal: "Coloque um bloco de **movimento** dentro do **repita**" },
+              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["control_wait"], label: "Use uma espera dentro do repita para a animação não ficar rápida demais", goal: "Use **espere** dentro do **repita**" },
+              { type: "walked", min: 80, message: "O Bloquinho precisa andar enquanto troca de fantasia.", goal: "O Bloquinho **anda** enquanto troca de fantasia" },
             ],
           },
           guide: {
@@ -271,7 +260,6 @@ Quando a bandeira for clicada, **repita 10 vezes**:
             passos: ["Mostre um desenho animado quadro a quadro (flipbook) para explicar a ideia.", "Testem diferentes tempos de espera: 0.5, 0.2, 0.05."],
             errosComuns: ["Sem espera, a animação fica rápida demais para ver.", "Blocos fora do repita."],
           },
-          extra: "Troque o repita por **sempre** e use **se tocar na borda, volte**: o Bloquinho vai passear pelo palco.",
         },
         {
           slug: "troque-o-cenario",
@@ -288,9 +276,9 @@ Quando a bandeira for clicada: o Bloquinho diz **“Vamos passear!”** por 2 se
           starter: game({ backdrops: ["branco", "floresta"], sprites: [{ name: "Bloquinho", code: [[flag()]] }] }),
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "looks_switchbackdropto" },
-              { type: "backdropIs", backdrop: "floresta" },
-              { type: "said", text: "passear" },
+              { type: "usesBlock", opcode: "looks_switchbackdropto", goal: "Use **mude para o cenário**" },
+              { type: "backdropIs", backdrop: "floresta", goal: "Termine no cenário **Floresta**" },
+              { type: "said", text: "passear", goal: "Diga **Vamos passear!**" },
             ],
           },
           guide: {
@@ -299,7 +287,6 @@ Quando a bandeira for clicada: o Bloquinho diz **“Vamos passear!”** por 2 se
             passos: ["Mostre o botão “Cenário” e o palco no painel."],
             errosComuns: ["Trocar o cenário antes de o Bloquinho falar (a ordem dos blocos importa)."],
           },
-          extra: "Adicione o cenário **Espaço** e faça o Bloquinho visitar os 3 lugares, um de cada vez.",
         },
         {
           slug: "sons-no-palco",
@@ -318,9 +305,9 @@ Os blocos **rosa** tocam sons. Quando a bandeira for clicada:
           starter: game({ sprites: [{ name: "Bloquinho", code: [[flag()]] }] }),
           checks: {
             checks: [
-              { type: "usesAnyBlock", opcodes: ["sound_play", "sound_playuntildone"], min: 2, label: "Toque pelo menos 2 sons" },
-              { type: "playedSound", sound: "pulo" },
-              { type: "playedSound", sound: "vitoria" },
+              { type: "usesAnyBlock", opcodes: ["sound_play", "sound_playuntildone"], min: 2, label: "Toque pelo menos 2 sons", goal: "Use pelo menos **2 sons**" },
+              { type: "playedSound", sound: "pulo", goal: "Toque o som **Pulo**" },
+              { type: "playedSound", sound: "vitoria", goal: "Toque o som **Vitória**" },
             ],
           },
           guide: {
@@ -330,40 +317,8 @@ Os blocos **rosa** tocam sons. Quando a bandeira for clicada:
             errosComuns: ["Achar que o som não tocou porque o computador está no mudo."],
           },
         },
-        {
-          slug: "show-de-talentos",
-          title: "Crie: show de talentos",
-          type: "DESAFIO",
-          xp: 30,
-          content: `# Crie: o show de talentos
-
-Monte um pequeno show com **pelo menos 2 atores**:
-
-- Um cenário de **palco de show** (escolha qualquer cenário além do branco) e troque para ele no começo.
-- Um ator faz uma **dança** (repita: próxima fantasia, gire, espere...).
-- Toque pelo menos **um som**.
-- No fim, alguém diz **“Obrigado!”**.`,
-          allowedBlocks: VIDA,
-          starter: game({ sprites: [{ name: "Bloquinho", code: [[flag()]] }] }),
-          checks: {
-            checks: [
-              { type: "sprites", min: 2, message: "Coloque pelo menos 2 atores no show." },
-              { type: "backdrops", min: 2, message: "Escolha um cenário para o show (botão “Cenário”)." },
-              { type: "usesBlock", opcode: "looks_switchbackdropto" },
-              { type: "inside", parent: ["control_repeat", "control_forever"], child: ["looks_nextcostume", "motion_turnright"], label: "Faça uma dança dentro de um repita" },
-              { type: "playedSound" },
-              { type: "said", text: "obrigad" },
-            ],
-          },
-          guide: {
-            objetivo: "Combinar atores, fantasias, cenários e sons em uma criação própria.",
-            minutos: 25,
-            passos: ["Faça uma “sessão de estreia” com alguns shows projetados.", "Valorize ideias diferentes, não só as mais complexas."],
-            errosComuns: ["Esquecer de selecionar o ator certo antes de montar os blocos."],
-          },
-          extra: "Faça a plateia (outros atores) **aplaudir** trocando de fantasia no fim do show.",
-        },
       ],
     },
+    corrida,
   ],
 };

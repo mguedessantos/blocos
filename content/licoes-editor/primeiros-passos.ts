@@ -207,7 +207,7 @@ O computador é rápido demais: às vezes nem dá para ver o que aconteceu! O bl
           type: "EXERCICIO",
           content: `## Missão: apresente-se
 
-Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga** para o Bloquinho falar.`,
+Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga por 2 segundos** para o Bloquinho falar.`,
           allowedBlocks: [...MOVE, "looks_sayforsecs", "looks_say"],
           starter: GRID,
           checks: {
@@ -215,7 +215,7 @@ Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga*
               {
                 type: "visits",
                 points: [
-                  { say: "bloquinho", goal: "Diga **Olá, eu sou o Bloquinho!**" },
+                  { say: "bloquinho", goal: "Diga **Olá, eu sou o Bloquinho!** por 2 segundos" },
                   { x: 50, y: 0, goal: "Ande **50 passos**" },
                   { say: "tchau", goal: "Diga **Tchau!**" },
                 ],

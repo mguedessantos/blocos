@@ -44,9 +44,9 @@ No final ele vai estar em **x: 100**.`,
           startWithFlag: true,
           checks: {
             checks: [
-              { type: "usesBlock", opcode: "control_repeat" },
-              { type: "finalPosition", x: 100, y: 0 },
-              { type: "maxBlocks", max: 3, bonus: true, message: "Dá para fazer com só 2 blocos embaixo da bandeira." },
+              { type: "usesBlock", opcode: "control_repeat", goal: "Use o bloco **repita**" },
+              { type: "finalPosition", x: 100, y: 0, goal: "Termine em **x: 100** (10 passinhos de 10)" },
+              { type: "maxBlocks", max: 3, bonus: true, message: "Dá para fazer com só 2 blocos embaixo da bandeira.", goal: "Bônus: use só **2 blocos** embaixo da bandeira" },
             ],
           },
         },

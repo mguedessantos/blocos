@@ -132,7 +132,7 @@ Faça o Bloquinho andar **5 passos** **até que** esteja **tocando na borda**. D
             checks: [
               { type: "usesBlock", opcode: "control_repeat_until" },
               { type: "said", text: "Cheguei" },
-              { type: "finalPosition", x: 220, y: 0, tolerance: 6, message: "O Bloquinho precisa parar quando encostar na borda da direita." },
+              { type: "finalPosition", x: 195, y: 0, tolerance: 6, message: "O Bloquinho precisa parar quando encostar na borda da direita." },
             ],
           },
         },

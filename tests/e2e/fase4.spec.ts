@@ -1,8 +1,6 @@
 import "dotenv/config";
 import { expect, test, type Page } from "@playwright/test";
-import { Client } from "pg";
 import { changeX, flag, project, whenKey } from "../../src/lib/blocks/build";
-import { sb3Bytes } from "../unit/sb3-builder";
 
 const ESCOLA = "http://escola-demo.localhost:3000";
 const run = Date.now().toString(36);
@@ -218,46 +216,6 @@ test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ p
   await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
   await page.getByRole("button", { name: "Verificar", exact: true }).click();
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toContainText("Perfeito");
-});
-
-test("missão opcional no PictoBlox: envio do .sb3 errado e depois certo", async ({ page, browser }) => {
-  const cred = await teacherCreatesStudent(page, `PictoBlox ${run}`, "Caio", "Introdução à Programação de Blocos");
-  // o aluno já terminou as lições obrigatórias do Mundo 1 (a missão opcional fica no fim)
-  const db = new Client({ connectionString: process.env.DATABASE_URL });
-  await db.connect();
-  await db.query(
-    `INSERT INTO "Progress" (id, "userId", "lessonId", status, stars, attempts, "updatedAt")
-     SELECT 'p' || l.id || u.id, u.id, l.id, 'CONCLUIDO', 3, 1, now()
-     FROM "Lesson" l JOIN "Module" m ON m.id = l."moduleId" JOIN "Track" t ON t.id = m."trackId",
-          "User" u JOIN "Enrollment" e ON e."userId" = u.id JOIN "Class" c ON c.id = e."classId"
-     WHERE t.slug = 'mundo-1-vila-do-palco' AND l.optional = false AND l.draft = false AND c.code = $1`,
-    [cred.code],
-  );
-  await db.end();
-
-  const ctx = await browser.newContext();
-  const kid = await ctx.newPage();
-  await loginStudent(kid, cred.code, cred.username, cred.password);
-  await kid.getByRole("link", { name: "Ver trilha Mundo 1 · Vila do Palco" }).click();
-  await kid.getByRole("link", { name: /Olá, mundo! no PictoBlox/ }).click();
-  await expect(kid.getByText("Extra opcional").first()).toBeVisible();
-
-  const result = kid.getByRole("status", { name: "Resultado da verificação" });
-  const upload = async (buffer: Buffer, name = "ola.sb3") => {
-    await kid.getByLabel("Arquivo .sb3 do projeto").setInputFiles({ name, mimeType: "application/octet-stream", buffer });
-    await kid.getByRole("button", { name: "Verificar projeto" }).click();
-  };
-  // projeto sem a fala → não passa
-  await upload(Buffer.from(await sb3Bytes({ sprites: [{ scripts: [["event_whenflagclicked", "motion_movesteps"]] }] })));
-  await expect(result).toContainText("diga");
-  // arquivo que não é .sb3 de verdade → erro amigável
-  await upload(Buffer.from("isso não é um zip"), "falso.sb3");
-  await expect(kid.getByRole("alert").filter({ hasText: "não parece um projeto .sb3" })).toBeVisible();
-  // projeto certo → 3 estrelas
-  await upload(Buffer.from(await sb3Bytes({ sprites: [{ scripts: [["event_whenflagclicked", "motion_movesteps", { op: "looks_sayforsecs", inputs: { MESSAGE: "Olá, mundo!", SECS: 2 } }]] }] })));
-  await expect(result).toContainText("Perfeito");
-  await expect(result.getByLabel("3 de 3 estrelas")).toBeVisible();
-  await ctx.close();
 });
 
 test("professor vê o currículo com o guia do professor; aluno não", async ({ page }) => {

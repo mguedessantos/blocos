@@ -3,7 +3,7 @@
 // Saída: public/editor-assets/<md5>.<ext> + src/lib/sb3/assets.json (índice usado pelos conversores).
 // Uso: npm run editor:assets
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 import { build } from "esbuild";
 
@@ -12,7 +12,7 @@ const OUT = "public/editor-assets";
 // Código que roda no navegador: desenha cada fantasia/cenário e sintetiza cada som.
 const ENTRY = `
 import { drawBackdrop, drawCharacter, playSound } from "./src/components/editor/art";
-import { BACKDROPS, CHARACTERS, SOUNDS } from "./src/lib/blocks/library";
+import { BACKDROPS, DRAWN_CHARACTERS as CHARACTERS, SOUNDS } from "./src/lib/blocks/library";
 
 const RES = 2; // bitmapResolution: o dobro de pixels, para ficar nítido
 function png(w, h, draw) {
@@ -57,11 +57,42 @@ async function fromImage(url, box) {
   sx.putImageData(d, 0, 0);
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px[(y * W + x) * 4 + 3] > 0) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-  const cw = x1 - x0 + 1, ch = y1 - y0 + 1, s = box / Math.max(cw, ch);
+  const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
   const out = document.createElement("canvas"); out.width = out.height = 100 * RES;
   const ox = out.getContext("2d");
-  ox.imageSmoothingEnabled = s > 0.5; // arte em pixel reduzida muito: sem borrar
-  ox.drawImage(src, x0, y0, cw, ch, (out.width - cw * s) / 2, (out.height - ch * s) / 2, cw * s, ch * s);
+  // Arte em pixel: acha o tamanho do "pixel" do desenho (L) e reduz para a grade de verdade,
+  // depois aumenta por um número inteiro: todo pixel continua quadrado e do mesmo tamanho.
+  const same = (i, j) => Math.abs(px[i] - px[j]) + Math.abs(px[i + 1] - px[j + 1]) + Math.abs(px[i + 2] - px[j + 2]) + Math.abs(px[i + 3] - px[j + 3]) < 60;
+  const runs = [];
+  for (let y = y0; y <= y1; y += Math.max(1, Math.floor(ch / 60))) {
+    let r = 1;
+    for (let x = x0 + 1; x <= x1; x++) {
+      if (same((y * W + x) * 4, (y * W + x - 1) * 4)) r++;
+      else { if (r >= 2) runs.push(r); r = 1; }
+    }
+  }
+  runs.sort((a, z) => a - z);
+  const r0 = runs[Math.floor(runs.length * 0.1)] || 0;
+  const near = runs.filter((r) => r >= r0 * 0.75 && r <= r0 * 1.25);
+  const L = near.length ? near[Math.floor(near.length / 2)] : 0;
+  const gw = L ? Math.round(cw / L) : 0, gh = L ? Math.round(ch / L) : 0;
+  if (L >= 2 && gw >= 4 && gh >= 4 && Math.max(gw, gh) <= box) {
+    const k = Math.max(1, Math.min(Math.round(box / Math.max(gw, gh)), Math.floor(out.width / Math.max(gw, gh))));
+    const ox0 = Math.round((out.width - gw * k) / 2), oy0 = Math.round((out.height - gh * k) / 2);
+    for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) {
+      const sx = Math.min(x1, Math.round(x0 + (gx + 0.5) * cw / gw)), sy = Math.min(y1, Math.round(y0 + (gy + 0.5) * ch / gh));
+      const i = (sy * W + sx) * 4;
+      if (px[i + 3] < 128) continue;
+      ox.fillStyle = "rgb(" + px[i] + "," + px[i + 1] + "," + px[i + 2] + ")";
+      ox.fillRect(ox0 + gx * k, oy0 + gy * k, k, k);
+    }
+  } else {
+    // desenho comum (não é arte em pixel): redução suave
+    const s = box / Math.max(cw, ch);
+    ox.imageSmoothingEnabled = true;
+    ox.imageSmoothingQuality = "high";
+    ox.drawImage(src, x0, y0, cw, ch, (out.width - cw * s) / 2, (out.height - ch * s) / 2, cw * s, ch * s);
+  }
   return out.toDataURL("image/png").split(",")[1];
 }
 window.exportAll = async (arte) => {
@@ -69,7 +100,9 @@ window.exportAll = async (arte) => {
   const characters = await Promise.all(Object.values(CHARACTERS).map(async (ch) => ({
     id: ch.id,
     name: ch.name,
-    costumes: await Promise.all(ch.costumes.map(async (name, i) => ({ name, b64: arte[ch.id] ? await fromImage(arte[ch.id][i] ?? arte[ch.id][0], ch.radius * 2 * 1.2 * RES) : png(S, S, (ctx) => { ctx.translate(S / 2, S / 2); drawCharacter(ctx, ch.id, i); }) }))),
+    costumes: arte[ch.id]
+      ? await Promise.all(arte[ch.id].map(async (c) => (c.svg ? { name: c.name, b64: "" } : { name: c.name, b64: await fromImage(c.url, ch.radius * 2 * 1.2 * RES) })))
+      : ch.costumes.map((name, i) => ({ name, b64: png(S, S, (ctx) => { ctx.translate(S / 2, S / 2); drawCharacter(ctx, ch.id, i); }) })),
   })));
   const backdrops = Object.entries(BACKDROPS).map(([id, name]) => ({ id, name, b64: png(480, 360, (ctx) => drawBackdrop(ctx, id, 480, 360)) }));
   const sounds = [];
@@ -87,13 +120,23 @@ const XY_GRID = "9838d02002d05f88dc54d96494fbc202.png";
 // Arte trocável: scripts/arte/<ator>.png|jpg substitui o desenho em código (1ª fantasia);
 // <ator>-2.png|jpg é a 2ª fantasia (sem ela, repete a 1ª).
 const ARTE = "scripts/arte";
+// Uma pasta por ator: scripts/arte/<ator>/1-parado.png, 2-andando.png... (número = ordem, resto = nome da fantasia)
 function arteFiles() {
-  const out: Record<string, string[]> = {};
-  for (const f of readdirSync(ARTE).sort()) {
-    const m = /^([a-z]+)(-2)?\.(png|jpe?g)$/.exec(f);
-    if (!m) continue;
-    const url = `data:image/${m[3] === "png" ? "png" : "jpeg"};base64,${readFileSync(`${ARTE}/${f}`).toString("base64")}`;
-    (out[m[1]] ??= [])[m[2] ? 1 : 0] = url;
+  const out: Record<string, { name: string; url?: string; svg?: string }[]> = {};
+  for (const dir of readdirSync(ARTE, { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const files = readdirSync(`${ARTE}/${dir.name}`)
+      .map((f) => ({ f, m: /^(\d+)(?:[ _-]+(.+?))?\.(png|jpe?g|svg)$/i.exec(f) }))
+      .filter((x) => x.m)
+      .sort((a, z) => Number(a.m![1]) - Number(z.m![1]));
+    if (!files.length) continue;
+    out[dir.name.toLowerCase()] = files.map(({ f, m }, i) => ({
+      name: m![2]?.trim() || `fantasia ${i + 1}`,
+      // SVG entra como está (sem redimensionar): 1 unidade do SVG = 1 passo do palco
+      ...(m![3].toLowerCase() === "svg"
+        ? { svg: readFileSync(`${ARTE}/${dir.name}/${f}`, "utf8") }
+        : { url: `data:image/${m![3].toLowerCase() === "png" ? "png" : "jpeg"};base64,${readFileSync(`${ARTE}/${dir.name}/${f}`).toString("base64")}` }),
+    }));
   }
   return out;
 }
@@ -105,7 +148,8 @@ async function main() {
   const page = await browser.newPage();
   await page.setContent("<!doctype html><body></body>");
   await page.addScriptTag({ content: bundle.outputFiles[0].text });
-  const raw = await page.evaluate((a) => (window as unknown as { exportAll: (a: unknown) => Promise<Exported> }).exportAll(a), arteFiles());
+  const art = arteFiles();
+  const raw = await page.evaluate((a) => (window as unknown as { exportAll: (a: unknown) => Promise<Exported> }).exportAll(a), art);
   await browser.close();
 
   mkdirSync(OUT, { recursive: true });
@@ -118,15 +162,40 @@ async function main() {
   const half = (raw.size * raw.res) / 2;
   const index = {
     bitmapResolution: raw.res,
-    characters: Object.fromEntries(raw.characters.map((c) => [c.id, c.costumes.map((k) => ({ name: k.name, md5ext: save(k.b64, "png"), rotationCenterX: half, rotationCenterY: half }))])),
+    characters: Object.fromEntries(raw.characters.map((c) => [c.id, c.costumes.map((k, i) => {
+      const svg = art[c.id]?.[i]?.svg;
+      if (!svg) return { name: k.name, md5ext: save(k.b64, "png"), rotationCenterX: half, rotationCenterY: half };
+      // centro de giro = centro da prancheta do SVG (viewBox ou width/height)
+      const vb = /viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(svg);
+      const w = Number(vb?.[1] ?? /\swidth\s*=\s*["']([\d.]+)/i.exec(svg)?.[1] ?? 100), h = Number(vb?.[2] ?? /\sheight\s*=\s*["']([\d.]+)/i.exec(svg)?.[1] ?? 100);
+      return { name: k.name, md5ext: save(Buffer.from(svg, "utf8").toString("base64"), "svg"), rotationCenterX: w / 2, rotationCenterY: h / 2 };
+    })])),
     backdrops: Object.fromEntries(raw.backdrops.map((b) => [b.id, { name: b.name, md5ext: b.id === "grade" ? XY_GRID : save(b.b64, "png"), rotationCenterX: 480, rotationCenterY: 360 }])),
     sounds: Object.fromEntries(raw.sounds.map((s) => [s.id, { name: s.name, md5ext: save(s.b64, "wav"), rate: s.rate, sampleCount: s.sampleCount }])),
   };
+  // arte que mudou: projetos salvos com o desenho antigo passam a abrir com o novo (src/lib/sb3/pack.ts refreshArt)
+  const before = JSON.parse(readFileSync("src/lib/sb3/assets.json", "utf8"));
+  const aliases: Record<string, string> = JSON.parse(readFileSync("src/lib/sb3/asset-aliases.json", "utf8"));
+  const link = (old: string | undefined, cur: string) => {
+    if (!old || old === cur) return;
+    aliases[old] = cur;
+    for (const k of Object.keys(aliases)) if (aliases[k] === old) aliases[k] = cur;
+  };
+  for (const [id, cs] of Object.entries(index.characters)) cs.forEach((c, i) => link(before.characters?.[id]?.[i]?.md5ext, c.md5ext));
+  for (const [id, bd] of Object.entries(index.backdrops)) link(before.backdrops?.[id]?.md5ext, bd.md5ext);
+  // um desenho que ainda está em uso (ex.: as duas fantasias eram iguais) nunca é trocado
+  const inUse = new Set([...Object.values(index.characters).flat(), ...Object.values(index.backdrops)].map((x) => x.md5ext));
+  for (const k of Object.keys(aliases)) if (aliases[k] === k || inUse.has(k)) delete aliases[k];
+  writeFileSync("src/lib/sb3/asset-aliases.json", JSON.stringify(Object.fromEntries(Object.entries(aliases).sort()), null, 2) + "\n");
   writeFileSync("src/lib/sb3/assets.json", JSON.stringify(index, null, 2) + "\n");
+  // arte que saiu do índice não é usada por ninguém (cada .sb3 salvo guarda as suas imagens): apaga
+  const files = (ix: typeof index) => [...Object.values(ix.characters).flat(), ...Object.values(ix.backdrops), ...Object.values(ix.sounds)].map((x) => x.md5ext);
+  const keep = new Set(files(index));
+  for (const f of files(before)) if (!keep.has(f)) rmSync(`${OUT}/${f}`, { force: true });
 
   // Bibliotecas do editor ("Escolher um ator/cenário/som/fantasia"), no formato do scratch-gui.
   const costume = (c: { name: string; md5ext: string; rotationCenterX: number; rotationCenterY: number }, name = c.name) => ({
-    name, tags: [], assetId: c.md5ext.split(".")[0], md5ext: c.md5ext, dataFormat: "png", bitmapResolution: index.bitmapResolution,
+    name, tags: [], assetId: c.md5ext.split(".")[0], md5ext: c.md5ext, dataFormat: c.md5ext.endsWith(".svg") ? "svg" : "png", bitmapResolution: c.md5ext.endsWith(".svg") ? 1 : index.bitmapResolution,
     rotationCenterX: c.rotationCenterX, rotationCenterY: c.rotationCenterY,
   });
   const sound = (s: { name: string; md5ext: string; rate: number; sampleCount: number }) => ({

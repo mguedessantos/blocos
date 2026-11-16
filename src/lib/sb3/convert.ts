@@ -5,6 +5,7 @@ import { BLOCKS_BY_OPCODE } from "@/lib/blocks/catalog";
 import { BACKDROPS, SOUNDS, isBackdrop, type BackdropId, type CharacterId, type SoundId } from "@/lib/blocks/library";
 import { normalizeProject, MAX_SPRITES, type ProjectState, type SpriteState } from "@/lib/blocks/project";
 import type { BlocklyBlock, BlocklyState } from "@/lib/blocks/program";
+import ALIASES from "./asset-aliases.json";
 import ASSETS from "./assets.json";
 
 export class ConvertError extends Error {}
@@ -33,6 +34,12 @@ const BACKDROP_BY_ASSET = new Map(Object.entries(ASSETS.backdrops).map(([bid, b]
 const CHARACTER_BY_ASSET = new Map(
   Object.entries(ASSETS.characters).flatMap(([id, costumes]) => costumes.map((c) => [c.md5ext.split(".")[0], id as CharacterId] as const)),
 );
+// arte antiga da biblioteca (projetos salvos antes de trocar um desenho) continua reconhecida
+for (const [old, cur] of Object.entries(ALIASES)) {
+  const [o, n] = [old.split(".")[0], cur.split(".")[0]];
+  if (CHARACTER_BY_ASSET.has(n)) CHARACTER_BY_ASSET.set(o, CHARACTER_BY_ASSET.get(n)!);
+  if (BACKDROP_BY_ASSET.has(n)) BACKDROP_BY_ASSET.set(o, BACKDROP_BY_ASSET.get(n)!);
+}
 
 type Sb3Block = {
   opcode: string;
@@ -128,7 +135,7 @@ export function projectToSb3Json(state: ProjectState): { json: Record<string, un
   const costume = (c: { name: string; md5ext: string; rotationCenterX: number; rotationCenterY: number }) => {
     assets.add(c.md5ext);
     const [assetId, dataFormat] = c.md5ext.split(".");
-    return { name: c.name, bitmapResolution: ASSETS.bitmapResolution, dataFormat, assetId, md5ext: c.md5ext, rotationCenterX: c.rotationCenterX, rotationCenterY: c.rotationCenterY };
+    return { name: c.name, bitmapResolution: dataFormat === "svg" ? 1 : ASSETS.bitmapResolution, dataFormat, assetId, md5ext: c.md5ext, rotationCenterX: c.rotationCenterX, rotationCenterY: c.rotationCenterY };
   };
 
   const sprites = state.sprites.map((s, i) => {

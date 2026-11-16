@@ -2,6 +2,8 @@
 // sem arte de terceiros). Este arquivo é só dados: serve ao servidor (verificação) e ao navegador.
 // O desenho de cada fantasia fica em src/components/editor/art.ts.
 
+import ASSETS from "../sb3/assets.json";
+
 export type CharacterId =
   | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio";
 
@@ -14,8 +16,9 @@ export type Character = {
   radius: number;
 };
 
-export const CHARACTERS: Record<CharacterId, Character> = {
-  bloquinho: { id: "bloquinho", name: "Bloquinho", costumes: ["parado", "andando"], radius: 22 },
+/** Personagens com as fantasias desenhadas em código (art.ts). As fantasias de verdade vêm de assets.json. */
+export const DRAWN_CHARACTERS: Record<CharacterId, Character> = {
+  bloquinho: { id: "bloquinho", name: "Bloquinho", costumes: ["parado", "andando"], radius: 45 }, // desenho SVG de 100×100 (scripts/arte/bloquinho)
   moeda: { id: "moeda", name: "Moeda", costumes: ["frente", "lado"], radius: 14 },
   estrela: { id: "estrela", name: "Estrela", costumes: ["amarela", "brilhante"], radius: 16 },
   glitch: { id: "glitch", name: "Glitch", costumes: ["bravo", "piscando"], radius: 26 },
@@ -29,6 +32,14 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   fruta: { id: "fruta", name: "Fruta", costumes: ["maçã", "banana"], radius: 14 },
   raio: { id: "raio", name: "Raio", costumes: ["vermelho", "roxo"], radius: 8 },
 };
+
+// As fantasias (quantas e com que nome) seguem a arte exportada: scripts/arte/<ator>/1-nome.png, 2-nome.png...
+export const CHARACTERS = Object.fromEntries(
+  Object.entries(DRAWN_CHARACTERS).map(([id, ch]) => {
+    const art = (ASSETS.characters as Record<string, { name: string }[]>)[id];
+    return [id, { ...ch, costumes: art?.length ? art.map((c) => c.name) : ch.costumes }];
+  }),
+) as Record<CharacterId, Character>;
 
 export const BACKDROPS = {
   branco: "Branco",

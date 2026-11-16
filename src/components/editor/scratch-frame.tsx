@@ -10,7 +10,7 @@ export type ScratchFrameHandle = {
   getSb3: () => Promise<ArrayBuffer>;
   /** Para o programa e põe os atores nestes lugares, sem mexer nos blocos. */
   /** Tela verde de CONCLUÍDO sobre o palco (some quando o programa roda de novo). */
-  concluido: () => void;
+  concluido: (after?: number) => void;
   center: (sprites: { name: string; x: number; y: number; direction: number; visible: boolean }[]) => void;
   /** Troca o projeto aberto (ex.: "Recomeçar"). */
   load: (sb3: ArrayBuffer) => void;
@@ -52,7 +52,7 @@ export function ScratchFrame({ handle, initial, allowedBlocks, onChange, onLoade
   useImperativeHandle(handle, () => ({
     load,
     center: (sprites) => post({ type: "center", sprites }),
-    concluido: () => post({ type: "concluido" }),
+    concluido: (after) => post({ type: "concluido", after }),
     getSb3: () =>
       new Promise<ArrayBuffer>((resolve, reject) => {
         const id = ++seq.current;

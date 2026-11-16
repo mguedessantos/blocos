@@ -28,7 +28,16 @@ function visibleTracksWhere(user: CurrentUser) {
 
 const lessonOrder = [{ module: { order: "asc" as const } }, { order: "asc" as const }];
 
+// Só para testes locais: alunos em DESBLOQUEAR_ALUNOS (ex.: "ana") veem todas as lições abertas. Nunca vale em produção.
+async function unlockedForTests(userId: string) {
+  const names = (process.env.DESBLOQUEAR_ALUNOS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!names.length || process.env.VERCEL_ENV === "production") return false;
+  const u = await db.user.findUnique({ where: { id: userId }, select: { username: true, role: true } });
+  return u?.role === "STUDENT" && !!u.username && names.includes(u.username);
+}
+
 async function trackLessons(userId: string, trackId: string) {
+  const unlocked = await unlockedForTests(userId);
   const lessons = await db.lesson.findMany({
     where: { module: { trackId }, draft: false },
     orderBy: lessonOrder,
@@ -44,7 +53,7 @@ async function trackLessons(userId: string, trackId: string) {
   return lessons.map((l) => {
     const p = l.progress[0];
     const done = p?.status === "CONCLUIDO";
-    const item = { id: l.id, title: l.title, type: l.type, mode: l.mode, optional: l.optional, xp: l.xp, module: l.module, done, stars: p?.stars ?? 0, locked: !prevDone };
+    const item = { id: l.id, title: l.title, type: l.type, mode: l.mode, optional: l.optional, xp: l.xp, module: l.module, done, stars: p?.stars ?? 0, locked: !prevDone && !unlocked };
     if (!l.optional) prevDone = done;
     return item;
   });

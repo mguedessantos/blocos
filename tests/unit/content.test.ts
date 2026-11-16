@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { OFFICIAL_TRACKS, type LessonContent } from "../../content/trilhas";
 import { ataqueDoGlitch } from "../../content/trilhas/ataque-do-glitch";
+import { bolaQuicando } from "../../content/trilhas/bola-quicando";
 import { cacaAoTesouro } from "../../content/trilhas/caca-ao-tesouro";
+import { corrida } from "../../content/trilhas/corrida-animada";
 import {
   b, backdrop, broadcast, c, changeVar, changeX, changeY, createClone, deleteClone, distanceTo, effect, eq, flag, forever, getVar, goTo, gotoXY,
   gt, hide, iff, ifElse, join, keyPressed, left, lt, move, n, nextCostume, playUntilDone, pointTowards, project, r, random, repeat,
@@ -10,7 +12,7 @@ import {
 } from "@/lib/blocks/build";
 import { BLOCKS_BY_OPCODE } from "@/lib/blocks/catalog";
 import { compileProject, normalizeProject } from "@/lib/blocks/project";
-import { checkModel, checkProject, checksSchema, needsRuntime } from "@/lib/checker";
+import { checkModel, checkProject, checksSchema, needsRuntime, objectivesOf } from "@/lib/checker";
 import { modelFromProjectJson } from "@/lib/sb3/project";
 import { projectToSb3Json, sb3JsonToProject } from "@/lib/sb3/convert";
 import { key, projectJson, type Node, type ProjectSpec } from "./sb3-builder";
@@ -45,7 +47,9 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "dez-passinhos": one(repeat(10, move(10))),
   triangulo: one(repeat(3, move(100), wait(0.5), left(120)), move(50)),
   escada: one(repeat(4, move(30), left(90), move(30), right(90), wait(0.3))),
-  "para-sempre": one(b("motion_pointindirection", { DIRECTION: n(45) }), forever(move(5), b("motion_ifonedgebounce"))),
+  "bola-repita": bolaQuicando([[100, 0]], 99, [repeat(30, move(10))], -200),
+  "bola-para-sempre": bolaQuicando([[100, 0]], 99, [forever(move(10))], -200),
+  "bola-quicando-desafio": bolaQuicando([[-150, 0], [150, 0]], 10, [forever(move(10), b("motion_ifonedgebounce"))]),
   // Mundo 3
   "um-amigo-no-palco": { sprites: [
     { name: "Bloquinho", x: -100, code: [[flag(), sayFor("Oi, tudo bem?", 2)]] },
@@ -54,10 +58,9 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "animacao-de-caminhada": { sprites: [{ name: "Bloquinho", x: -180, code: [[flag(), repeat(10, move(10), nextCostume(), wait(0.2))]] }] },
   "troque-o-cenario": { backdrops: ["branco", "floresta"], sprites: [{ name: "Bloquinho", code: [[flag(), sayFor("Vamos passear!", 2), backdrop("floresta")]] }] },
   "sons-no-palco": { sprites: [{ name: "Bloquinho", code: [[flag(), sound("pulo"), move(50), playUntilDone("vitoria")]] }] },
-  "show-de-talentos": { backdrops: ["branco", "cidade"], sprites: [
-    { name: "Bloquinho", code: [[flag(), backdrop("cidade"), repeat(4, nextCostume(), right(90), wait(0.2)), sound("vitoria"), sayFor("Obrigado!")]] },
-    { name: "Estrela", character: "estrela", x: 120 },
-  ] },
+  "corrida-animada": corrida([repeat(40, move(10), nextCostume(), wait(0.1))]),
+  "corrida-largada": corrida([sayFor("Preparar!", 1), sound("pop"), repeat(40, move(10), nextCostume(), wait(0.1))]),
+  "corrida-contra-o-glitch": corrida([sayFor("Preparar!", 1), sound("pop"), repeat(20, move(20), nextCostume(), wait(0.1))], true),
   // Mundo 4: o ataque do Glitch (só o Bloquinho é programado)
   "glitch-para-a-direita": ataqueDoGlitch([[whenKey("right arrow"), changeX(20)]], false),
   "glitch-dois-lados": ataqueDoGlitch([[whenKey("right arrow"), changeX(20)], [whenKey("left arrow"), changeX(-20)]], false),
@@ -124,7 +127,7 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "chuva-de-meteoros": { backdrops: ["espaco"], variables: ["desvios"], sprites: [
     { name: "Bloquinho", y: -140, code: [[flag(), setVar("desvios", n(0)), forever(iff(keyPressed("right arrow"), changeX(6)), iff(keyPressed("left arrow"), changeX(-6)))], [whenReceive("fim"), say(t("Fim de jogo!")), stopAll()]] },
     { name: "Meteoro", character: "meteoro", y: 170, visible: false, code: [
-      [flag(), forever(createClone(), wait(1))],
+      [flag(), forever(createClone(), wait(0.5))],
       [whenClone(), gotoXY(random(-200, 200), 170), show(), repeat(35, changeY(-10), iff(touchingHero(), broadcast("fim"))), changeVar("desvios", n(1)), deleteClone()],
     ] },
   ] },
@@ -185,7 +188,10 @@ const SOLUTIONS: Record<string, GameSpec> = {
 const WRONG: [string, GameSpec][] = [
   ["quadrado-magico", one(move(100), left(90), move(100), left(90), move(100), left(90), move(100), left(90))],
   ["triangulo", one(repeat(3, move(100), left(90)))],
-  ["para-sempre", one(forever(move(5)))],
+  ["corrida-animada", corrida([repeat(40, move(10))])],
+  ["corrida-contra-o-glitch", corrida([repeat(80, move(5), nextCostume(), wait(0.1))], true)],
+  ["bola-repita", bolaQuicando([[100, 0]], 99, [move(300)], -200)],
+  ["bola-quicando-desafio", bolaQuicando([[-150, 0], [150, 0]], 10, [forever(move(10))])],
   ["bate-e-volta", one(repeat(30, move(10)))],
   ["direita-ou-esquerda", one(say(t("Direita!")))],
   ["robo-aspirador", one(forever(move(10)))],
@@ -352,27 +358,19 @@ describe("quem anda não termina onde começou (senão parece que não se mexeu)
   }
 });
 
-// ───────────── Desafio extra com verificação (XP bônus) ─────────────
-const EXTRA_SOLUTIONS: Record<string, GameSpec> = {
-  "primeiros-passos": one(move(200), move(40)),
-  "virando-a-esquina": one(move(100), left(90), move(100), left(90), move(100), left(90), move(100)),
-  "pule-para-cima": one(gotoXY(0, 90)),
-  "pule-para-baixo": one(gotoXY(0, -90)),
-  "pule-para-o-canto": one(gotoXY(240, 180), gotoXY(-240, 180), gotoXY(-240, -180), gotoXY(240, -180)),
-  "diga-ola": one(say("1"), say("2"), say("3"), say("4"), say("5")),
-};
-
-describe("desafio extra verificado", () => {
-  const withExtra = lessons.filter((l) => l.extraChecks);
-  it("toda lição com extra verificado tem solução de referência", () => {
-    expect(withExtra.map((l) => l.slug).sort()).toEqual(Object.keys(EXTRA_SOLUTIONS).sort());
+// ───────────── Regras das missões ─────────────
+describe("missões", () => {
+  it("nenhuma lição tem desafio extra", () => {
+    expect(lessons.filter((l) => l.extra || l.extraChecks).map((l) => l.slug)).toEqual([]);
   });
-  for (const l of withExtra) {
-    it(l.slug, () => {
-      const extra = checksSchema.parse(l.extraChecks);
-      const runExtra = (spec: object) => checkProject(compileProject(normalizeProject("sprites" in spec && !("v" in spec) ? project(spec as GameSpec) : spec)), extra);
-      expect(runExtra(EXTRA_SOLUTIONS[l.slug]).passed).toBe(true);
-      expect(runExtra(l.starter ?? (l.startWithFlag ? { sprites: [{ name: "Bloquinho", code: [[flag()]] }] } : {})).passed).toBe(false);
-    });
-  }
+  it("toda missão tem checklist de objetivos", () => {
+    for (const l of lessons.filter(isExercise)) expect(objectivesOf(l.checks).length, l.slug).toBeGreaterThan(0);
+  });
+  it("os blocos já ensinados continuam liberados nas lições seguintes", () => {
+    const seen = new Set<string>();
+    for (const l of lessons) {
+      if (l.allowedBlocks?.length) for (const op of seen) expect(l.allowedBlocks, `${l.slug} sem ${op}`).toContain(op);
+      for (const op of l.allowedBlocks ?? []) seen.add(op);
+    }
+  });
 });
