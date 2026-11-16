@@ -4,13 +4,13 @@
     "bloquinho": [
       {
         "name": "parado",
-        "md5ext": "c5c42e76f11e185c21e7487dfeed5d58.png",
+        "md5ext": "276dcca46c9ac7fb25ddcdddb5d7d840.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       },
       {
         "name": "andando",
-        "md5ext": "9ff0a0beeb48173e92479e74f3dd50df.png",
+        "md5ext": "fab5bc0c0f1f306fbe8618bec892c5db.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       }
@@ -46,13 +46,13 @@
     "glitch": [
       {
         "name": "bravo",
-        "md5ext": "778a056a3d34131a0e5806fc5096b84f.png",
+        "md5ext": "a3bff515f48cfa10b36ca4b81773d9e6.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       },
       {
         "name": "piscando",
-        "md5ext": "590d37d978865b80220f44dbbe7fa729.png",
+        "md5ext": "394b2d7efb6db6f7482cf68be145bb40.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       }
@@ -168,12 +168,32 @@
         "rotationCenterX": 100,
         "rotationCenterY": 100
       }
+    ],
+    "raio": [
+      {
+        "name": "vermelho",
+        "md5ext": "11482f7a47f19488c09a99d82c22aeff.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      },
+      {
+        "name": "roxo",
+        "md5ext": "e1315cf052bb3d81b759b45e234aeaba.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      }
     ]
   },
   "backdrops": {
     "branco": {
       "name": "Branco",
       "md5ext": "934303b2dad24a6049b71d3f9575c79a.png",
+      "rotationCenterX": 480,
+      "rotationCenterY": 360
+    },
+    "grade": {
+      "name": "Grade x e y",
+      "md5ext": "9838d02002d05f88dc54d96494fbc202.png",
       "rotationCenterX": 480,
       "rotationCenterY": 360
     },
@@ -191,7 +211,7 @@
     },
     "espaco": {
       "name": "Espaço",
-      "md5ext": "6940fec90eb6558f49ce017e4174bf35.png",
+      "md5ext": "e6f608f7ae33f518f33518accfc5a4c3.png",
       "rotationCenterX": 480,
       "rotationCenterY": 360
     },
@@ -216,6 +236,12 @@
     "fim": {
       "name": "Tela de fim",
       "md5ext": "4ddac4121e46f0b65601dc8a64f1107a.png",
+      "rotationCenterX": 480,
+      "rotationCenterY": 360
+    },
+    "concluido": {
+      "name": "Concluído",
+      "md5ext": "f440d84b4a34a69a953728bc459ac8ba.png",
       "rotationCenterX": 480,
       "rotationCenterY": 360
     }

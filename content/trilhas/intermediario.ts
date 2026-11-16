@@ -1,6 +1,5 @@
 import { changeX, flag, forever, game, ifEdgeBounce } from "../../src/lib/blocks/build";
 import { editor } from "../licoes-editor";
-import { pictoblox } from "./basico";
 import type { TrackContent } from "./types";
 
 const FLAG = "event_whenflagclicked";
@@ -20,11 +19,11 @@ const SENSORES = [
 
 export const mundo4: TrackContent = {
   slug: "mundo-4-ponte-das-decisoes",
-  title: "Mundo 4 · Ponte das Decisões",
+  title: "Mundo 5 · Ponte das Decisões",
   description: "Se… então, senão, e/ou/não e repetir até: ensine o Bloquinho a tomar decisões.",
   story: "A Ponte das Decisões desmoronou: o Glitch apagou a capacidade dos blocos de escolher. Reconstrua cada tábua ensinando o Bloquinho a pensar “se isso, então aquilo”.",
   level: 2,
-  order: 4,
+  order: 5,
   modules: [
     {
       title: "Tomando decisões",
@@ -78,46 +77,16 @@ export const mundo4: TrackContent = {
         }, "Use **número aleatório entre 90 e 180** no giro e compare o caminho."),
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "a-porta-que-decide",
-          title: "A porta que decide",
-          type: "EXERCICIO",
-          xp: 20,
-          content: `## Missão: o portão mágico no PictoBlox
-
-1. Tenha pelo menos **2 atores**: um herói e um portão (ou qualquer objeto).
-2. No herói: **sempre** → **se tocando em [portão]? então** → **diga “Abriu!”**.
-3. Arraste o herói até o portão com o mouse para testar.`,
-          checks: {
-            checks: [
-              { type: "sprites", min: 2 },
-              { type: "inside", parent: ["control_forever"], child: IFS, label: "Coloque um “se … então” dentro do “sempre”" },
-              { type: "usesAnyBlock", opcodes: ["sensing_touchingobject"], label: "Use o sensor “tocando em …?”" },
-              { type: "inside", parent: IFS, child: ["*"], label: "Algo precisa acontecer dentro do “se”" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir a estrutura sempre + se + sensor para o PictoBlox.",
-            minutos: 15,
-            passos: ["No PictoBlox dá para arrastar atores no palco enquanto o código roda."],
-            errosComuns: ["“se” fora do “sempre”: só confere uma vez, no início."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
 export const mundo5: TrackContent = {
   slug: "mundo-5-cidade-dos-comandos",
-  title: "Mundo 5 · Cidade dos Comandos",
+  title: "Mundo 6 · Cidade dos Comandos",
   description: "Teclado e cliques: dê o controle do jogo para o jogador.",
   story: "Na Cidade dos Comandos, tudo obedece ao teclado e ao clique — mas o Glitch embaralhou os controles. Mostre quem manda e devolva o controle aos jogadores!",
   level: 2,
-  order: 5,
+  order: 6,
   modules: [
     {
       title: "O jogador no controle",
@@ -127,13 +96,13 @@ export const mundo5: TrackContent = {
           title: "Quem começa o código?",
           type: "TEORIA",
           xp: 5,
-          content: `# Eventos: o “gatilho” de cada script ⚡
+          content: `# Eventos: o “gatilho” de cada script
 
 Até agora, todo código começou com a **bandeira verde**. Mas um jogo precisa reagir ao **jogador**!
 
 Os blocos amarelos de **Eventos** começam scripts:
 
-- **quando 🏁 for clicado**: quando o jogo começa.
+- **quando a bandeira verde for clicada**: quando o jogo começa.
 - **quando a tecla [espaço] for pressionada**: quando o jogador aperta uma tecla.
 - **quando este ator for clicado**: quando o jogador clica no ator.
 
@@ -276,7 +245,7 @@ Compare com a missão das setas: ficou bem mais suave!`,
           title: "Crie: pegue a estrela",
           type: "DESAFIO",
           xp: 35,
-          content: `# 🏆 Seu primeiro mini-jogo
+          content: `# Seu primeiro mini-jogo
 
 1. Faça o **Bloquinho** andar com o **controle suave** (setas).
 2. **Se** o Bloquinho estiver **tocando em Estrela** → ele diz **“Peguei!”** e toca um som.
@@ -305,43 +274,16 @@ Compare com a missão das setas: ficou bem mais suave!`,
         },
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "comandos-no-pictoblox",
-          title: "Controle suave no PictoBlox",
-          type: "EXERCICIO",
-          xp: 20,
-          content: `## Missão: o mesmo controle no PictoBlox
-
-Refaça no PictoBlox o **controle suave**: **sempre** → **se tecla [seta] pressionada? então** → **mude x por …** (para as duas setas).`,
-          checks: {
-            checks: [
-              { type: "inside", parent: ["control_forever"], child: IFS, label: "Coloque os “se” dentro de um “sempre”" },
-              { type: "usesAnyBlock", opcodes: ["sensing_keypressed"], min: 2, label: "Use “tecla … pressionada?” para pelo menos 2 teclas" },
-              { type: "inside", parent: IFS, child: ["motion_changexby", "motion_changeyby"], label: "Mova o ator dentro do “se”" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir o padrão de controle para o PictoBlox.",
-            minutos: 15,
-            passos: ["Peça para comparar os nomes dos blocos: “adicione 10 a x” no site × “mude x por 10” no PictoBlox."],
-            errosComuns: ["Colocar o “se tecla pressionada” fora do sempre."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
 export const mundo6: TrackContent = {
   slug: "mundo-6-observatorio-dos-sensores",
-  title: "Mundo 6 · Observatório dos Sensores",
+  title: "Mundo 7 · Observatório dos Sensores",
   description: "Colisões, distância, mouse e cronômetro: faça o jogo perceber o mundo.",
   story: "No Observatório dos Sensores, cada instrumento sente uma parte do mundo do jogo. O Glitch cobriu as lentes de poeira — limpe uma a uma e seus jogos vão enxergar tudo.",
   level: 2,
-  order: 6,
+  order: 7,
   modules: [
     {
       title: "Os olhos do código",
@@ -351,7 +293,7 @@ export const mundo6: TrackContent = {
           title: "Os olhos do código",
           type: "TEORIA",
           xp: 5,
-          content: `# Sensores: o jogo percebendo o mundo 👀
+          content: `# Sensores: o jogo percebendo o mundo
 
 Os blocos **azul-claros** de **Sensores** fazem perguntas ao jogo:
 
@@ -485,7 +427,7 @@ O Bloquinho vai dizer **2**!`,
           title: "Crie: fuja do Glitch",
           type: "DESAFIO",
           xp: 35,
-          content: `# 🏆 Fuja do Glitch!
+          content: `# Fuja do Glitch!
 
 1. No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mova 3 passos** → **se tocando em [Bloquinho]? então** → **diga “Peguei você!”** e **pare [tudo]**.
 2. No **Bloquinho**: o **controle suave** com as 4 setas para fugir.
@@ -512,44 +454,16 @@ Quanto tempo você consegue escapar?`,
         },
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "cor-perigosa",
-          title: "Cor perigosa no PictoBlox",
-          type: "EXERCICIO",
-          content: `## Missão: lava! (só no PictoBlox)
-
-O PictoBlox tem um sensor a mais: **tocando na cor [ ]?**. Pinte uma área **vermelha** no cenário (lava 🌋). **Se** o ator **tocar na cor vermelha**, ele diz **Ai!** e volta para o início.
-
-Use: **sempre** → **se tocando na cor [vermelho]? então** → reação.`,
-          checks: {
-            checks: [
-              { type: "usesAnyBlock", opcodes: ["sensing_touchingcolor"], label: "Use o sensor “tocando na cor …?”" },
-              { type: "inside", parent: ["control_forever"], child: IFS, label: "Coloque o “se” dentro de um “sempre”" },
-              { type: "inside", parent: IFS, child: ["*"], label: "Algo acontece quando toca na cor" },
-            ],
-          },
-          guide: {
-            objetivo: "Conhecer um sensor que só existe no PictoBlox, aplicando o mesmo padrão sempre + se.",
-            minutos: 15,
-            passos: ["Mostre o conta-gotas para escolher exatamente a cor do cenário no bloco."],
-            errosComuns: ["Cor do bloco ligeiramente diferente da cor pintada: use o conta-gotas."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
 export const mundo7: TrackContent = {
   slug: "mundo-7-cofre-dos-pontos",
-  title: "Mundo 7 · Cofre dos Pontos",
+  title: "Mundo 8 · Cofre dos Pontos",
   description: "Variáveis e operadores: placar, contadores, contas e textos — o coração de todo jogo.",
   story: "O Cofre dos Pontos guardava os placares de todos os jogos do reino, e o Glitch zerou tudo. Aprenda a guardar e calcular valores para reabrir o cofre.",
   level: 2,
-  order: 7,
+  order: 8,
   modules: [
     {
       title: "Guardando informações",
@@ -594,7 +508,7 @@ export const mundo7: TrackContent = {
           minutos: 15,
           passos: ["Antes de rodar, peça para a turma prever o caminho."],
           errosComuns: ["Mudar a variável antes de mover: a primeira caminhada fica com 20."],
-        }, "Troque o giro de 90 por 120. Que forma o caminho faz? 🌀"),
+        }, "Troque o giro de 90 por 120. Que forma o caminho faz?"),
         editor("tabuada-do-3", {
           objetivo: "Combinar variável, laço e operação.",
           minutos: 15,
@@ -639,36 +553,6 @@ O placar aparece no canto do palco!`,
           },
           extra: "Crie uma variável **recorde** que guarda a maior pontuação (botão **Criar uma variável**).",
         },
-      ],
-    },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "placar-no-jogo",
-          title: "Placar no PictoBlox",
-          type: "EXERCICIO",
-          xp: 25,
-          content: `## Missão: o cofre de pontos no PictoBlox
-
-1. Em **Variáveis**, clique em **Criar uma variável** e chame de **pontos**.
-2. Na bandeira: **mude pontos para 0**.
-3. Quando o herói **tocar** em uma estrela, **adicione 1 a pontos** e mande a estrela para outro lugar.`,
-          checks: {
-            checks: [
-              { type: "variables", min: 1 },
-              { type: "inScript", hat: [FLAG], opcodes: ["data_setvariableto"], label: "Comece o jogo com “mude pontos para 0”" },
-              { type: "inside", parent: IFS, child: ["data_changevariableby"], label: "Some pontos dentro de um “se”" },
-              { type: "usesAnyBlock", opcodes: ["sensing_touchingobject"], label: "Use “tocando em …?” para pegar a estrela" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir variáveis e placar para o PictoBlox.",
-            minutos: 20,
-            passos: ["Mostre a caixinha que exibe a variável no palco do PictoBlox."],
-            errosComuns: ["Não zerar os pontos no início."],
-          },
-        }),
       ],
     },
   ],

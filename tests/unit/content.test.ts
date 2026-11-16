@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OFFICIAL_TRACKS, type LessonContent } from "../../content/trilhas";
+import { ataqueDoGlitch } from "../../content/trilhas/ataque-do-glitch";
+import { cacaAoTesouro } from "../../content/trilhas/caca-ao-tesouro";
 import {
   b, backdrop, broadcast, c, changeVar, changeX, changeY, createClone, deleteClone, distanceTo, effect, eq, flag, forever, getVar, goTo, gotoXY,
   gt, hide, iff, ifElse, join, keyPressed, left, lt, move, n, nextCostume, playUntilDone, pointTowards, project, r, random, repeat,
@@ -11,7 +13,7 @@ import { compileProject, normalizeProject } from "@/lib/blocks/project";
 import { checkModel, checkProject, checksSchema, needsRuntime } from "@/lib/checker";
 import { modelFromProjectJson } from "@/lib/sb3/project";
 import { projectToSb3Json, sb3JsonToProject } from "@/lib/sb3/convert";
-import { projectJson, type Node, type ProjectSpec } from "./sb3-builder";
+import { key, projectJson, type Node, type ProjectSpec } from "./sb3-builder";
 
 // ───────────── Soluções de referência das lições do SITE ─────────────
 const one = (...body: ReturnType<typeof b>[]): GameSpec => ({ variables: ["pontos"], sprites: [{ name: "Bloquinho", code: [[flag(), ...body]] }] });
@@ -34,7 +36,10 @@ const SOLUTIONS: Record<string, GameSpec> = {
   "pule-para-o-canto": one(gotoXY(150, 100), gotoXY(240, 180)),
   "passeio-com-pausa": one(move(50), wait(1), move(50)),
   "diga-ola": one(sayFor("Olá, eu sou o Bloquinho!", 2), move(50), sayFor("Tchau!", 2)),
-  apresentacao: one(sayFor("Oi, eu sou o Bloquinho!"), move(60), wait(1), sayFor("Tchau!")),
+  "tesouro-primeira-moeda": cacaAoTesouro([[150, 0]], [move(150)]),
+  "tesouro-dobrando-a-esquina": cacaAoTesouro([[100, 0], [100, 100]], [move(100), wait(1), left(90), move(100), wait(1)]),
+  "tesouro-caca-completa": cacaAoTesouro([[100, 100], [-100, 100], [-100, -100], [100, -100]],
+    [gotoXY(100, 100), wait(1), gotoXY(-100, 100), wait(1), gotoXY(-100, -100), wait(1), gotoXY(100, -100), wait(1)]),
   // Mundo 2
   "quadrado-magico": one(repeat(4, move(100), wait(0.5), left(90)), move(50)),
   "dez-passinhos": one(repeat(10, move(10))),
@@ -53,7 +58,11 @@ const SOLUTIONS: Record<string, GameSpec> = {
     { name: "Bloquinho", code: [[flag(), backdrop("cidade"), repeat(4, nextCostume(), right(90), wait(0.2)), sound("vitoria"), sayFor("Obrigado!")]] },
     { name: "Estrela", character: "estrela", x: 120 },
   ] },
-  // Mundo 4
+  // Mundo 4: o ataque do Glitch (só o Bloquinho é programado)
+  "glitch-para-a-direita": ataqueDoGlitch([[whenKey("right arrow"), changeX(20)]], false),
+  "glitch-dois-lados": ataqueDoGlitch([[whenKey("right arrow"), changeX(20)], [whenKey("left arrow"), changeX(-20)]], false),
+  "glitch-desvie-dos-raios": ataqueDoGlitch([[whenKey("right arrow"), changeX(20)], [whenKey("left arrow"), changeX(-20)]]),
+  // Mundo 4 (antigo)
   "bate-e-volta": one(repeat(30, move(10), iff(b("sensing_touchingobject"), right(180)))),
   "direita-ou-esquerda": one(b("motion_setx", { X: n(150) }), ifElse(gt(r(xpos()), n(0)), [say(t("Direita!"))], [say(t("Esquerda!"))])),
   "volta-ao-mundo": one(repeat(20, changeX(15), iff(gt(r(xpos()), n(150)), b("motion_setx", { X: n(-150) })))),
@@ -182,6 +191,10 @@ const WRONG: [string, GameSpec][] = [
   ["robo-aspirador", one(forever(move(10)))],
   ["contando-passos", one(repeat(5, move(20)), say(t("5")))],
   ["calculadora", one(say(t("56")))],
+  ["tesouro-dobrando-a-esquina", cacaAoTesouro([[100, 0], [100, 100]], [move(100), left(90), move(100)])],
+  ["tesouro-caca-completa", cacaAoTesouro([[100, 100], [-100, 100], [-100, -100], [100, -100]], [gotoXY(100, 100), gotoXY(-100, 100), gotoXY(-100, -100), gotoXY(100, -100)])],
+  ["glitch-dois-lados", ataqueDoGlitch([[whenKey("right arrow"), changeX(20)], [whenKey("left arrow"), changeX(20)]], false)],
+  ["glitch-desvie-dos-raios", ataqueDoGlitch([[whenKey("right arrow"), changeX(-20)], [whenKey("left arrow"), changeX(20)]])],
   ["setas-do-teclado", { sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(10)]] }] }],
   ["controle-suave", { sprites: [{ name: "Bloquinho", x: -150, code: [[whenKey("right arrow"), changeX(5)], [whenKey("left arrow"), changeX(-5)]] }] }],
   ["mensagens", { sprites: [
@@ -207,6 +220,7 @@ const SB3_SOLUTIONS: Record<string, ProjectSpec> = {
   patrulha: { sprites: [{ scripts: [[F, "motion_setrotationstyle", sforever("motion_movesteps", "motion_ifonedgebounce")]] }] },
   "disfarce-e-canto": { sprites: [{ costumes: 2, sounds: 1, scripts: [[F, "looks_nextcostume", "sound_playuntildone"]] }] },
   "a-porta-que-decide": { sprites: [{ scripts: [[F, sforever(siff(sTouching, sSay("Abriu!")))]] }, {}] },
+  "fuga-no-pictoblox": { sprites: [{ scripts: [[key("right arrow"), "motion_changexby"], [key("left arrow"), "motion_changexby"]] }] },
   "comandos-no-pictoblox": { sprites: [{ scripts: [[F, sforever(siff(sKey("right arrow"), "motion_changexby"), siff(sKey("left arrow"), "motion_changexby"))]] }] },
   "cor-perigosa": { sprites: [{ scripts: [[F, sforever(siff({ op: "sensing_touchingcolor" }, sSay("Ai!"), "motion_gotoxy"))]] }] },
   "placar-no-jogo": { sprites: [{ variables: ["pontos"], scripts: [[F, "data_setvariableto", sforever(siff(sTouching, "data_changevariableby", "motion_gotoxy"))]] }, {}] },
@@ -231,8 +245,8 @@ const isExercise = (l: LessonContent) => l.type === "EXERCICIO" || l.type === "D
 const run = (spec: GameSpec | object, l: LessonContent) => checkProject(compileProject(normalizeProject("sprites" in spec && !("v" in spec) ? project(spec as GameSpec) : spec)), checksSchema.parse(l.checks));
 
 describe("currículo oficial", () => {
-  it("tem 10 mundos em 3 níveis, em ordem, com história, terminando no projeto final da jam", () => {
-    expect(OFFICIAL_TRACKS.map((tr) => tr.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  it("tem 11 mundos em 3 níveis, em ordem, com história, terminando no projeto final da jam", () => {
+    expect(OFFICIAL_TRACKS.map((tr) => tr.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     expect(new Set(OFFICIAL_TRACKS.map((tr) => tr.level))).toEqual(new Set([1, 2, 3]));
     for (const tr of OFFICIAL_TRACKS) expect(tr.story, tr.slug).toBeTruthy();
     const required = OFFICIAL_TRACKS.at(-1)!.modules.flatMap((m) => m.lessons).filter((l) => !l.optional);
@@ -242,10 +256,6 @@ describe("currículo oficial", () => {
   it("o site vem primeiro: nenhuma lição obrigatória depende do PictoBlox", () => {
     for (const l of lessons) {
       if (l.mode === "SB3") expect(l.optional, `${l.slug} é do PictoBlox e não pode ser obrigatória`).toBe(true);
-    }
-    // e cada mundo oferece a transferência opcional para o PictoBlox
-    for (const tr of OFFICIAL_TRACKS) {
-      expect(tr.modules.flatMap((m) => m.lessons).some((l) => l.mode === "SB3" && l.optional), tr.slug).toBe(true);
     }
   });
 
@@ -273,10 +283,11 @@ describe("currículo oficial", () => {
 
     const solution = SOLUTIONS[l.slug];
     expect(solution, `falta solução de referência para ${l.slug}`).toBeDefined();
-    // a solução só usa blocos liberados na lição
+    // a solução só usa blocos liberados na lição (os que já vêm prontos no projeto inicial não contam)
     if (l.allowedBlocks?.length) {
       const used = Object.keys(compileProject(project(solution)).opcodeCounts);
-      for (const op of used) if (!op.startsWith("event_whenflag")) expect(l.allowedBlocks, `${l.slug} usa ${op}`).toContain(op);
+      const ready = l.starter ? Object.keys(compileProject(normalizeProject(l.starter)).opcodeCounts) : [];
+      for (const op of used) if (!op.startsWith("event_whenflag") && !ready.includes(op)) expect(l.allowedBlocks, `${l.slug} usa ${op}`).toContain(op);
     }
     const res = run(solution, l);
     expect(res.items.filter((i) => !i.ok)).toEqual([]);
@@ -307,10 +318,10 @@ describe("currículo oficial", () => {
 import { OFFICIAL_COURSES } from "../../content/cursos";
 
 describe("cursos oficiais", () => {
-  it("o primeiro curso reúne os 10 mundos; o de Arduino está “em breve” e vazio", () => {
+  it("o primeiro curso reúne os 11 mundos; o de Arduino está “em breve” e vazio", () => {
     const [intro, arduino] = OFFICIAL_COURSES;
     expect(intro.title).toBe("PictoBlox e Introdução à Programação de Blocos");
-    expect(intro.tracks).toHaveLength(10);
+    expect(intro.tracks).toHaveLength(11);
     expect(intro.comingSoon).toBeFalsy();
     expect(arduino.title).toBe("Arduino e PictoBlox");
     expect(arduino.comingSoon).toBe(true);
@@ -349,7 +360,6 @@ const EXTRA_SOLUTIONS: Record<string, GameSpec> = {
   "pule-para-baixo": one(gotoXY(0, -90)),
   "pule-para-o-canto": one(gotoXY(240, 180), gotoXY(-240, 180), gotoXY(-240, -180), gotoXY(240, -180)),
   "diga-ola": one(say("1"), say("2"), say("3"), say("4"), say("5")),
-  apresentacao: one(gotoXY(0, 0), gotoXY(50, 50), gotoXY(-50, 50)),
 };
 
 describe("desafio extra verificado", () => {

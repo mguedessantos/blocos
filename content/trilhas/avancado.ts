@@ -1,7 +1,6 @@
 import {
   b, changeX, changeY, flag, forever, game, gotoXY, iff, keyPressed, lt, n, r, random, ypos,
 } from "../../src/lib/blocks/build";
-import { pictoblox } from "./basico";
 import type { TrackContent } from "./types";
 
 const FLAG = "event_whenflagclicked";
@@ -28,11 +27,11 @@ const heroControls4 = () => [flag(), forever(
 
 export const mundo8: TrackContent = {
   slug: "mundo-8-fortaleza-do-glitch",
-  title: "Mundo 8 · Fortaleza do Glitch",
+  title: "Mundo 9 · Fortaleza do Glitch",
   description: "Aparecer e sumir, sorteios, mensagens entre atores, clones e telas de jogo.",
   story: "A Fortaleza do Glitch é cheia de truques: atores que somem, que se multiplicam, que trocam recados em segredo. Domine esses poderes e use-os contra o próprio Glitch.",
   level: 3,
-  order: 8,
+  order: 9,
   modules: [
     {
       title: "Truques da fortaleza",
@@ -192,7 +191,7 @@ Todo jogo tem telas: **início**, **jogo** e **fim**. Este projeto já tem os ce
           title: "Crie: chuva de meteoros",
           type: "DESAFIO",
           xp: 40,
-          content: `# 🏆 Sobreviva à chuva
+          content: `# Sobreviva à chuva
 
 1. O **Bloquinho** anda para os lados com o **controle suave**.
 2. O **Meteoro** cria **clones** que caem do alto em posições sorteadas.
@@ -224,43 +223,16 @@ Todo jogo tem telas: **início**, **jogo** e **fim**. Este projeto já tem os ce
         },
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "clones-no-pictoblox",
-          title: "Clones no PictoBlox",
-          type: "EXERCICIO",
-          xp: 25,
-          content: `## Missão: clones no PictoBlox
-
-Refaça o **exército de clones** no PictoBlox: **crie clone de [este ator]**, **quando eu começar como um clone** e **apague este clone**.`,
-          checks: {
-            checks: [
-              { type: "usesAnyBlock", opcodes: ["control_create_clone_of"], label: "Use “crie clone de …”" },
-              { type: "usesAnyBlock", opcodes: ["control_start_as_clone"], label: "Use “quando eu começar como um clone”" },
-              { type: "usesAnyBlock", opcodes: ["control_delete_this_clone"], label: "Apague o clone quando ele não for mais necessário" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir clones para o PictoBlox.",
-            minutos: 20,
-            passos: ["Os blocos têm os mesmos nomes no site e no PictoBlox."],
-            errosComuns: ["Esquecer de esconder o ator original."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
 export const mundo9: TrackContent = {
   slug: "mundo-9-forja-dos-jogos",
-  title: "Mundo 9 · Forja dos Jogos",
+  title: "Mundo 10 · Forja dos Jogos",
   description: "Planeje e construa dois jogos completos, etapa por etapa: Caça-Moedas e Fuga do Glitch.",
   story: "Na Forja dos Jogos, os Criadores transformam blocos em jogos de verdade. Cada etapa concluída devolve aura ao reino — e prepara você para o Grande Torneio.",
   level: 3,
-  order: 9,
+  order: 10,
   modules: [
     {
       title: "Jogo 1: Caça-Moedas",
@@ -270,7 +242,7 @@ export const mundo9: TrackContent = {
           title: "Planeje seu jogo",
           type: "TEORIA",
           xp: 10,
-          content: `# Todo jogo bom começa com um plano 📝
+          content: `# Todo jogo bom começa com um plano
 
 Antes de programar, responda no caderno:
 
@@ -344,7 +316,7 @@ Faça o Bloquinho andar para a **direita** e para a **esquerda** com as setas, u
           guide: {
             objetivo: "Aplicar o padrão de controle em um projeto real.",
             minutos: 10,
-            passos: ["Retome a missão “Controle suave” do Mundo 5."],
+            passos: ["Retome a missão “Controle suave” do Mundo 6."],
             errosComuns: ["Herói saindo da tela: o desafio extra resolve."],
           },
           extra: "Impeça o herói de sair do palco: **se** posição x > 220, **mude x para** 220 (e o mesmo do lado esquerdo).",
@@ -415,7 +387,7 @@ A variável **pontos** já existe. Na **Moeda**:
           title: "Moedas 5: vidas e fim de jogo",
           type: "DESAFIO",
           xp: 40,
-          content: `# 🏆 Etapa final: vidas e fim
+          content: `# Etapa final: vidas e fim
 
 As variáveis **pontos** e **vidas** já existem.
 
@@ -423,7 +395,7 @@ As variáveis **pontos** e **vidas** já existem.
 2. Se a moeda chegar ao chão **sem ser pega** (no “se posição y < -170”), **adicione -1 a vidas**.
 3. No Bloquinho: **sempre** → **se vidas = 0** → **diga “Fim de jogo!”** e **pare [tudo]**.
 
-Parabéns: você fez um jogo completo! 🎉`,
+Parabéns: você fez um jogo completo!`,
           allowedBlocks: TODOS,
           starter: game({
             backdrops: ["floresta"],
@@ -559,7 +531,7 @@ No **Glitch**: **sempre** → **aponte para [Bloquinho]** → **mova 2 passos**.
           title: "Fuga 4: sobreviva!",
           type: "DESAFIO",
           xp: 40,
-          content: `# 🏆 Etapa final: quanto tempo você aguenta?
+          content: `# Etapa final: quanto tempo você aguenta?
 
 O palco já tem os cenários **Castelo** e **Tela de fim**.
 
@@ -599,44 +571,16 @@ O palco já tem os cenários **Castelo** e **Tela de fim**.
         },
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "caca-moedas-no-pictoblox",
-          title: "Caça-Moedas no PictoBlox",
-          type: "DESAFIO",
-          xp: 40,
-          content: `## Missão: refaça o Caça-Moedas no PictoBlox
-
-Recrie no PictoBlox o jogo que você fez aqui: herói com controle suave, moeda que cai, **pontos**, **vidas** e **fim de jogo**.`,
-          checks: {
-            checks: [
-              { type: "variables", min: 2, message: "Use duas variáveis: pontos e vidas." },
-              { type: "usesAnyBlock", opcodes: ["sensing_keypressed", KEY], label: "Controle o herói pelo teclado" },
-              { type: "inside", parent: ["control_forever"], child: ["motion_changeyby"], label: "A moeda cai dentro de um “sempre”" },
-              { type: "usesAnyBlock", opcodes: ["control_stop"], label: "Pare o jogo quando as vidas acabarem" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir um jogo completo para o PictoBlox.",
-            minutos: 60,
-            passos: ["Peça para os alunos deixarem o site aberto ao lado como “receita”."],
-            errosComuns: ["Nomes de blocos diferentes: “adicione -5 a y” no site = “mude y por -5” no PictoBlox."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
 export const mundo10: TrackContent = {
   slug: "mundo-10-grande-torneio",
-  title: "Mundo 10 · O Grande Torneio",
+  title: "Mundo 11 · O Grande Torneio",
   description: "Prepare-se para a game jam: trabalho em equipe, do tema à ideia, capricho e o projeto final.",
   story: "Chegou a hora do Grande Torneio dos Criadores! Equipes de todo o reino vão criar jogos sobre um tema surpresa, com tempo marcado. É aqui que a aura volta de vez — e o Glitch é derrotado pela criatividade.",
   level: 3,
-  order: 10,
+  order: 11,
   modules: [
     {
       title: "Preparando a equipe",
@@ -646,7 +590,7 @@ export const mundo10: TrackContent = {
           title: "O que é uma game jam?",
           type: "TEORIA",
           xp: 10,
-          content: `# Game jam: criar um jogo contra o relógio ⏱️
+          content: `# Game jam: criar um jogo contra o relógio
 
 Uma **game jam** é um evento em que equipes criam um jogo do zero, sobre um **tema** revelado no início, em um **tempo limitado**.
 
@@ -676,7 +620,7 @@ Uma **game jam** é um evento em que equipes criam um jogo do zero, sobre um **t
           title: "Trabalho em equipe",
           type: "TEORIA",
           xp: 10,
-          content: `# Ninguém cria um jogo sozinho 🤝
+          content: `# Ninguém cria um jogo sozinho
 
 Em uma jam, cada pessoa da equipe tem um **papel** (e todo mundo ajuda em tudo!):
 
@@ -705,7 +649,7 @@ A equipe trabalha em **um projeto só**. Quem está no teclado é o **piloto**; 
           title: "Do tema à ideia",
           type: "TEORIA",
           xp: 10,
-          content: `# Tempestade de ideias 💡
+          content: `# Tempestade de ideias
 
 Quando o tema sair:
 
@@ -814,7 +758,7 @@ Jogos bons começam fáceis e vão ficando difíceis. Neste jogo, a moeda cai se
           title: "Teste e corrija",
           type: "TEORIA",
           xp: 10,
-          content: `# Caçando bugs 🐛
+          content: `# Caçando bugs
 
 O Glitch adora jogos que não foram testados! Antes de entregar, confira:
 
@@ -847,7 +791,7 @@ O Glitch adora jogos que não foram testados! Antes de entregar, confira:
           title: "Projeto final: o jogo da equipe",
           type: "DESAFIO",
           xp: 60,
-          content: `# 🏆 O Grande Torneio de treino
+          content: `# O Grande Torneio de treino
 
 Com a sua equipe, crie aqui no site um jogo completo sobre o tema que o professor anunciar. O jogo precisa ter:
 
@@ -892,40 +836,6 @@ Quando terminar, clique em **Verificar**. Na game jam de verdade, vocês vão en
           },
           extra: "Escreva um **texto de 3 linhas** apresentando o jogo e as instruções — os jurados da jam vão adorar.",
         },
-      ],
-    },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "projeto-final-pictoblox",
-          title: "O jogo da equipe no PictoBlox",
-          type: "DESAFIO",
-          xp: 60,
-          content: `## Missão: a jam no PictoBlox
-
-Se a sua escola usa o PictoBlox na jam, refaça (ou continue) o jogo da equipe lá, com os mesmos requisitos: 3 atores, 2 cenários, controles, variável, mensagens, ciclo de jogo e sons.
-
-> No PictoBlox, cada pessoa pode criar um ator no próprio computador, **exportar** (botão direito no ator → exportar, arquivo .sprite3) e o responsável **importa** no projeto principal.`,
-          checks: {
-            checks: [
-              { type: "sprites", min: 3 },
-              { type: "backdrops", min: 2 },
-              { type: "usesAnyBlock", opcodes: [...CONTROLS, "sensing_mousedown", "event_whenthisspriteclicked", "motion_pointtowards"], label: "O jogador controla o jogo (teclado ou mouse)" },
-              { type: "variables", min: 1 },
-              { type: "usesAnyBlock", opcodes: BROADCAST, label: "Use mensagens entre atores" },
-              { type: "usesAnyBlock", opcodes: [RECEIVE], label: "Algum ator reage a uma mensagem" },
-              { type: "inside", parent: ["control_forever"], child: IFS, label: "Tenha um ciclo de jogo (“se” dentro de “sempre”)" },
-              { type: "sounds", min: 1 },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir o projeto final para o PictoBlox, quando a escola usar o PictoBlox na jam.",
-            minutos: 120,
-            passos: ["Pratique antes o exportar/importar atores (.sprite3) para juntar o trabalho da equipe."],
-            errosComuns: ["Dois alunos editando o “mesmo” projeto em computadores diferentes e perdendo trabalho."],
-          },
-        }),
       ],
     },
   ],

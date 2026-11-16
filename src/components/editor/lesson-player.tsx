@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, BookOpen, Circle, CircleCheck, CircleX, Flag, LocateFixed, Sparkles, Square, Lightbulb, RotateCcw, X } from "lucide-react";
+import { BadgeIcon } from "@/components/badge-icon";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { Stars } from "@/components/lesson-icon";
@@ -69,7 +70,9 @@ function legacyDraft(key: string): unknown {
 
 export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra, mode = "aluno", aside, objectives, checks, extraBonus, extraDone }: Props) {
   const aula = mode === "aula";
-  const draftKey = aula ? `blocos:aula:${lessonId}` : `blocos:licao:${lessonId}`;
+  // a chave muda quando o projeto inicial da lição muda: rascunhos da versão antiga deixam de abrir
+  const starterTag = useMemo(() => [...JSON.stringify(starter ?? null)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 0).toString(36), [starter]);
+  const draftKey = aula ? `blocos:aula:${lessonId}:${starterTag}` : `blocos:licao:${lessonId}:${starterTag}`;
   const editor = useRef<ScratchFrameHandle | null>(null);
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
@@ -120,6 +123,11 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
     }, 700);
   }, [parsedChecks, objectives, starter]);
   useEffect(() => () => clearTimeout(liveTimer.current), []);
+  // missão cumprida (objetivos ao vivo, depois de rodar): tela verde de CONCLUÍDO no palco
+  const liveDone = !!live?.length && live.filter((i) => !i.bonus).every((i) => i.ok);
+  useEffect(() => {
+    if (liveDone && ran) editor.current?.concluido();
+  }, [liveDone, ran]);
   const onChange = useCallback(() => {
     setRan(false);
     void saveDraft();
@@ -138,6 +146,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
         const project = withStarterPlacement(await projectFromSb3(sb3), normalizeProject(starter));
         const result = await verify(JSON.stringify(project));
         setOutcome(result);
+        if (result.ok && result.passed) editor.current?.concluido();
         if (result.ok) {
           setLive(result.items);
           setVerified(true);
@@ -214,7 +223,7 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_clamp(280px,22vw,380px)] lg:grid-rows-1">
         {/* Editor de blocos (esquerda) */}
         <div className="relative min-h-0">
-          <ScratchFrame handle={editor} initial={initial} allowedBlocks={allowedBlocks} onChange={onChange} onLoaded={runLive} onRun={() => setRan(true)} />
+          <ScratchFrame handle={editor} initial={initial} allowedBlocks={allowedBlocks} onChange={onChange} onLoaded={() => { recenter(); runLive(); }} onRun={() => setRan(true)} />
           {helpOpen && (
             <aside
               id="ajuda-blocos"
@@ -343,7 +352,7 @@ export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref
       )}
       {outcome.newBadges?.map((b) => (
         <p key={b.id} className="flex items-center gap-3 rounded-2xl border-2 border-star px-4 py-2 font-extrabold">
-          <span aria-hidden className="text-3xl">{b.icon}</span> Nova medalha: {b.name}!
+          <BadgeIcon name={b.icon} className="h-8 w-8 text-amber-500" /> Nova medalha: {b.name}!
         </p>
       ))}
       <ul className="space-y-1.5 text-sm font-semibold">

@@ -224,8 +224,8 @@ function finish(items: CheckItem[]): CheckResult {
   const requiredOk = required.every((i) => i.ok);
   const stars = starsFor(requiredOk, bonus.filter((i) => i.ok).length, bonus.length);
   const summary = !requiredOk
-    ? "Quase lá! Veja as dicas abaixo e tente de novo. 💪"
-    : stars === 3 ? "Perfeito! Você conseguiu! 🎉" : "Muito bem, você conseguiu! Dá para ganhar mais estrelas? ⭐";
+    ? "Quase lá! Veja as dicas abaixo e tente de novo."
+    : stars === 3 ? "Perfeito! Você conseguiu!" : "Muito bem, você conseguiu! Dá para ganhar mais estrelas?";
   return { passed: requiredOk, stars, items, summary };
 }
 
@@ -276,7 +276,7 @@ export function checkProject(project: ProjectProgram, checks: Checks): CheckResu
   const items: CheckItem[] = [];
   const hasEvent = [...project.sprites.map((s) => s.program), project.stage.program].some((p) => p.scripts.length > 0);
   if (!hasEvent) {
-    items.push({ ok: false, bonus: false, message: "Comece o programa com um bloco amarelo de evento, como “quando 🏁 for clicado”." });
+    items.push({ ok: false, bonus: false, message: "Comece o programa com um bloco amarelo de evento, como “quando a bandeira verde for clicada”." });
   }
   let world: World | null = null;
   let initial: WorldState | null = null;

@@ -23,7 +23,7 @@ export default async function ConvitePage(props: PageProps<"/convite/[token]">) 
 
   return (
     <Card className="flex flex-col gap-4">
-      <h1 className="text-2xl font-extrabold">Bem-vindo(a) ao {invite.organization.name}! 🍎</h1>
+      <h1 className="text-2xl font-extrabold">Bem-vindo(a) ao {invite.organization.name}!</h1>
       <p className="text-sm text-muted">Crie sua conta de professor(a) para <strong>{invite.email}</strong>.</p>
       <AcceptInviteForm token={token} />
     </Card>

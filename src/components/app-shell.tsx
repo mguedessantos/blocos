@@ -1,4 +1,4 @@
-import { CircleAlert, Clock, KeyRound, LifeBuoy, LogOut } from "lucide-react";
+import { CircleAlert, Clock, Megaphone, KeyRound, LifeBuoy, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/app/(auth)/actions";
@@ -79,7 +79,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
       </header>
       {unread[0] && (
         <div role="status" className="no-print flex flex-wrap items-center justify-center gap-2 bg-brand-soft px-6 py-2 text-sm font-bold text-brand-shadow">
-          <span aria-hidden>📣</span> Novo aviso: {unread[0].title}
+          <Megaphone aria-hidden className="h-4 w-4" /> Novo aviso: {unread[0].title}
           {unread.length > 1 && <span className="font-semibold">(+{unread.length - 1})</span>}
           <span className="font-semibold">· abra o sino para ler</span>
         </div>

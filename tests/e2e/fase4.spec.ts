@@ -97,7 +97,7 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   const kid = await ctx.newPage();
   await loginStudent(kid, cred.code, cred.username, cred.password);
   await expect(kid.getByRole("heading", { name: "PictoBlox e Introdução à Programação de Blocos" })).toBeVisible();
-  await expect(kid.getByText(/0 de 12 lições · \+2 extras/)).toBeVisible();
+  await expect(kid.getByText(/0 de 14 lições/)).toBeVisible();
 
   await kid.getByRole("link", { name: "Ver trilha Mundo 1 · Vila do Palco" }).click();
   await expect(kid.getByLabel("Ande 100 passos (trancada)")).toBeVisible();
@@ -143,7 +143,7 @@ test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a pró
   await expect(kid.getByRole("heading", { level: 1, name: "Virando a esquina" })).toBeVisible();
 
   await kid.goto(`${ESCOLA}/aluno`);
-  await expect(kid.getByText(/3 de 12 lições/)).toBeVisible();
+  await expect(kid.getByText(/3 de 14 lições/)).toBeVisible();
   await expect(kid.getByText("30 XP", { exact: true })).toBeVisible(); // + 10 do desafio extra
   await ctx.close();
 });
@@ -195,7 +195,7 @@ test("arrastar um bloco de verdade e clicar na bandeira move o personagem", asyn
 
 test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ page }) => {
   await loginStudent(page, "ROBO42", "clara", "gato123");
-  await page.getByRole("link", { name: "Ver trilha Mundo 5 · Cidade dos Comandos" }).click();
+  await page.getByRole("link", { name: "Ver trilha Mundo 6 · Cidade dos Comandos" }).click();
   const setas = page.getByRole("link", { name: /Setas do teclado/ });
   if (!(await setas.isVisible())) {
     await page.getByRole("link", { name: /Quem começa o código/ }).click();

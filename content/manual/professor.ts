@@ -80,7 +80,7 @@ Na lista **Alunos**, marque o(s) aluno(s) e clique em **Gerar novas senhas e car
     slug: "curriculo",
     title: "Mundos, aulas e cursos",
     body: `
-O curso **PictoBlox e Introdução à Programação de Blocos** tem 10 mundos em três níveis: Básico, Intermediário e Avançado. Cada mundo tem lições no site e uma missão extra opcional no PictoBlox.
+O curso **PictoBlox e Introdução à Programação de Blocos** tem 11 mundos em três níveis: Básico, Intermediário e Avançado. Cada mundo tem lições no site e uma missão extra opcional no PictoBlox.
 
 ![Página do currículo com os mundos por nível](prof-curriculo)
 
@@ -173,7 +173,7 @@ Na página da turma, o **Progresso da turma** mostra um mapa: cada linha é um a
 - Troque de mundo pelos botões acima do mapa.
 
 ## Quem precisa de ajuda
-Aparece um aviso com os nomes dos alunos que tentaram **3 vezes ou mais** sem concluir uma lição. Eles também ganham um **⚠** ao lado do nome. É um bom momento para sentar junto e olhar os blocos.
+Aparece um aviso com os nomes dos alunos que tentaram **3 vezes ou mais** sem concluir uma lição. Eles também ganham um **ícone de alerta** ao lado do nome. É um bom momento para sentar junto e olhar os blocos.
 `,
   },
   {
@@ -183,7 +183,7 @@ Aparece um aviso com os nomes dos alunos que tentaram **3 vezes ou mais** sem co
 Quando o aluno conclui todas as lições obrigatórias de um mundo, a plataforma gera um **certificado em PDF** com a marca da escola.
 
 - O aluno baixa pelo botão **Certificado** no card do mundo.
-- Você baixa pelo mapa de progresso: clique no **🎓** ao lado do aluno.
+- Você baixa pelo mapa de progresso: clique no **ícone de certificado** ao lado do aluno.
 
 > Dica: o certificado tem um código de conferência. Ele não mostra dados além do primeiro nome do aluno e da escola.
 `,

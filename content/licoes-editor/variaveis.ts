@@ -19,7 +19,7 @@ export const variaveis: TrackContent = {
           title: "Caixinhas com nome",
           type: "TEORIA",
           xp: 5,
-          content: `# Variáveis: caixinhas com nome 📦
+          content: `# Variáveis: caixinhas com nome
 
 Uma **variável** é como uma caixinha com uma etiqueta. Dentro dela você guarda um valor — um número ou um texto — e pode mudar esse valor quando quiser.
 
@@ -124,7 +124,7 @@ Variáveis podem controlar o movimento! Faça o Bloquinho andar em **espiral**:
 - Comece com **pontos = 10**.
 - Repita **5 vezes**: **mova pontos passos**, gire **↻ 90 graus**, **adicione 10 a pontos** e **espere** um pouco.
 
-Cada caminhada fica 10 passos maior que a anterior. 🌀`,
+Cada caminhada fica 10 passos maior que a anterior.`,
           allowedBlocks: [...BASE, ...VARS, "control_repeat", "control_wait"],
           startWithFlag: true,
           checks: {
@@ -151,7 +151,7 @@ Cada caminhada fica 10 passos maior que a anterior. 🌀`,
           title: "Tabuada do 3",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Desafio: a tabuada do 3
+          content: `# Desafio: a tabuada do 3
 
 Faça o Bloquinho falar a tabuada do 3, um número de cada vez: **3, 6, 9, ... até 30**.
 

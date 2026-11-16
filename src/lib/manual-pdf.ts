@@ -12,8 +12,8 @@ const hex = (h: string) => {
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 };
 /** Fontes padrão usam WinAnsi: acentos ok; emoji e outros símbolos são removidos. */
-const SYMBOLS: Record<string, string> = { "✓": "(ok)", "→": "->", "★": "estrela", "⚠": "(!)", "🎓": "(certificado)" };
-const safe = (s: string) => s.normalize("NFC").replace(/✓|→|★|⚠|🎓/gu, (c) => SYMBOLS[c]).replace(/[^ -~ -ÿ–—‘’“”•…]/g, "").replace(/ {2,}/g, " ");
+const SYMBOLS: Record<string, string> = { "✓": "(ok)", "→": "->", "★": "estrela", "⚠": "(!)" };
+const safe = (s: string) => s.normalize("NFC").replace(/✓|→|★|⚠/gu, (c) => SYMBOLS[c]).replace(/[^ -~ -ÿ–—‘’“”•…]/g, "").replace(/ {2,}/g, " ");
 
 type Run = { text: string; bold: boolean };
 type Word = Run & { sp: boolean };

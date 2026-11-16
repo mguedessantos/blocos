@@ -212,6 +212,10 @@ export function drawCharacter(ctx: Ctx, id: CharacterId, costume: number) {
       }
       break;
     }
+    case "raio": // tiro do Glitch: um raio de energia que cai
+      rect(ctx, -4, -14, 8, 28, 4, alt ? "#a855f7" : "#ef4444", alt ? "#581c87" : "#7f1d1d");
+      rect(ctx, -1.5, -10, 3, 20, 1.5, "#fde68a");
+      break;
   }
 }
 
@@ -224,6 +228,7 @@ export function drawBackdrop(ctx: Ctx, id: BackdropId, w: number, h: number) {
     ctx.fillRect(0, 0, w, h);
   };
   switch (id) {
+    case "grade": // a arte real vem da biblioteca (Xy-grid), ver scripts/export-assets.ts
     case "branco":
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, w, h);
@@ -258,7 +263,6 @@ export function drawBackdrop(ctx: Ctx, id: BackdropId, w: number, h: number) {
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, 0, w, h);
       for (let i = 0; i < 60; i++) circle(ctx, (i * 97) % w, (i * 53) % h, (i % 3) * 0.6 + 0.6, "#e2e8f0");
-      circle(ctx, 400, 70, 26, "#a78bfa");
       break;
     case "cidade":
       grad("#fde68a", "#fdba74");
@@ -278,6 +282,16 @@ export function drawBackdrop(ctx: Ctx, id: BackdropId, w: number, h: number) {
       ctx.beginPath();
       ctx.roundRect(215, 260, 50, 100, [25, 25, 0, 0]);
       ctx.fill();
+      break;
+    case "concluido":
+      grad("#15803d", "#4ade80");
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 52px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("CONCLUÍDO!", w / 2, h / 2 - 10);
+      ctx.font = "bold 22px system-ui, sans-serif";
+      ctx.fillText("Missão cumprida!", w / 2, h / 2 + 30);
+      ctx.textAlign = "start";
       break;
     case "inicio":
     case "fim": {

@@ -39,17 +39,17 @@ export type StudentStats = {
 export type BadgeDef = { id: string; name: string; description: string; icon: string; earned: (s: StudentStats) => boolean };
 
 export const BADGES: BadgeDef[] = [
-  { id: "primeiro-passo", name: "Primeiro passo", description: "Concluiu a primeira lição.", icon: "🚀", earned: (s) => s.completed >= 1 },
-  { id: "dez-licoes", name: "Dez de dez", description: "Concluiu 10 lições.", icon: "🔟", earned: (s) => s.completed >= 10 },
-  { id: "cinquenta-licoes", name: "Maratonista", description: "Concluiu 50 lições.", icon: "🏃", earned: (s) => s.completed >= 50 },
-  { id: "perfeito", name: "Perfeição", description: "Ganhou 3 estrelas em 10 lições.", icon: "⭐", earned: (s) => s.perfect >= 10 },
-  { id: "de-primeira", name: "De primeira!", description: "Resolveu 5 exercícios com 3 estrelas na primeira tentativa.", icon: "🎯", earned: (s) => s.exercisesFirstTry >= 5 },
-  { id: "persistente", name: "Não desisto", description: "Concluiu uma lição depois de tentar 3 vezes ou mais.", icon: "💪", earned: (s) => s.persistent >= 1 },
-  { id: "explorador-pictoblox", name: "Explorador(a) do PictoBlox", description: "Concluiu uma missão extra no PictoBlox.", icon: "🧭", earned: (s) => s.pictoblox >= 1 },
-  { id: "primeiro-mundo", name: "Mundo completo", description: "Terminou uma trilha inteira.", icon: "🗺️", earned: (s) => s.tracksFinished >= 1 },
-  { id: "nivel-basico", name: "Básico dominado", description: "Terminou todas as trilhas do nível Básico.", icon: "🥉", earned: (s) => s.levelsFinished.includes(1) },
-  { id: "nivel-intermediario", name: "Intermediário dominado", description: "Terminou todas as trilhas do nível Intermediário.", icon: "🥈", earned: (s) => s.levelsFinished.includes(2) },
-  { id: "pronto-para-jam", name: "Pronto(a) para a Jam", description: "Terminou todas as trilhas do nível Avançado.", icon: "🏆", earned: (s) => s.levelsFinished.includes(3) },
+  { id: "primeiro-passo", name: "Primeiro passo", description: "Concluiu a primeira lição.", icon: "Rocket", earned: (s) => s.completed >= 1 },
+  { id: "dez-licoes", name: "Dez de dez", description: "Concluiu 10 lições.", icon: "BookOpen", earned: (s) => s.completed >= 10 },
+  { id: "cinquenta-licoes", name: "Maratonista", description: "Concluiu 50 lições.", icon: "Footprints", earned: (s) => s.completed >= 50 },
+  { id: "perfeito", name: "Perfeição", description: "Ganhou 3 estrelas em 10 lições.", icon: "Star", earned: (s) => s.perfect >= 10 },
+  { id: "de-primeira", name: "De primeira!", description: "Resolveu 5 exercícios com 3 estrelas na primeira tentativa.", icon: "Target", earned: (s) => s.exercisesFirstTry >= 5 },
+  { id: "persistente", name: "Não desisto", description: "Concluiu uma lição depois de tentar 3 vezes ou mais.", icon: "Dumbbell", earned: (s) => s.persistent >= 1 },
+  { id: "explorador-pictoblox", name: "Explorador(a) do PictoBlox", description: "Concluiu uma missão extra no PictoBlox.", icon: "Compass", earned: (s) => s.pictoblox >= 1 },
+  { id: "primeiro-mundo", name: "Mundo completo", description: "Terminou uma trilha inteira.", icon: "Map", earned: (s) => s.tracksFinished >= 1 },
+  { id: "nivel-basico", name: "Básico dominado", description: "Terminou todas as trilhas do nível Básico.", icon: "Medal", earned: (s) => s.levelsFinished.includes(1) },
+  { id: "nivel-intermediario", name: "Intermediário dominado", description: "Terminou todas as trilhas do nível Intermediário.", icon: "Award", earned: (s) => s.levelsFinished.includes(2) },
+  { id: "pronto-para-jam", name: "Pronto(a) para a Jam", description: "Terminou todas as trilhas do nível Avançado.", icon: "Trophy", earned: (s) => s.levelsFinished.includes(3) },
 ];
 
 export function earnedBadges(s: StudentStats) {

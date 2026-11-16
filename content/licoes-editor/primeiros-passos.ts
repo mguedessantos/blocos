@@ -1,4 +1,8 @@
 import type { TrackContent } from "../trilhas/types";
+import { flag, project } from "../../src/lib/blocks/build";
+
+// Aulas de movimento: palco com a grade de x e y, para a criança ver as coordenadas.
+const GRID = project({ sprites: [{ name: "Bloquinho", code: [[flag()]] }], backdrops: ["grade"] });
 
 const JUMP = ["event_whenflagclicked", "motion_gotoxy"];
 const MOVE = ["event_whenflagclicked", "motion_movesteps", "motion_turnright", "motion_turnleft"];
@@ -18,13 +22,13 @@ export const primeirosPassos: TrackContent = {
           title: "Conheça o Bloquinho",
           type: "TEORIA",
           xp: 5,
-          content: `# Oi! Eu sou o Bloquinho 🤖
+          content: `# Oi! Eu sou o Bloquinho
 
-Eu sou um robô que obedece **blocos de programação**. Você encaixa os blocos, um embaixo do outro, e eu faço cada um deles **na ordem**, de cima para baixo.
+Eu sou um personagem que obedece **blocos de programação**. Você encaixa os blocos, um embaixo do outro, e eu faço cada um deles **na ordem**, de cima para baixo.
 
 ## Como funciona
 
-- Todo programa começa com o bloco **quando 🏁 for clicado**.
+- Todo programa começa com o bloco **quando a bandeira verde for clicada**.
 - Os blocos de **Movimento** (azuis) me fazem andar e girar.
 - Quando terminar, clique na **bandeira verde** acima da minha caixa para me ver em ação.
 - Clique em **Verificar** para saber se você completou o desafio e ganhar estrelas.
@@ -41,7 +45,7 @@ O bloco **mova 10 passos** faz o Bloquinho andar. Troque o número para andar ma
 
 Encaixe o bloco embaixo da bandeira, clique na **bandeira verde** para testar e, quando o objetivo ficar marcado, clique em **Verificar**.`,
           allowedBlocks: MOVE,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "finalPosition", x: 100, y: 0, message: "O Bloquinho precisa terminar 100 passos à direita do centro (x: 100).", goal: "Ande **100 passos** para a direita" },
@@ -58,7 +62,7 @@ Girar **90 graus** é virar uma esquina. Para virar à esquerda, use **gire ↺ 
 
 Cumpra os objetivos **na ordem**: um bloco para cada objetivo. Eles vão sendo marcados enquanto você monta.`,
           allowedBlocks: MOVE,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               {
@@ -87,7 +91,7 @@ O palco é como um mapa. Todo lugar dele tem dois números:
 
 O bloco **vá para x: y:** faz o Bloquinho pular direto para um lugar. Quanto **maior o y**, mais para cima. O topo do palco é **y: 180**.`,
           allowedBlocks: JUMP,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "motion_gotoxy", goal: "Pule para o **topo** do palco: **vá para x: 0 y: 180**" },
@@ -105,7 +109,7 @@ Abaixo do centro, o **y fica negativo**: tem um sinal de menos na frente. O chã
 
 Use **vá para x: y:** e coloque **-180** no y.`,
           allowedBlocks: JUMP,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "motion_gotoxy", goal: "Pule para a parte de **baixo**: **vá para x: 0 y: -180**" },
@@ -121,7 +125,7 @@ Use **vá para x: y:** e coloque **-180** no y.`,
 
 Agora é o **x**. À esquerda do centro, o **x fica negativo**. A borda esquerda do palco é **x: -240**.`,
           allowedBlocks: JUMP,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "motion_gotoxy", goal: "Pule para o lado **esquerdo**: **vá para x: -240 y: 0**" },
@@ -137,7 +141,7 @@ Agora é o **x**. À esquerda do centro, o **x fica negativo**. A borda esquerda
 
 À direita do centro, o **x é positivo**. A borda direita do palco é **x: 240**.`,
           allowedBlocks: JUMP,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "motion_gotoxy", goal: "Pule para o lado **direito**: **vá para x: 240 y: 0**" },
@@ -155,7 +159,7 @@ Agora use os **dois números ao mesmo tempo**: o **x** escolhe o lado e o **y** 
 
 Use um bloco **vá para x: y:** para cada pulo, **na ordem** dos objetivos.`,
           allowedBlocks: JUMP,
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "motion_gotoxy", goal: "Pule para **x: 150, y: 100**" },
@@ -177,7 +181,7 @@ Use um bloco **vá para x: y:** para cada pulo, **na ordem** dos objetivos.`,
 
 O computador é rápido demais: às vezes nem dá para ver o que aconteceu! O bloco **espere 1 segundos** dá uma pausa entre um passo e outro.`,
           allowedBlocks: [...MOVE, "control_wait"],
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               {
@@ -205,7 +209,7 @@ O computador é rápido demais: às vezes nem dá para ver o que aconteceu! O bl
 
 Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga** para o Bloquinho falar.`,
           allowedBlocks: [...MOVE, "looks_sayforsecs", "looks_say"],
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               {
@@ -225,7 +229,7 @@ Os blocos de **Aparência** (roxos) mostram balões de fala. Use o bloco **diga*
           title: "Quadrado mágico",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Desafio: ande em quadrado
+          content: `# Desafio: ande em quadrado
 
 Faça o Bloquinho andar em um **quadrado** com lados de **100 passos**, voltar para onde começou e depois **sair** do quadrado.
 
@@ -233,7 +237,7 @@ Um quadrado tem **4 lados iguais** e **4 cantos de 90 graus**. Em vez de repetir
 
 Coloque um **espere** dentro do repita: assim dá para ver o Bloquinho andando, em vez de pular.`,
           allowedBlocks: [...MOVE, "control_repeat", "control_wait"],
-          startWithFlag: true,
+          starter: GRID,
           checks: {
             checks: [
               { type: "usesBlock", opcode: "control_repeat", message: "Use o bloco “repita” para não precisar repetir os blocos.", goal: "Use o bloco **repita**" },

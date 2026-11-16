@@ -3,7 +3,7 @@
 // O desenho de cada fantasia fica em src/components/editor/art.ts.
 
 export type CharacterId =
-  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta";
+  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio";
 
 export type Character = {
   id: CharacterId;
@@ -18,7 +18,7 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   bloquinho: { id: "bloquinho", name: "Bloquinho", costumes: ["parado", "andando"], radius: 22 },
   moeda: { id: "moeda", name: "Moeda", costumes: ["frente", "lado"], radius: 14 },
   estrela: { id: "estrela", name: "Estrela", costumes: ["amarela", "brilhante"], radius: 16 },
-  glitch: { id: "glitch", name: "Glitch", costumes: ["bravo", "piscando"], radius: 22 },
+  glitch: { id: "glitch", name: "Glitch", costumes: ["bravo", "piscando"], radius: 26 },
   nave: { id: "nave", name: "Nave", costumes: ["normal", "turbo"], radius: 20 },
   meteoro: { id: "meteoro", name: "Meteoro", costumes: ["pedra", "fogo"], radius: 16 },
   bola: { id: "bola", name: "Bola", costumes: ["azul", "vermelha"], radius: 14 },
@@ -27,10 +27,12 @@ export const CHARACTERS: Record<CharacterId, Character> = {
   botao: { id: "botao", name: "Botão", costumes: ["jogar", "de novo"], radius: 30 },
   coracao: { id: "coracao", name: "Coração", costumes: ["cheio", "vazio"], radius: 14 },
   fruta: { id: "fruta", name: "Fruta", costumes: ["maçã", "banana"], radius: 14 },
+  raio: { id: "raio", name: "Raio", costumes: ["vermelho", "roxo"], radius: 8 },
 };
 
 export const BACKDROPS = {
   branco: "Branco",
+  grade: "Grade x e y",
   ceu: "Céu",
   floresta: "Floresta",
   espaco: "Espaço",
@@ -38,6 +40,7 @@ export const BACKDROPS = {
   castelo: "Castelo",
   inicio: "Tela de início",
   fim: "Tela de fim",
+  concluido: "Concluído",
 } as const;
 export type BackdropId = keyof typeof BACKDROPS;
 

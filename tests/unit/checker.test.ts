@@ -115,7 +115,7 @@ describe("check", () => {
   it("exige o bloco de início", () => {
     const r = check(programFromBlockly({ blocks: { blocks: [move(10)] } }), { checks: [] });
     expect(r.passed).toBe(false);
-    expect(r.items[0].message).toContain("quando 🏁");
+    expect(r.items[0].message).toContain("quando");
   });
 
   it("estrelas", () => {

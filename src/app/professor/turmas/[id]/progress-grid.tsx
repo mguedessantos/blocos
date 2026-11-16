@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GraduationCap, TriangleAlert } from "lucide-react";
 import type { getClassProgress } from "@/lib/dal/classes";
 
 type Data = Awaited<ReturnType<typeof getClassProgress>>;
@@ -51,7 +52,7 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
               <tr key={s.id}>
                 <th scope="row" className="sticky left-0 z-10 bg-white px-2 text-left font-semibold">
                   <Link href={`/professor/alunos/${s.id}`} className="hover:underline">{s.name}</Link>
-                  {s.stuck && <span className="ml-1 text-amber-600" title="Precisa de ajuda">⚠</span>}
+                  {s.stuck && <span className="ml-1 text-amber-600" title="Precisa de ajuda"><TriangleAlert aria-hidden className="inline h-4 w-4" /></span>}
                 </th>
                 {s.cells.map((c, i) => {
                   const lesson = data.lessons[i];
@@ -71,7 +72,7 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
                 <td className="px-2 text-right font-bold tabular-nums">
                   {s.done}/{s.total}
                   {s.total > 0 && s.done >= s.total && (
-                    <a href={`/certificados/${data.track!.id}?aluno=${s.id}`} target="_blank" className="ml-2 text-brand underline" aria-label={`Certificado de ${s.name}`} title="Certificado">🎓</a>
+                    <a href={`/certificados/${data.track!.id}?aluno=${s.id}`} target="_blank" className="ml-2 text-brand underline" aria-label={`Certificado de ${s.name}`} title="Certificado"><GraduationCap aria-hidden className="inline h-4 w-4" /></a>
                   )}
                 </td>
               </tr>

@@ -47,7 +47,7 @@ export function Sb3Upload({ lessonId, nextHref }: { lessonId: string; nextHref: 
         </h2>
         <ol className="space-y-3 font-semibold">
           <li className="flex gap-3"><Step n={1} /> Abra o <strong>PictoBlox</strong> no modo <strong>Blocos</strong> e faça a missão.</li>
-          <li className="flex gap-3"><Step n={2} /> Teste clicando na bandeira verde 🏁.</li>
+          <li className="flex gap-3"><Step n={2} /> Teste clicando na bandeira verde.</li>
           <li className="flex gap-3">
             <Step n={3} />
             <span>Salve: <strong>Arquivo → Salvar no seu computador</strong>. Vai aparecer um arquivo <strong>.sb3</strong>.</span>

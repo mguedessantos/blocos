@@ -21,7 +21,7 @@ export function CredentialCards({ credentials, brandName, logoUrl, loginUrl, cla
           Se perder, gere novas senhas.
         </p>
         <button onClick={() => window.print()} className="btn">
-          🖨️ Imprimir cartões
+          Imprimir cartões
         </button>
       </div>
       <div className="print-area grid grid-cols-1 gap-3 sm:grid-cols-2 print:grid-cols-2">
@@ -33,12 +33,12 @@ export function CredentialCards({ credentials, brandName, logoUrl, loginUrl, cla
               <span className="font-extrabold">{brandName}</span>
               <span className="ml-auto text-xs text-muted">{className}</span>
             </div>
-            <p className="text-lg font-extrabold">Oi, {c.name}! 👋</p>
+            <p className="text-lg font-extrabold">Oi, {c.name}!</p>
             <p className="text-xs text-muted">Entre em: <strong>{loginUrl.replace(/^https?:\/\//, "")}</strong></p>
             <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 font-mono text-base">
-              <dt className="font-sans text-sm text-muted">🏫 Turma</dt><dd className="font-bold">{classCode}</dd>
-              <dt className="font-sans text-sm text-muted">🙂 Usuário</dt><dd className="font-bold">{c.username}</dd>
-              <dt className="font-sans text-sm text-muted">🔑 Senha</dt><dd className="font-bold">{c.password}</dd>
+              <dt className="font-sans text-sm text-muted">Turma</dt><dd className="font-bold">{classCode}</dd>
+              <dt className="font-sans text-sm text-muted">Usuário</dt><dd className="font-bold">{c.username}</dd>
+              <dt className="font-sans text-sm text-muted">Senha</dt><dd className="font-bold">{c.password}</dd>
             </dl>
           </div>
         ))}

@@ -41,7 +41,7 @@ export default async function JamsPage() {
               {j.prizes.length > 0 && (
                 <ul className="space-y-1 text-sm font-semibold">
                   {j.prizes.slice(0, 3).map((p) => (
-                    <li key={p.place}>🏅 {p.place}º lugar: {p.title} <span className="text-muted">({p.recipient === "ESCOLA" ? "para a escola" : "para a equipe"})</span></li>
+                    <li key={p.place}>{p.place}º lugar: {p.title} <span className="text-muted">({p.recipient === "ESCOLA" ? "para a escola" : "para a equipe"})</span></li>
                   ))}
                 </ul>
               )}

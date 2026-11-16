@@ -48,7 +48,7 @@ const message: Arg = { type: "field_input", name: "BROADCAST_OPTION", text: "com
 
 export const BLOCKS: BlockDef[] = [
   // Eventos
-  { opcode: "event_whenflagclicked", category: "eventos", shape: "hat", text: "quando 🏁 for clicado",
+  { opcode: "event_whenflagclicked", category: "eventos", shape: "hat", text: "quando {bandeira} for clicado",
     help: "Começa o programa quando você clica na bandeira verde. Todo programa precisa de um bloco de início!" },
   { opcode: "event_whenkeypressed", category: "eventos", shape: "hat", text: "quando a tecla %1 for pressionada", args: [menu("KEY_OPTION", "keys")],
     help: "Começa este script toda vez que o jogador aperta a tecla escolhida." },
@@ -191,9 +191,9 @@ export const BLOCKS: BlockDef[] = [
     help: "Soma um número ao valor da variável (ótimo para contar pontos!)." },
 
   // Caneta (extensão)
-  { opcode: "pen_penDown", category: "caneta", shape: "stack", text: "✏️ abaixar a caneta", help: "A partir de agora, o personagem desenha por onde anda." },
-  { opcode: "pen_penUp", category: "caneta", shape: "stack", text: "✏️ levantar a caneta", help: "Para de desenhar." },
-  { opcode: "pen_clear", category: "caneta", shape: "stack", text: "✏️ apagar tudo", help: "Apaga todos os desenhos do palco." },
+  { opcode: "pen_penDown", category: "caneta", shape: "stack", text: "abaixar a caneta", help: "A partir de agora, o personagem desenha por onde anda." },
+  { opcode: "pen_penUp", category: "caneta", shape: "stack", text: "levantar a caneta", help: "Para de desenhar." },
+  { opcode: "pen_clear", category: "caneta", shape: "stack", text: "apagar tudo", help: "Apaga todos os desenhos do palco." },
 ];
 
 export const BLOCKS_BY_OPCODE = new Map(BLOCKS.map((b) => [b.opcode, b]));

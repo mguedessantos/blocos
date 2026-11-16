@@ -149,7 +149,11 @@ export function projectToSb3Json(state: ProjectState): { json: Record<string, un
     videoTransparency: 50, videoState: "on", textToSpeechLanguage: null,
   };
   return {
-    json: { targets: [stage, ...sprites], monitors: [], extensions: usesPen ? ["pen"] : [], meta: { semver: "3.0.0", vm: "0.2.0", agent: "Blocos" } },
+    // variáveis globais aparecem no palco (placar), como quando a criança cria uma no editor
+    json: { targets: [stage, ...sprites], monitors: state.variables.map((v, i) => ({
+      id: v.id, mode: "default", opcode: "data_variable", params: { VARIABLE: v.name }, spriteName: null, value: 0,
+      width: 0, height: 0, x: 5, y: 5 + i * 27, visible: true, sliderMin: 0, sliderMax: 100, isDiscrete: true,
+    })), extensions: usesPen ? ["pen"] : [], meta: { semver: "3.0.0", vm: "0.2.0", agent: "Blocos" } },
     assets: [...assets],
   };
 }

@@ -25,9 +25,9 @@ export function AddStudentsForm({ classId, card }: { classId: string; card: Card
   if (state?.credentials) {
     return (
       <div className="space-y-3">
-        <p className="no-print font-bold text-green-800">✅ {state.credentials.length} aluno(s) criado(s)!</p>
+        <p className="no-print font-bold text-green-800">{state.credentials.length} aluno(s) criado(s)!</p>
         {state.warnings && state.warnings.length > 0 && (
-          <ul className="no-print text-sm text-amber-800">{state.warnings.map((w) => <li key={w}>⚠️ {w}</li>)}</ul>
+          <ul className="no-print text-sm text-amber-800">{state.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
         )}
         <CredentialCards credentials={state.credentials} {...card} />
       </div>
@@ -74,7 +74,7 @@ export function StudentsTable({ classId, students, card }: { classId: string; st
       return n;
     });
 
-  if (students.length === 0) return <p className="text-muted">Nenhum aluno ainda. Adicione abaixo. 👇</p>;
+  if (students.length === 0) return <p className="text-muted">Nenhum aluno ainda. Adicione abaixo.</p>;
 
   return (
     <div className="space-y-4">
@@ -128,7 +128,7 @@ export function StudentsTable({ classId, students, card }: { classId: string; st
           </table>
         </div>
         <Button disabled={pending || selected.size === 0} className="text-sm">
-          {pending ? "Gerando..." : `🔑 Gerar novas senhas e cartões (${selected.size})`}
+          {pending ? "Gerando..." : `Gerar novas senhas e cartões (${selected.size})`}
         </Button>
         {state?.error && <Alert>{state.error}</Alert>}
       </form>

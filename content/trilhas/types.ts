@@ -27,7 +27,7 @@ export type LessonContent = {
   content: string;
   /** Opcodes liberados na caixa de blocos (só EDITOR). */
   allowedBlocks?: string[];
-  /** true = começa com o bloco “quando 🏁 for clicado” já na área. */
+  /** true = começa com o bloco “quando a bandeira verde for clicada” já na área. */
   startWithFlag?: boolean;
   checks?: Checks;
   guide?: TeacherGuide;

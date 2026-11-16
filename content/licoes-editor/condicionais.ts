@@ -19,7 +19,7 @@ export const condicionais: TrackContent = {
           title: "Se... então",
           type: "TEORIA",
           xp: 5,
-          content: `# O Bloquinho aprende a pensar 🤔
+          content: `# O Bloquinho aprende a pensar
 
 Todo dia você toma decisões: **se** estiver chovendo, **então** leva o guarda-chuva.
 
@@ -141,7 +141,7 @@ Faça o Bloquinho andar **5 passos** **até que** esteja **tocando na borda**. D
           title: "Aspirador de pó",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Desafio: o aspirador de pó
+          content: `# Desafio: o aspirador de pó
 
 Alguns aspiradores de pó andam sozinhos: vão reto até bater na parede, aí giram e continuam limpando.
 

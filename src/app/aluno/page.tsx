@@ -1,5 +1,6 @@
 import { ArrowRight, Award, Lock, Star } from "lucide-react";
 import Link from "next/link";
+import { BadgeIcon } from "@/components/badge-icon";
 import { Island } from "@/components/island";
 import { buttonClass } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
@@ -119,7 +120,7 @@ export default async function AlunoPage() {
               className={`relative flex flex-col items-center gap-1 rounded-2xl border-2 p-3 text-center ${b.awardedAt ? "border-star bg-white/5" : "border-dashed border-line opacity-60 grayscale"}`}
             >
               {b.isNew && <span className="absolute -right-1 -top-2 rounded-full bg-cta px-2 text-[11px] font-extrabold text-night">Nova!</span>}
-              {b.awardedAt ? <span aria-hidden className="text-3xl">{b.icon}</span> : <Lock aria-hidden className="h-8 w-8 text-muted" />}
+              {b.awardedAt ? <BadgeIcon name={b.icon} className="h-8 w-8 text-amber-500" /> : <Lock aria-hidden className="h-8 w-8 text-muted" />}
               <span className="text-sm font-extrabold leading-tight">{b.name}</span>
               <span className="text-xs font-semibold text-muted">{b.awardedAt ? "Conquistada" : b.description}</span>
             </li>

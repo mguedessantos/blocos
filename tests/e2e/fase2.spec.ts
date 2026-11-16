@@ -7,7 +7,7 @@ const BILLING = process.env.BILLING_ENABLED === "true";
 
 async function signup(page: Page, opts: { type?: "Escola" | "Professor"; org: string; email: string }) {
   await page.goto("/cadastro");
-  if (opts.type === "Professor") await page.getByText("🍎 Professor(a)").click();
+  if (opts.type === "Professor") await page.getByText("Professor(a)").click();
   await page.getByLabel(/Nome da (escola|sua conta)/).fill(opts.org);
   await page.getByLabel("Cidade", { exact: true }).fill("Campinas");
   await page.getByLabel("Estado").selectOption("SP");

@@ -1,14 +1,10 @@
 import { flag, game } from "../../src/lib/blocks/build";
 import { editor } from "../licoes-editor";
-import { ABERTURA, PICTOBLOX_INTRO } from "./historia";
-import type { LessonContent, TrackContent } from "./types";
+import { modulo as tesouro } from "./caca-ao-tesouro";
+import { ABERTURA } from "./historia";
+import type { TrackContent } from "./types";
 
 const FLAG = "event_whenflagclicked";
-
-/** Missão opcional de transferência para o PictoBlox (.sb3). */
-export function pictoblox(l: Omit<LessonContent, "mode" | "optional">): LessonContent {
-  return { ...l, mode: "SB3", optional: true, content: `${PICTOBLOX_INTRO}\n\n${l.content}` };
-}
 
 // Blocos liberados nas lições de “personagens com vida”
 const VIDA = [
@@ -43,7 +39,6 @@ export const mundo1: TrackContent = {
             passos: [
               "Leia a história em voz alta com a turma ou peça para alguém ler.",
               "Combine com a turma: no fim da jornada, vamos fazer uma game jam em equipes.",
-              "Se a escola tiver o PictoBlox, conte que haverá missões opcionais 🚀 para levar o que aprenderam para lá.",
             ],
             errosComuns: ["Alunos ansiosos para pular a leitura: combine que a história traz pistas para as missões."],
           },
@@ -118,104 +113,9 @@ export const mundo1: TrackContent = {
           passos: ["Compare “diga” e “diga por 2 segundos”: qual espera antes de continuar?"],
           errosComuns: ["Usar “diga” (sem segundos) e o movimento acontecer junto com a fala."],
         }, "Crie um diálogo maior: o Bloquinho fala **5 frases** diferentes.", { checks: [{ type: "usesAnyBlock", opcodes: ["looks_say", "looks_sayforsecs"], min: 5, label: "Use 5 blocos diga" }] }),
-        {
-          slug: "apresentacao",
-          title: "Crie: a apresentação do Bloquinho",
-          type: "DESAFIO",
-          xp: 25,
-          content: `# 🏆 Crie: o Bloquinho se apresenta
-
-Agora é com você! Monte uma pequena apresentação do Bloquinho para a turma:
-
-- Ele precisa **falar pelo menos 2 frases** (use **diga … por … segundos**).
-- Ele precisa **andar** pelo palco.
-- Use uma **espera** em algum momento.
-
-Não existe resposta única: invente a sua!`,
-          allowedBlocks: [FLAG, "motion_movesteps", "motion_turnright", "motion_turnleft", "motion_gotoxy", "looks_sayforsecs", "looks_say", "control_wait"],
-          startWithFlag: true,
-          checks: {
-            checks: [
-              { type: "usesBlock", opcode: "looks_sayforsecs", min: 2, message: "O Bloquinho precisa falar pelo menos 2 frases com “diga … por … segundos”.", goal: "Fale pelo menos **2 frases** com **diga … por … segundos**" },
-              { type: "usesAnyBlock", opcodes: ["motion_movesteps", "motion_gotoxy"], label: "Faça o Bloquinho andar pelo palco", goal: "Faça o Bloquinho **andar** pelo palco" },
-              { type: "walked", min: 30, message: "O Bloquinho precisa sair do lugar.", goal: "Faça o Bloquinho **andar** pelo palco" },
-              { type: "usesBlock", opcode: "control_wait", goal: "Use uma **espera** em algum momento" },
-            ],
-          },
-          guide: {
-            objetivo: "Criar livremente combinando fala, movimento e espera.",
-            minutos: 15,
-            passos: ["Deixe 10 minutos de criação livre.", "Peça para 2 ou 3 alunos mostrarem a apresentação no projetor."],
-            errosComuns: ["Querer escrever textos enormes: o balão mostra até 40 letras."],
-          },
-          extra: "Use **vá para x: y:** para o Bloquinho aparecer em 3 lugares diferentes do palco enquanto fala.",
-          extraChecks: { checks: [{ type: "usesBlock", opcode: "motion_gotoxy", min: 3 }] },
-        },
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        {
-          slug: "conhecendo-o-pictoblox",
-          title: "Conhecendo o PictoBlox",
-          type: "TEORIA",
-          optional: true,
-          xp: 5,
-          content: `${PICTOBLOX_INTRO}
-
-# A mesma ideia, outro programa 🛠️
-
-O **PictoBlox** é um programa de computador que usa os **mesmos tipos de blocos** que você já conhece. Abra o PictoBlox no **modo Blocos** e encontre:
-
-- **Palco**: onde o jogo acontece.
-- **Atores** (sprites): os personagens, listados embaixo do palco.
-- **Paleta de blocos**: à esquerda, separados pelas **mesmas cores** do site.
-- **Área de código**: onde você encaixa os blocos.
-- **Bandeira verde** 🏁: começa. O **botão vermelho** para tudo.
-
-## Salvando
-
-No menu **Arquivo → Salvar no seu computador**, o PictoBlox cria um arquivo **.sb3**. É esse arquivo que você envia nas missões 🚀.`,
-          guide: {
-            objetivo: "Reconhecer no PictoBlox as mesmas partes do editor do site (transferência).",
-            minutos: 15,
-            passos: [
-              "Coloque o site e o PictoBlox lado a lado e peça para a turma achar as partes iguais.",
-              "Todos salvam um projeto vazio no computador para treinar o caminho Arquivo → Salvar.",
-            ],
-            errosComuns: ["Salvar no modo Python em vez do modo Blocos.", "Não achar o arquivo salvo: combine uma pasta da turma."],
-          },
-        },
-        pictoblox({
-          slug: "primeiro-projeto",
-          title: "Olá, mundo! no PictoBlox",
-          type: "EXERCICIO",
-          xp: 15,
-          content: `## Missão: o mesmo programa no PictoBlox
-
-Faça no PictoBlox o que você já fez aqui: o ator **anda** e diz **Olá, mundo!** quando a bandeira verde for clicada.
-
-1. Em **Eventos**, arraste **quando ⚑ for clicado**.
-2. Em **Movimento**, encaixe **mova 10 passos**.
-3. Em **Aparência**, encaixe **diga Olá! por 2 segundos** e troque o texto para **Olá, mundo!**.
-4. Teste, salve e envie o arquivo .sb3.`,
-          checks: {
-            checks: [
-              { type: "inScript", hat: [FLAG], opcodes: ["motion_movesteps"], label: "Use “mova … passos” embaixo da bandeira verde", goal: "Use **mova … passos** embaixo da bandeira verde" },
-              { type: "inScript", hat: [FLAG], opcodes: ["looks_say", "looks_sayforsecs"], label: "Use um bloco “diga” embaixo da bandeira verde", goal: "Use um bloco **diga** embaixo da bandeira verde" },
-              { type: "textContains", opcodes: ["looks_say", "looks_sayforsecs"], text: "mundo", label: "A frase precisa ter a palavra “mundo”", goal: "A frase precisa ter a palavra **mundo**" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir o primeiro programa do site para o PictoBlox.",
-            minutos: 15,
-            passos: ["Peça para a turma comparar: quais blocos têm nomes um pouco diferentes? (“mover” × “mova”)."],
-            errosComuns: ["Blocos soltos, sem encaixar no “quando ⚑ for clicado”."],
-          },
-        }),
-      ],
-    },
+    tesouro,
   ],
 };
 
@@ -273,37 +173,6 @@ export const mundo2: TrackContent = {
         }),
       ],
     },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "patrulha",
-          title: "O guarda que patrulha",
-          type: "EXERCICIO",
-          xp: 20,
-          content: `## Missão: um guarda no PictoBlox
-
-Use no PictoBlox o **sempre** que você aprendeu:
-
-1. Quando a bandeira for clicada, use **sempre**.
-2. Dentro do sempre: **mova 5 passos** e **se tocar na borda, volte**.
-3. Para o guarda não ficar de cabeça para baixo: **defina o estilo de rotação para esquerda-direita**.`,
-          checks: {
-            checks: [
-              { type: "inside", parent: ["control_forever"], child: ["motion_movesteps"], label: "O guarda anda dentro de um “sempre”" },
-              { type: "inside", parent: ["control_forever"], child: ["motion_ifonedgebounce"], label: "Use “se tocar na borda, volte” dentro do “sempre”" },
-              { type: "usesAnyBlock", opcodes: ["motion_setrotationstyle"], label: "Use “defina o estilo de rotação”", bonus: true },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir o laço infinito para o PictoBlox.",
-            minutos: 15,
-            passos: ["Lembre a missão “Para sempre!” do site e peça para a turma refazer no PictoBlox."],
-            errosComuns: ["Ator de cabeça para baixo ao quicar: falta o estilo de rotação."],
-          },
-        }),
-      ],
-    },
   ],
 };
 
@@ -323,7 +192,7 @@ export const mundo3: TrackContent = {
           title: "Atores e cenários",
           type: "TEORIA",
           xp: 5,
-          content: `# Seu palco, seus personagens 🎭
+          content: `# Seu palco, seus personagens
 
 Até agora, só o Bloquinho estava no palco. A partir de agora você pode ter **vários atores**!
 
@@ -466,7 +335,7 @@ Os blocos **rosa** tocam sons. Quando a bandeira for clicada:
           title: "Crie: show de talentos",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Crie: o show de talentos
+          content: `# Crie: o show de talentos
 
 Monte um pequeno show com **pelo menos 2 atores**:
 
@@ -494,35 +363,6 @@ Monte um pequeno show com **pelo menos 2 atores**:
           },
           extra: "Faça a plateia (outros atores) **aplaudir** trocando de fantasia no fim do show.",
         },
-      ],
-    },
-    {
-      title: "Leve para o PictoBlox (opcional)",
-      lessons: [
-        pictoblox({
-          slug: "disfarce-e-canto",
-          title: "Disfarce e canto no PictoBlox",
-          type: "EXERCICIO",
-          content: `## Missão: fantasias e sons no PictoBlox
-
-No PictoBlox, os atores também têm **fantasias** e **sons** (veja as abas **Fantasias** e **Sons**).
-
-Quando a bandeira for clicada: **próxima fantasia** e **toque o som … até o fim**. Teste, salve e envie.`,
-          checks: {
-            checks: [
-              { type: "costumes", min: 2 },
-              { type: "sounds", min: 1 },
-              { type: "inScript", hat: [FLAG], opcodes: ["looks_nextcostume", "looks_switchcostumeto"], label: "Troque de fantasia quando a bandeira for clicada" },
-              { type: "inScript", hat: [FLAG], opcodes: ["sound_play", "sound_playuntildone"], label: "Toque um som quando a bandeira for clicada" },
-            ],
-          },
-          guide: {
-            objetivo: "Transferir fantasias e sons para o PictoBlox; conhecer as abas Fantasias e Sons.",
-            minutos: 15,
-            passos: ["No PictoBlox dá para gravar a própria voz na aba Sons: os alunos adoram."],
-            errosComuns: ["Escolher um ator com só 1 fantasia."],
-          },
-        }),
       ],
     },
   ],

@@ -8,8 +8,8 @@ import { slugify } from "@/lib/slug";
 import { signup } from "./actions";
 
 const TYPES = [
-  { value: "ESCOLA", label: "🏫 Escola", hint: "Vários professores" },
-  { value: "PROFESSOR_INDEPENDENTE", label: "🍎 Professor(a)", hint: "Aulas particulares ou cursos" },
+  { value: "ESCOLA", label: "Escola", hint: "Vários professores" },
+  { value: "PROFESSOR_INDEPENDENTE", label: "Professor(a)", hint: "Aulas particulares ou cursos" },
 ] as const;
 
 export function SignupForm({ rootDomain, billing }: { rootDomain: string; billing: boolean }) {

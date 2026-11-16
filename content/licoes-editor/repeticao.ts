@@ -17,7 +17,7 @@ export const repeticao: TrackContent = {
           title: "Por que repetir?",
           type: "TEORIA",
           xp: 5,
-          content: `# Programadores são preguiçosos (do jeito bom!) 😄
+          content: `# Programadores são preguiçosos (do jeito bom!)
 
 Imagine que você quer que o Bloquinho ande **10 passinhos**. Você poderia colocar 10 blocos iguais, um embaixo do outro... mas isso dá trabalho e é fácil errar.
 
@@ -25,7 +25,7 @@ O bloco **repita** resolve isso: tudo o que fica **dentro** dele acontece vária
 
 ## Como usar
 
-- Arraste o bloco **repita 10 vezes** (ele parece uma boca aberta 🟧).
+- Arraste o bloco **repita 10 vezes** (ele parece uma boca aberta).
 - Coloque os blocos que você quer repetir **dentro** da boca.
 - Troque o número para escolher quantas vezes repetir.
 
@@ -130,7 +130,7 @@ Dá para colocar um **repita dentro de outro repita**!
 1. Monte um quadrado com lados de **50 passos** (repita 4 vezes: mover e girar 90).
 2. Coloque esse quadrado dentro de **outro repita 4 vezes**, girando **90 graus** depois de cada quadrado.
 
-Você vai ver 4 quadrados formando uma flor. 🌸`,
+Você vai ver 4 quadrados formando uma flor.`,
           allowedBlocks: [...BASE, "control_wait"],
           startWithFlag: true,
           checks: {
@@ -146,7 +146,7 @@ Você vai ver 4 quadrados formando uma flor. 🌸`,
           title: "Estrela de 5 pontas",
           type: "DESAFIO",
           xp: 30,
-          content: `# 🏆 Desafio: desenhe uma estrela
+          content: `# Desafio: desenhe uma estrela
 
 Uma estrela de 5 pontas é um caminho com **5 linhas de 100 passos**. O segredo é o ângulo: em cada ponta, o Bloquinho gira **144 graus**.
 

@@ -36,8 +36,8 @@ export default async function AssinaturaPage(props: PageProps<"/escola/assinatur
       {status === "sucesso" && (
         <p className="rounded-xl bg-green-50 px-4 py-3 font-semibold text-green-800">
           {sub?.status === "ACTIVE"
-            ? "Pagamento confirmado! 🎉 Sua assinatura está ativa."
-            : "Pagamento recebido! 🎉 Sua assinatura será ativada em instantes (atualize a página)."}
+            ? "Pagamento confirmado! Sua assinatura está ativa."
+            : "Pagamento recebido! Sua assinatura será ativada em instantes (atualize a página)."}
         </p>
       )}
       {status === "cancelado" && (

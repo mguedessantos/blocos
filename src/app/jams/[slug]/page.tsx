@@ -92,7 +92,7 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
                   <span className="font-display text-xl font-extrabold">{r.score !== null ? `${r.score.toLocaleString("pt-BR")} pts` : "sem notas"}</span>
                 </div>
                 <p className="text-sm font-semibold text-muted">{r.team} · {r.school}</p>
-                {r.prize && <p className="mt-1 font-bold">🏅 {r.prize.title} ({r.prize.recipient === "ESCOLA" ? "para a escola" : "para a equipe"})</p>}
+                {r.prize && <p className="mt-1 font-bold">{r.prize.title} ({r.prize.recipient === "ESCOLA" ? "para a escola" : "para a equipe"})</p>}
                 {r.feedback.length > 0 && (
                   <div className="mt-2 space-y-1">
                     <p className="text-sm font-extrabold">O que os jurados disseram:</p>

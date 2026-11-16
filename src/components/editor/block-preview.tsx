@@ -37,7 +37,7 @@ export function BlockPreview({ def }: { def: BlockDef }) {
       const m = /^%(\d)$/.exec(part);
       if (m) return <Fragment key={i}>{arg(Number(m[1]))}</Fragment>;
       // a bandeira verde do editor no lugar do emoji
-      return part.split("🏁").map((t, j) => (
+      return part.split("{bandeira}").map((t, j) => (
         <Fragment key={`${i}-${j}`}>
           {j > 0 && <svg aria-label="bandeira verde" viewBox="0 0 16 16" className="h-4 w-4"><path d="M3 1v14" stroke="#45993d" strokeWidth="1.6" /><path d="M3.8 2.2c3-1.6 5 1.4 8.6 0v6.4c-3.6 1.4-5.6-1.6-8.6 0z" fill="#4cbf56" stroke="#45993d" /></svg>}
           {t.trim() && <span>{t.trim()}</span>}
