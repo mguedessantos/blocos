@@ -216,6 +216,22 @@ export function drawCharacter(ctx: Ctx, id: CharacterId, costume: number) {
       rect(ctx, -4, -14, 8, 28, 4, alt ? "#a855f7" : "#ef4444", alt ? "#581c87" : "#7f1d1d");
       rect(ctx, -1.5, -10, 3, 20, 1.5, "#fde68a");
       break;
+    case "muro": { // 96x14, igual à caixa de colisão (library.ts)
+      rect(ctx, -48, -7, 96, 14, 2, alt ? "#b45309" : "#64748b", alt ? "#7c2d12" : "#334155");
+      ctx.strokeStyle = alt ? "#7c2d12" : "#334155";
+      ctx.lineWidth = 2;
+      for (const x of [-16, 16]) {
+        ctx.beginPath();
+        ctx.moveTo(x, -7);
+        ctx.lineTo(x, 7);
+        ctx.stroke();
+      }
+      break;
+    }
+    case "raquete": // 96x14, igual à caixa de colisão (library.ts)
+      rect(ctx, -48, -7, 96, 14, 7, alt ? "#f97316" : "#3b82f6", alt ? "#7c2d12" : "#1e3a8a");
+      rect(ctx, -40, -3, 80, 3, 1.5, "rgba(255,255,255,0.6)");
+      break;
   }
 }
 

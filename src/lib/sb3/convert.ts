@@ -57,6 +57,16 @@ type Sb3Target = Record<string, unknown> & { isStage: boolean; name: string; blo
 // ───────────────────────────── nosso projeto → .sb3 ─────────────────────────────
 
 /** project.json do .sb3 + lista de arquivos de arte/som que ele usa (em /editor-assets). */
+/** Altura aproximada de uma pilha de blocos no editor (unidades do .sb3): ~48 por bloco, mais o "braço" de cada laço/se. */
+function stackHeight(first: BlocklyBlock | undefined): number {
+  let h = 0;
+  for (let b = first; b; b = b.next?.block) {
+    h += 48;
+    for (const [k, v] of Object.entries(b.inputs ?? {})) if (k.startsWith("SUBSTACK")) h += Math.max(24, stackHeight(v.block)) + 32;
+  }
+  return h;
+}
+
 export function projectToSb3Json(state: ProjectState): { json: Record<string, unknown>; assets: string[] } {
   const assets = new Set<string>();
   const broadcasts = new Map<string, string>(); // nome → id
@@ -125,10 +135,13 @@ export function projectToSb3Json(state: ProjectState): { json: Record<string, un
       }
       return head;
     }
-    (ws.blocks?.blocks ?? []).forEach((top, i) => {
+    // scripts sem posição: um embaixo do outro, com espaço pela altura de cada um (sem sobrepor)
+    let nextY = 40;
+    for (const top of ws.blocks?.blocks ?? []) {
       const p = top as BlocklyBlock & { x?: number; y?: number };
-      addChain(top, null, { x: p.x ?? 40, y: p.y ?? 40 + i * 160 });
-    });
+      addChain(top, null, { x: p.x ?? 40, y: p.y ?? nextY });
+      nextY = (p.y ?? nextY) + stackHeight(top) + 48;
+    }
     return out;
   }
 

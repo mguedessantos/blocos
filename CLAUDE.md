@@ -35,7 +35,10 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - `src/lib/blocks/program.ts`: estado JSON do Blockly → `Program` neutro (o `.sb3` vai gerar o mesmo formato). Entrada do navegador é não confiável: o conversor valida tudo.
 - `src/lib/blocks/interpreter.ts`: interpretador determinístico (sem eval), 30 quadros/s com tempo virtual; o mesmo código anima no navegador e verifica no servidor.
 - `src/lib/checker`: especificações de verificação (zod) → 0–3 estrelas. A verificação que vale é sempre a do SERVIDOR (`submitAttempt`).
-- Conteúdo: `content/trilhas/*.ts` → `npx prisma db seed` (idempotente, não apaga progresso). Toda lição de exercício precisa de solução de referência em `tests/unit/content.test.ts`.
+- Conteúdo: um arquivo por lição em `content/mundos/<mundo-NN-nome>/licoes/<slug>.ts` → `npx prisma db seed` (idempotente, não apaga progresso).
+  - Cada arquivo exporta `licao` (o que o seed grava) e, nos exercícios, `teste` (solução de referência + erros comuns; só os testes usam, nunca vai ao banco nem ao navegador: nenhum arquivo de `src/` importa `content/mundos`, e um teste confere).
+  - A ordem das lições fica no `index.ts` do mundo; a dos mundos, em `content/mundos/index.ts`. O jogo do mundo (quando há) fica em `jogo.ts`; listas de blocos compartilhadas em `content/mundos/blocos/`.
+  - Nomes de pasta seguem o número do site (mundo-07 = Mundo 7); os slugs no banco são os antigos (ex.: `mundo-6-observatorio-dos-sensores`) e NÃO podem mudar (identificam o progresso).
 - O estado do editor vai para a server action como string JSON (objetos do Blockly não serializam).
 
 ## Cobrança desligada por padrão
@@ -52,7 +55,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - O .sb3 completo do aluno fica no armazenamento privado (`Progress.projectKey`, rota `/api/licoes/[id]/projeto`) e no IndexedDB; abre o mais novo.
 
 ## Currículo (o site vem primeiro)
-- 10 mundos em 3 níveis (`content/trilhas/{basico,intermediario,avancado}.ts`). Toda habilidade é ensinada e verificada NO EDITOR DO SITE; o PictoBlox aparece só em missões `optional: true` (“Leve para o PictoBlox”), que nunca bloqueiam a trilha.
+- 11 mundos em 3 níveis (`content/mundos/`), um minijogo por mundo. Toda habilidade é ensinada e verificada NO EDITOR DO SITE (as missões do PictoBlox saíram do currículo).
 - Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).
 - Projetos do editor: `src/lib/blocks/project.ts` (vários atores + palco + variáveis globais); motor em `interpreter.ts` (`World`: teclas, cliques, mensagens, clones, sons). Biblioteca original de personagens/cenários/sons em `library.ts` + desenhos em `components/editor/art.ts`.
 - Objetivos da missão: `goal` em cada checagem (checagens com o mesmo `goal` viram um objetivo) e `visits` (pontos do caminho, na ordem; cada ponto é um objetivo). `objectivesOf` mostra a lista; os objetivos marcam sozinhos (checagem no navegador a cada mudança) e o ✗ só aparece depois de Verificar. O Verificar só libera depois de rodar o programa (mensagem `run` do editor). Mundo 1 já usa.

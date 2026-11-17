@@ -8,7 +8,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Prisma, PrismaClient } from "../src/generated/prisma/client";
 import { OFFICIAL_COURSES } from "../content/cursos";
 import { BADGES } from "../src/lib/gamification";
-import { FLAG_STARTER, OFFICIAL_TRACKS, guideMarkdown } from "../content/trilhas";
+import { FLAG_STARTER, OFFICIAL_TRACKS, guideMarkdown } from "../content/mundos";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 const DAY = 24 * 60 * 60 * 1000;
@@ -161,7 +161,7 @@ async function main() {
 
   }
 
-  // Trilhas oficiais (conteúdo em content/trilhas). Idempotente: atualiza sem apagar progresso.
+  // Trilhas oficiais (conteúdo em content/mundos). Idempotente: atualiza sem apagar progresso.
   // Trilhas oficiais que saíram do currículo ficam despublicadas (o progresso dos alunos é mantido).
   await db.track.updateMany({
     where: { organizationId: null, slug: { notIn: OFFICIAL_TRACKS.map((t) => t.slug) } },

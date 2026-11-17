@@ -70,6 +70,22 @@ describe("motor de jogo", () => {
     expect(s.vars.pontos).toBeGreaterThanOrEqual(1);
   });
 
+  it("raquete colide como caixa, não como círculo", () => {
+    const bola = (name: string, x: number, y: number) =>
+      ({ name, character: "bola" as const, x, y, code: [[flag(), iff(touching("Raquete"), setVar(name, n1()))]] });
+    const w = new World(compiled({
+      variables: ["ponta", "acima"],
+      sprites: [
+        { name: "Raquete", character: "raquete", x: 0, y: -150, code: [] },
+        bola("ponta", 45, -130), // na ponta da raquete, encostando por cima
+        bola("acima", 0, -120), // 30 acima do centro: um círculo de raio 48 tocaria, a caixa de 14 de altura não
+      ],
+    }));
+    const s = w.runToEnd(1);
+    expect(s.vars.ponta).toBe(1);
+    expect(s.vars.acima).not.toBe(1);
+  });
+
   it("cenários e sons ficam registrados", () => {
     const w = new World(compiled({ backdrops: ["inicio", "fim"], sprites: [{ code: [[flag(), sound("moeda"), backdrop("fim")]] }] }));
     const s = w.runToEnd(1);

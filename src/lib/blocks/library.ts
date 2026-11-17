@@ -5,7 +5,7 @@
 import ASSETS from "../sb3/assets.json";
 
 export type CharacterId =
-  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio";
+  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio" | "raquete" | "muro";
 
 export type Character = {
   id: CharacterId;
@@ -14,6 +14,8 @@ export type Character = {
   costumes: string[];
   /** Raio aproximado (px, tamanho 100%) usado em colisões. */
   radius: number;
+  /** Colisão por caixa (px, tamanho 100%) em vez de círculo: para atores retos, como a raquete. */
+  box?: { w: number; h: number };
 };
 
 /** Personagens com as fantasias desenhadas em código (art.ts). As fantasias de verdade vêm de assets.json. */
@@ -31,6 +33,8 @@ export const DRAWN_CHARACTERS: Record<CharacterId, Character> = {
   coracao: { id: "coracao", name: "Coração", costumes: ["cheio", "vazio"], radius: 14 },
   fruta: { id: "fruta", name: "Fruta", costumes: ["maçã", "banana"], radius: 14 },
   raio: { id: "raio", name: "Raio", costumes: ["vermelho", "roxo"], radius: 8 },
+  raquete: { id: "raquete", name: "Raquete", costumes: ["azul", "laranja"], radius: 48, box: { w: 96, h: 14 } },
+  muro: { id: "muro", name: "Muro", costumes: ["pedra", "tijolo"], radius: 48, box: { w: 96, h: 14 } }, // pedaço de parede do labirinto
 };
 
 // As fantasias (quantas e com que nome) seguem a arte exportada: scripts/arte/<ator>/1-nome.png, 2-nome.png...

@@ -1,4 +1,4 @@
-import { OFFICIAL_TRACKS, type TrackContent } from "./trilhas";
+import { OFFICIAL_TRACKS, type TrackContent } from "./mundos";
 
 export type CourseContent = {
   slug: string;

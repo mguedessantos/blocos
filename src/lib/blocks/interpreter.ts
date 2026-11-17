@@ -183,7 +183,7 @@ export class World {
   }
   /** Clique no palco (coordenadas do Scratch): dispara “quando este ator for clicado” no ator de cima. */
   click(x: number, y: number) {
-    const hit = [...this.state.targets].reverse().find((t) => t.visible && Math.hypot(t.x - x, t.y - y) <= this.radius(t) + 4);
+    const hit = [...this.state.targets].reverse().find((t) => t.visible && this.contains(t, x, y, 4));
     if (hit) this.pending.push(() => this.fireFor(hit, (s) => s.hat === "event_whenthisspriteclicked", true));
   }
   clickSprite(name: string) {
@@ -251,20 +251,35 @@ export class World {
 
   // ───────────── Avaliação ─────────────
 
-  private radius(t: TargetState) {
-    return CHARACTERS[t.character].radius * (t.size / 100);
+  /** Forma de colisão no tamanho atual: caixa (meia largura/altura) ou círculo (hw = hh = raio). Sem girar a caixa. */
+  private shape(t: TargetState) {
+    const ch = CHARACTERS[t.character], k = t.size / 100;
+    return ch.box ? { box: true, hw: (ch.box.w / 2) * k, hh: (ch.box.h / 2) * k } : { box: false, hw: ch.radius * k, hh: ch.radius * k };
+  }
+
+  private contains(t: TargetState, x: number, y: number, pad = 0) {
+    const s = this.shape(t), dx = Math.abs(t.x - x), dy = Math.abs(t.y - y);
+    return s.box ? dx <= s.hw + pad && dy <= s.hh + pad : Math.hypot(dx, dy) <= s.hw + pad;
+  }
+
+  private overlaps(a: TargetState, b: TargetState) {
+    const sa = this.shape(a), sb = this.shape(b), dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+    if (!sa.box && !sb.box) return Math.hypot(dx, dy) < sa.hw + sb.hw;
+    if (sa.box && sb.box) return dx < sa.hw + sb.hw && dy < sa.hh + sb.hh;
+    const [c, bx] = sa.box ? [sb, sa] : [sa, sb]; // círculo × caixa: distância do centro do círculo até a caixa
+    return Math.hypot(Math.max(0, dx - bx.hw), Math.max(0, dy - bx.hh)) < c.hw;
   }
 
   private touchingEdge(t: TargetState) {
-    const r = this.radius(t);
-    return Math.abs(t.x) + r >= STAGE_W / 2 || Math.abs(t.y) + r >= STAGE_H / 2;
+    const s = this.shape(t);
+    return Math.abs(t.x) + s.hw >= STAGE_W / 2 || Math.abs(t.y) + s.hh >= STAGE_H / 2;
   }
 
   private touching(t: TargetState, what: string | undefined) {
     if (!t.visible && t.name !== STAGE_TARGET_NAME) return false;
     if (!what || what === "_edge_") return this.touchingEdge(t);
-    if (what === "_mouse_") return Math.hypot(t.x - this.mouse.x, t.y - this.mouse.y) <= this.radius(t);
-    return this.state.targets.some((o) => o !== t && o.visible && o.name === what && Math.hypot(o.x - t.x, o.y - t.y) < this.radius(o) + this.radius(t));
+    if (what === "_mouse_") return this.contains(t, this.mouse.x, this.mouse.y);
+    return this.state.targets.some((o) => o !== t && o.visible && o.name === what && this.overlaps(o, t));
   }
 
   private pointOf(what: string | undefined, self: TargetState): { x: number; y: number } | null {
@@ -415,11 +430,11 @@ export class World {
           break;
         }
         case "motion_ifonedgebounce": {
-          const r = this.radius(t);
+          const { hw, hh } = this.shape(t);
           const rad = ((90 - t.direction) * Math.PI) / 180;
           const dx = Math.cos(rad), dy = Math.sin(rad);
-          if ((t.x + r >= STAGE_W / 2 && dx > 0) || (t.x - r <= -STAGE_W / 2 && dx < 0)) t.direction = normDir(-t.direction);
-          if ((t.y + r >= STAGE_H / 2 && dy > 0) || (t.y - r <= -STAGE_H / 2 && dy < 0)) t.direction = normDir(180 - t.direction);
+          if ((t.x + hw >= STAGE_W / 2 && dx > 0) || (t.x - hw <= -STAGE_W / 2 && dx < 0)) t.direction = normDir(-t.direction);
+          if ((t.y + hh >= STAGE_H / 2 && dy > 0) || (t.y - hh <= -STAGE_H / 2 && dy < 0)) t.direction = normDir(180 - t.direction);
           break;
         }
         case "motion_setrotationstyle": {

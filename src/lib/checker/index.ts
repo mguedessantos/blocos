@@ -131,8 +131,8 @@ function evaluateStatic(spec: CheckSpec, m: StaticModel): Eval | null {
     case "keys":
       return { ok: m.keys.size >= spec.min, pass: `Você usou ${plural(m.keys.size, "tecla", "teclas")}.`, fail: `Use pelo menos ${plural(spec.min, "tecla diferente", "teclas diferentes")} em “quando a tecla … for pressionada”.` };
     case "textContains": {
-      const want = spec.text.toLowerCase();
-      const ok = m.texts.some((t) => spec.opcodes.includes(t.opcode) && t.value.toLowerCase().includes(want));
+      const want = plain(spec.text);
+      const ok = m.texts.some((t) => spec.opcodes.includes(t.opcode) && plain(t.value).includes(want));
       return { ok, pass: `${spec.label}: ok!`, fail: `${spec.label}.` };
     }
     default:
@@ -157,8 +157,8 @@ function evaluateRuntime(spec: CheckSpec, w: WorldState, initial: WorldState): E
       return { ok, pass: `Terminou olhando para a direção certa.`, fail: `${who(spec.sprite)} precisa terminar apontando para ${spec.direction}${s ? ` (está em ${fmt(s.direction)})` : ""}.` };
     }
     case "said": {
-      const want = spec.text.trim().toLowerCase();
-      const ok = w.said.some((t) => t.trim().toLowerCase().includes(want));
+      const want = plain(spec.text);
+      const ok = w.said.some((t) => plain(t).includes(want));
       return { ok, pass: `Alguém disse “${spec.text}”.`, fail: `O personagem precisa dizer “${spec.text}”.` };
     }
     case "variableEquals": {
@@ -238,6 +238,9 @@ const ator = (s?: string) => (s ? `**${s}**` : "o personagem");
 const bloco = (op: string) => `**${blockLabel(op).replaceAll("{bandeira}", "bandeira verde")}**`;
 
 /** Objetivo mostrado no checklist: o `goal` escrito na lição ou, sem ele, um texto gerado a partir da checagem. */
+/** Texto para comparar falas: sem acentos, sem maiúsculas e sem espaços nas pontas ("Cócegas " = "cocegas"). */
+const plain = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
+
 export function goalOf(spec: Exclude<CheckSpec, { type: "visits" }>): string {
   const g = spec.goal ?? ("label" in spec ? spec.label : undefined);
   if (g) return (spec.bonus && !spec.goal ? "Bônus: " : "") + g;

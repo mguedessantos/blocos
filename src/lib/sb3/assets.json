@@ -4,13 +4,13 @@
     "bloquinho": [
       {
         "name": "parado",
-        "md5ext": "3b1c014ab5c4ac25b808ab671e5bd054.svg",
+        "md5ext": "ed2f387792f4f9a8f763598d1e45119b.svg",
         "rotationCenterX": 50,
         "rotationCenterY": 50
       },
       {
         "name": "andando",
-        "md5ext": "7db324ce966312349ef6a75c96374a23.svg",
+        "md5ext": "6a8ab2a03a65948503dd29bc674ca51c.svg",
         "rotationCenterX": 50,
         "rotationCenterY": 50
       }
@@ -179,6 +179,34 @@
       {
         "name": "roxo",
         "md5ext": "e1315cf052bb3d81b759b45e234aeaba.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      }
+    ],
+    "raquete": [
+      {
+        "name": "azul",
+        "md5ext": "7f488609df902e6ccaaf4271d8b7f9c2.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      },
+      {
+        "name": "laranja",
+        "md5ext": "391095b60feedffcb58860e33f9689bd.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      }
+    ],
+    "muro": [
+      {
+        "name": "pedra",
+        "md5ext": "6818dca4d4d5f1677b74e6d8acd96da4.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      },
+      {
+        "name": "tijolo",
+        "md5ext": "e7ef455511c7888d3dbaffd2e6372960.png",
         "rotationCenterX": 100,
         "rotationCenterY": 100
       }
