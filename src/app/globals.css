@@ -195,3 +195,9 @@ h1, h2, h3, .font-display {
 /* Links/textos "da marca" no escuro: violeta claro (o #7A55F5 é só para fundo de botão) */
 .tema-noite .text-brand { color: #b39cff; }
 
+
+/* Windows com escala de 125% (padrão em muitos notebooks): mostra o site do mesmo tamanho que em 100%.
+   O zoom 125% do navegador também cai aqui (fica igual ao 100%); 110%, 150% e mais continuam funcionando. */
+@media (min-resolution: 1.2dppx) and (max-resolution: 1.3dppx) {
+  html { zoom: 0.8; }
+}

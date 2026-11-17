@@ -84,5 +84,5 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
   - migrações: `DOTENV_CONFIG_PATH=.env.prod npx prisma migrate deploy` (o build da Vercel também roda `prisma migrate deploy`)
   - currículo/contas: `DOTENV_CONFIG_PATH=.env.prod SEED_DEMO=minimal npx tsx prisma/seed.ts` (idempotente; NUNCA rodar sem SEED_DEMO em produção)
   - variáveis na Vercel: `node .vercel/push-env.cjs` (lê o .env.prod sem mostrar)
-- Deploy: `vercel deploy --prod --yes` (ou push no master, depois de ligar o GitHub na Vercel).
+- Publicar: `npm run publicar` (mostra o que mudou e sugere a descrição; Enter aceita) (testes, editor, commit/push, espera o deploy, seed de produção). Antes: `vercel deploy --prod --yes` (ou push no master, depois de ligar o GitHub na Vercel).
 - Contas em produção: dono (ADMIN_EMAIL) + teste: coordenacao@demo.blocos, professor@demo.blocos, aluno na turma TESTE1 (senha DEMO_PASSWORD).
