@@ -54,7 +54,7 @@ describe("email com a marca", () => {
 describe("certificado", () => {
   it("gera PDF com logo, acentos e metadados da escola", async () => {
     const bytes = await buildCertificate({
-      studentName: "Ana Conceição", trackTitle: "Mundo 1 · Vila do Palco", courseTitle: "PictoBlox e Introdução à Programação de Blocos",
+      studentName: "Ana Conceição", trackTitle: "Mundo 1 · Vila do Palco", courseTitle: "Introdução à Programação de Blocos",
       lessons: 8, schoolName: "Colégio Aurora", brandName: "Aurora Code", primary: "#0f766e", secondary: "#facc15",
       completedAt: new Date("2026-11-12T15:00:00Z"), code: "ABC123DEF0", logo: { bytes: PNG_1x1, kind: "png" },
     });

@@ -66,6 +66,3 @@ export async function sb3Bytes(p: ProjectSpec | object) {
   zip.file("project.json", JSON.stringify("targets" in p ? p : projectJson(p as ProjectSpec)));
   return zip.generateAsync({ type: "uint8array" });
 }
-
-/** Atalho: bloco de tecla. */
-export const key = (k: string): Node => ({ op: "event_whenkeypressed", fields: { KEY_OPTION: [k, null] } });

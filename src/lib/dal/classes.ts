@@ -187,7 +187,7 @@ export async function exportStudentData(user: CurrentUser, studentId: string) {
       name: true, username: true, avatar: true, xp: true, createdAt: true, lastLoginAt: true, active: true,
       enrollments: { select: { createdAt: true, class: { select: { name: true } } } },
       progress: { select: { status: true, stars: true, attempts: true, updatedAt: true, lesson: { select: { title: true } } } },
-      submissions: { select: { createdAt: true, stars: true, result: true, teacherComment: true, sb3Url: true, lesson: { select: { title: true } } } },
+      submissions: { select: { createdAt: true, stars: true, result: true, teacherComment: true, lesson: { select: { title: true } } } },
       badges: { select: { awardedAt: true, badge: { select: { name: true } } } },
       jamMemberships: { select: { team: { select: { name: true, jam: { select: { title: true } } } } } },
     },
@@ -213,7 +213,7 @@ export async function getClassProgress(user: CurrentUser, classId: string, track
     db.lesson.findMany({
       where: { module: { trackId: track.id }, draft: false },
       orderBy: [{ module: { order: "asc" } }, { order: "asc" }],
-      select: { id: true, title: true, optional: true },
+      select: { id: true, title: true },
     }),
     db.user.findMany({
       where: { role: "STUDENT", deletedAt: null, enrollments: { some: { classId } } },
@@ -226,7 +226,6 @@ export async function getClassProgress(user: CurrentUser, classId: string, track
     select: { userId: true, lessonId: true, status: true, stars: true, attempts: true },
   });
   const cell = new Map(progress.map((p) => [`${p.userId}:${p.lessonId}`, p]));
-  const required = lessons.filter((l) => !l.optional);
 
   return {
     tracks,
@@ -237,14 +236,13 @@ export async function getClassProgress(user: CurrentUser, classId: string, track
         const p = cell.get(`${s.id}:${l.id}`);
         return { lessonId: l.id, done: p?.status === "CONCLUIDO", stars: p?.stars ?? 0, attempts: p?.attempts ?? 0 };
       });
-      const doneRequired = cells.filter((c, i) => c.done && !lessons[i].optional).length;
-      // "travado": 3+ tentativas sem concluir na primeira lição obrigatória pendente
-      const firstPending = cells.find((c, i) => !lessons[i].optional && !c.done);
+      // "travado": 3+ tentativas sem concluir na primeira lição pendente
+      const firstPending = cells.find((c) => !c.done);
       return {
         ...s,
         cells,
-        done: doneRequired,
-        total: required.length,
+        done: cells.filter((c) => c.done).length,
+        total: lessons.length,
         stuck: Boolean(firstPending && firstPending.attempts >= 3),
       };
     }),

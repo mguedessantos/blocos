@@ -97,15 +97,6 @@ function accumulate(m: StaticModel, program: Program, vars: Set<string>) {
   }
 }
 
-/** Modelo estático de um programa do editor do navegador (1 ator, 1 cenário). */
-export function modelFromProgram(program: Program): StaticModel {
-  const m = emptyModel("editor");
-  const vars = new Set<string>();
-  accumulate(m, program, vars);
-  m.variables = vars.size;
-  return m;
-}
-
 /** Modelo estático de um projeto do editor com vários atores. */
 export function modelFromProject(project: ProjectProgram): StaticModel {
   const m = emptyModel("editor");

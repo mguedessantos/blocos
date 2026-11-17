@@ -12,7 +12,7 @@ O palco deste projeto tem dois cenários: **Branco** e **Floresta**.
 
 Quando a bandeira for clicada: o Bloquinho diz **“Vamos passear!”** por 2 segundos e depois **mude para o cenário Floresta**.
 
-> Para ver os cenários, clique em **Palco** no painel de atores.`,
+> Para ver os cenários, clique em **Palco** (à direita da lista de atores) e depois na aba **Cenários**.`,
   allowedBlocks: VIDA,
   starter: game({ backdrops: ["branco", "floresta"], sprites: [{ name: "Bloquinho", code: [[flag()]] }] }),
   checks: {
@@ -25,7 +25,7 @@ Quando a bandeira for clicada: o Bloquinho diz **“Vamos passear!”** por 2 se
   guide: {
     objetivo: "Trocar cenários pelo código (base para fases e telas de jogo).",
     minutos: 10,
-    passos: ["Mostre o botão “Cenário” e o palco no painel."],
+    passos: ["Mostre a coluna Palco e a aba Cenários no projetor."],
     errosComuns: ["Trocar o cenário antes de o Bloquinho falar (a ordem dos blocos importa)."],
   },
 };

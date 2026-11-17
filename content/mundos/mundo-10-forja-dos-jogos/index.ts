@@ -15,7 +15,7 @@ export default mundo({
   slug: "mundo-9-forja-dos-jogos",
   title: "Mundo 10 · Forja dos Jogos",
   description: "Planeje e construa dois jogos completos, etapa por etapa: Caça-Moedas e Fuga do Glitch.",
-  story: "Na Forja dos Jogos, os Criadores transformam blocos em jogos de verdade. Cada etapa concluída devolve aura ao reino — e prepara você para o Grande Torneio.",
+  story: "Na Forja dos Jogos, os Criadores transformam blocos em jogos de verdade. Cada etapa concluída devolve aura ao reino e prepara você para o Grande Torneio.",
   level: 3,
   order: 10,
   modules: [

@@ -12,7 +12,7 @@ export default mundo({
   slug: "mundo-10-grande-torneio",
   title: "Mundo 11 · O Grande Torneio",
   description: "Prepare-se para a game jam: trabalho em equipe, do tema à ideia, capricho e o projeto final.",
-  story: "Chegou a hora do Grande Torneio dos Criadores! Equipes de todo o reino vão criar jogos sobre um tema surpresa, com tempo marcado. É aqui que a aura volta de vez — e o Glitch é derrotado pela criatividade.",
+  story: "Chegou a hora do Grande Torneio dos Criadores! Equipes de todo o reino vão criar jogos sobre um tema surpresa, com tempo marcado. É aqui que a aura volta de vez, e o Glitch é derrotado pela criatividade.",
   level: 3,
   order: 11,
   modules: [

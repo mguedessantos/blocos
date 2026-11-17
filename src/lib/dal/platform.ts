@@ -115,7 +115,7 @@ async function trackProgress(orgIds: string[]) {
       orderBy: [{ course: { order: "asc" } }, { level: "asc" }, { order: "asc" }],
       select: {
         id: true, title: true, level: true, course: { select: { title: true } },
-        modules: { select: { lessons: { where: { draft: false, optional: false }, select: { id: true } } } },
+        modules: { select: { lessons: { where: { draft: false }, select: { id: true } } } },
       },
     }),
     db.progress.findMany({

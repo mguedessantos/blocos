@@ -31,7 +31,6 @@ export type StudentStats = {
   perfect: number; // lições com 3 estrelas
   exercisesFirstTry: number; // exercícios/desafios concluídos com 3 estrelas na 1ª tentativa
   persistent: number; // concluídas depois de 3+ tentativas
-  pictoblox: number; // missões extras (.sb3) concluídas
   tracksFinished: number; // trilhas com todas as lições obrigatórias feitas
   levelsFinished: number[]; // níveis (1 básico, 2 intermediário, 3 avançado) com todas as trilhas feitas
 };
@@ -45,7 +44,6 @@ export const BADGES: BadgeDef[] = [
   { id: "perfeito", name: "Perfeição", description: "Ganhou 3 estrelas em 10 lições.", icon: "Star", earned: (s) => s.perfect >= 10 },
   { id: "de-primeira", name: "De primeira!", description: "Resolveu 5 exercícios com 3 estrelas na primeira tentativa.", icon: "Target", earned: (s) => s.exercisesFirstTry >= 5 },
   { id: "persistente", name: "Não desisto", description: "Concluiu uma lição depois de tentar 3 vezes ou mais.", icon: "Dumbbell", earned: (s) => s.persistent >= 1 },
-  { id: "explorador-pictoblox", name: "Explorador(a) do PictoBlox", description: "Concluiu uma missão extra no PictoBlox.", icon: "Compass", earned: (s) => s.pictoblox >= 1 },
   { id: "primeiro-mundo", name: "Mundo completo", description: "Terminou uma trilha inteira.", icon: "Map", earned: (s) => s.tracksFinished >= 1 },
   { id: "nivel-basico", name: "Básico dominado", description: "Terminou todas as trilhas do nível Básico.", icon: "Medal", earned: (s) => s.levelsFinished.includes(1) },
   { id: "nivel-intermediario", name: "Intermediário dominado", description: "Terminou todas as trilhas do nível Intermediário.", icon: "Award", earned: (s) => s.levelsFinished.includes(2) },
@@ -58,14 +56,14 @@ export function earnedBadges(s: StudentStats) {
 
 export const BADGE_BY_ID = new Map(BADGES.map((b) => [b.id, b]));
 
-type ProgressRow = { status: string; stars: number; attempts: number; lesson: { type: string; mode: string; optional: boolean; trackId: string } };
+type ProgressRow = { status: string; stars: number; attempts: number; lesson: { type: string; trackId: string } };
 type TrackInfo = { id: string; level: number; required: number };
 
 /** Calcula as estatísticas a partir das linhas de progresso e das trilhas visíveis. */
 export function statsFrom(rows: ProgressRow[], tracks: TrackInfo[]): StudentStats {
   const done = rows.filter((r) => r.status === "CONCLUIDO");
   const reqDone = new Map<string, number>();
-  for (const r of done) if (!r.lesson.optional) reqDone.set(r.lesson.trackId, (reqDone.get(r.lesson.trackId) ?? 0) + 1);
+  for (const r of done) reqDone.set(r.lesson.trackId, (reqDone.get(r.lesson.trackId) ?? 0) + 1);
   const finished = new Set(tracks.filter((t) => t.required > 0 && (reqDone.get(t.id) ?? 0) >= t.required).map((t) => t.id));
   const levels = [...new Set(tracks.map((t) => t.level))];
   return {
@@ -73,7 +71,6 @@ export function statsFrom(rows: ProgressRow[], tracks: TrackInfo[]): StudentStat
     perfect: done.filter((r) => r.stars >= 3).length,
     exercisesFirstTry: done.filter((r) => (r.lesson.type === "EXERCICIO" || r.lesson.type === "DESAFIO") && r.stars >= 3 && r.attempts === 1).length,
     persistent: done.filter((r) => r.attempts >= 3).length,
-    pictoblox: done.filter((r) => r.lesson.optional && r.lesson.mode === "SB3").length,
     tracksFinished: finished.size,
     levelsFinished: levels.filter((lv) => tracks.filter((t) => t.level === lv).every((t) => finished.has(t.id))),
   };

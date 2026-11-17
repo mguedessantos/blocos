@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, GraduationCap, Presentation, Rocket, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, GraduationCap, Presentation } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LessonPlayer } from "@/components/editor/lesson-player";
@@ -7,7 +7,7 @@ import { Markdown } from "@/components/markdown";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
-import { EXTRA_XP, getCatalogLesson } from "@/lib/dal/lessons";
+import { getCatalogLesson } from "@/lib/dal/lessons";
 import { previewVerifyAction } from "./actions";
 import { objectivesOf } from "@/lib/checker";
 
@@ -26,7 +26,7 @@ export default async function AulaPage(props: PageProps<"/professor/licoes/[id]"
   });
   const { track, lesson, index, total, prevId, nextId } = data;
   const kind = LESSON_KIND[lesson.type];
-  const isEditor = lesson.type !== "TEORIA" && lesson.type !== "DEMO" && lesson.mode !== "SB3";
+  const isEditor = lesson.type !== "TEORIA" && lesson.type !== "DEMO";
 
   const nav = (
     <span className="inline-flex items-center gap-1">
@@ -67,15 +67,6 @@ export default async function AulaPage(props: PageProps<"/professor/licoes/[id]"
       <div className="mt-3 text-[0.95rem]">{lesson.teacherGuide ? <Markdown source={lesson.teacherGuide} /> : <p className="text-muted">Sem guia para esta lição.</p>}</div>
     </details>
   );
-  const extra = lesson.extra && (
-    <details className="clay group p-4">
-      <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
-        <Sparkles aria-hidden className="h-5 w-5 text-star" /> Desafio extra (opcional)
-        <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
-      </summary>
-      <div className="mt-3"><Markdown source={lesson.extra} /></div>
-    </details>
-  );
 
   // a aula usa o mesmo visual que os alunos veem nas telas deles
   if (isEditor) {
@@ -93,30 +84,25 @@ export default async function AulaPage(props: PageProps<"/professor/licoes/[id]"
           verify={previewVerifyAction.bind(null, lesson.id)}
           header={header}
           mission={<Markdown source={lesson.content} />}
-          extra={lesson.extra && <Markdown source={lesson.extra} />}
-          extraBonus={lesson.extraChecks ? EXTRA_XP : undefined}
           aside={guide}
         />
       </div>
     );
   }
 
-  // teoria, demonstração e missões no PictoBlox: o conteúdo em tela grande, com o guia ao lado
+  // teoria e demonstração: o conteúdo em tela grande, com o guia ao lado
   return (
     <div className="tema-noite -mx-4 -my-8 min-h-full px-4 py-8 sm:-mx-6 sm:px-6">
       <div className="mx-auto max-w-screen-2xl space-y-5">
         <div className="clay p-4">{header}</div>
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(300px,26vw,420px)]">
           <Card className="space-y-6 text-lg">
-            {lesson.mode === "SB3" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-star px-3 py-0.5 text-sm font-extrabold text-night"><Rocket aria-hidden className="h-3.5 w-3.5" /> Missão no PictoBlox</span>
-            )}
             <Markdown source={lesson.content} />
             {nextId && (
               <Link href={`/professor/licoes/${nextId}`} className={buttonClass("primary", "md", "btn-cta")}>Próxima lição <ArrowRight aria-hidden className="h-5 w-5" /></Link>
             )}
           </Card>
-          <div className="space-y-3">{extra}{guide}</div>
+          <div className="space-y-3">{guide}</div>
         </div>
       </div>
     </div>

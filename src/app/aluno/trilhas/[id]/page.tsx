@@ -1,4 +1,4 @@
-import { ArrowLeft, Lock, Rocket } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Island } from "@/components/island";
@@ -19,9 +19,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
   const current = track.lessons.find((l) => !l.done && !l.locked)?.id;
   const [label, ...rest] = track.title.split(" · ");
   const name = rest.length ? rest.join(" · ") : track.title;
-  const required = track.lessons.filter((l) => !l.optional);
-  const doneCount = required.filter((l) => l.done).length;
-  let n = 0;
+  const doneCount = track.lessons.filter((l) => l.done).length;
 
   return (
     <div className="space-y-6">
@@ -32,7 +30,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
         <span aria-hidden className="hidden h-6 w-px bg-line sm:block" />
         <p className="font-display text-lg font-extrabold text-star">{rest.length ? label : `Mundo ${track.worldIndex}`}</p>
         <h1 className="text-3xl font-extrabold">{name}</h1>
-        <span className="ml-auto text-sm font-bold text-muted">{doneCount} de {required.length} lições</span>
+        <span className="ml-auto text-sm font-bold text-muted">{doneCount} de {track.lessons.length} lições</span>
       </div>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
@@ -50,22 +48,20 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
 
         {/* Lista numerada de lições */}
         <ol className="space-y-3">
-          {track.lessons.map((l) => {
+          {track.lessons.map((l, i) => {
             const kind = LESSON_KIND[l.type];
             const isCurrent = l.id === current;
-            const num = l.optional ? "★" : String(++n);
             const body = (
               <>
                 <span
                   className={`hexa shrink-0 ${l.done ? "bg-star text-night" : isCurrent ? "bg-cta text-night" : l.locked ? "bg-[#2a2560] text-muted" : "bg-[#7a55f5] text-white"}`}
                   aria-hidden
                 >
-                  {l.locked ? <Lock className="h-5 w-5" /> : num}
+                  {l.locked ? <Lock className="h-5 w-5" /> : i + 1}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-extrabold uppercase tracking-wider text-muted">
-                    {l.optional ? "Missão extra" : kind.label}
-                    {l.mode === "SB3" && <span className="ml-1 inline-flex items-center gap-1 text-star"><Rocket aria-hidden className="h-3 w-3" /> PictoBlox</span>}
+                    {kind.label}
                   </span>
                   <span className="block font-display text-lg font-extrabold leading-tight">{l.title}</span>
                   <span className="block text-sm font-bold text-muted">{l.done ? <Stars value={l.stars} /> : l.locked ? "Trancada" : `${l.xp} XP`}</span>
@@ -74,9 +70,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
                 {isCurrent && <span className="faixa absolute -bottom-1 right-3 !bg-cta">Você está aqui</span>}
               </>
             );
-            const cls = `relative flex items-center gap-4 rounded-2xl border-2 px-3 py-3 pr-6 ${
-              l.optional ? "border-dashed border-[#5a4fa8]" : "border-line"
-            } ${isCurrent ? "!border-[#8b6cff] bg-[#231c5c] shadow-[0_0_0_4px_rgb(139_108_255/0.2)]" : "bg-surface"}`;
+            const cls = `relative flex items-center gap-4 rounded-2xl border-2 border-line px-3 py-3 pr-6 ${isCurrent ? "!border-[#8b6cff] bg-[#231c5c] shadow-[0_0_0_4px_rgb(139_108_255/0.2)]" : "bg-surface"}`;
             return (
               <li key={l.id}>
                 {l.locked ? (

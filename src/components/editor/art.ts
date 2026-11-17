@@ -216,6 +216,16 @@ export function drawCharacter(ctx: Ctx, id: CharacterId, costume: number) {
       rect(ctx, -4, -14, 8, 28, 4, alt ? "#a855f7" : "#ef4444", alt ? "#581c87" : "#7f1d1d");
       rect(ctx, -1.5, -10, 3, 20, 1.5, "#fde68a");
       break;
+    case "cabeca": // 14x14 como o gomo, mais escura e com olhos; olha para a direita (gira com a direção)
+      rect(ctx, -5.5, -5.5, 11, 11, 4, alt ? "#eab308" : "#15803d", alt ? "#854d0e" : "#14532d");
+      for (const ey of [-2.5, 2.5]) {
+        circle(ctx, 2, ey, 1.8, "#fff");
+        circle(ctx, 2.6, ey, 0.9, "#111827");
+      }
+      break;
+    case "gomo": // 14x14 contando o contorno, igual à caixa de colisão (library.ts); maior que isso, gomos vizinhos se tocam
+      rect(ctx, -5.5, -5.5, 11, 11, 4, alt ? "#facc15" : "#22c55e", alt ? "#a16207" : "#15803d");
+      break;
     case "muro": { // 96x14, igual à caixa de colisão (library.ts)
       rect(ctx, -48, -7, 96, 14, 2, alt ? "#b45309" : "#64748b", alt ? "#7c2d12" : "#334155");
       ctx.strokeStyle = alt ? "#7c2d12" : "#334155";

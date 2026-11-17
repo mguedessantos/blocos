@@ -14,6 +14,8 @@ const DT = 1 / FPS;
 const MAX_LINES = 5000;
 const MAX_TEXT = 200;
 const MAX_CLONES = 300;
+/** Tecla segurada: depois desse tempo (s) o computador começa a repetir o aperto. */
+const KEY_REPEAT_DELAY = 0.5;
 const MAX_THREADS = 2000;
 
 export type Line = [number, number, number, number];
@@ -181,6 +183,10 @@ export class World {
   keyUp(key: string) {
     this.keysDown.delete(key);
   }
+  /** Repetição do teclado (tecla segurada): dispara de novo “quando a tecla for pressionada”, como no computador. */
+  private keyRepeat(key: string) {
+    this.pending.push(() => this.fire((s) => s.hat === "event_whenkeypressed" && (s.fields.KEY_OPTION === key || s.fields.KEY_OPTION === "any"), false));
+  }
   /** Clique no palco (coordenadas do Scratch): dispara “quando este ator for clicado” no ator de cima. */
   click(x: number, y: number) {
     const hit = [...this.state.targets].reverse().find((t) => t.visible && this.contains(t, x, y, 4));
@@ -213,12 +219,17 @@ export class World {
     this.start();
     const limit = Math.round(maxSeconds * FPS);
     const lastInput = Math.max(0, ...inputs.map((i) => ("key" in i ? i.to : i.at)));
+    const heldSince = new Map<string, number>();
     while (this.ticks < limit && !this.state.stopped) {
       const t = (this.ticks + 1) * DT;
       // teclas seguradas neste quadro (um mesmo botão pode ter vários intervalos)
       const held = new Set(inputs.flatMap((i) => ("key" in i && t >= i.from && t < i.to ? [i.key] : [])));
       for (const k of [...this.keysDown]) if (!held.has(k)) this.keyUp(k);
-      for (const k of held) this.keyDown(k);
+      for (const k of held) {
+        if (!this.keysDown.has(k)) heldSince.set(k, t);
+        else if (t - heldSince.get(k)! >= KEY_REPEAT_DELAY) this.keyRepeat(k); // segurando: o teclado repete (a cada quadro, ~30 por segundo)
+        this.keyDown(k);
+      }
       for (const inp of inputs) if ("click" in inp && Math.abs(t - inp.at) < DT / 2) this.clickSprite(inp.click);
       this.tick();
       if (this.done && t > lastInput) break;
@@ -570,11 +581,6 @@ export class World {
 // ───────────── Compatibilidade: um ator só ─────────────
 
 export type StageState = TargetState & Pick<WorldState, "lines" | "vars" | "said" | "time">;
-
-export function initialState(): StageState {
-  const w = new World(singleSpriteProject({ scripts: [], opcodeCounts: {}, blockCount: 0 }));
-  return { ...w.state.targets[0], lines: [], vars: {}, said: [], time: 0 };
-}
 
 /** Atalho para um programa de um ator só; `state` mostra o primeiro ator + dados do mundo. */
 export class Runtime {

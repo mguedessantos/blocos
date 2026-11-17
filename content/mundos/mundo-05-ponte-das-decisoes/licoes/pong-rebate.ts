@@ -14,22 +14,22 @@ Na **Bola**, dentro do **sempre**, coloque:
 
 **se (tocando em Raquete?) então**
 
-- **aponte para a direção (sorteie um número entre -45 e 45)**
+- **aponte para a direção (número aleatório entre -45 e 45)**
 
-Direção **0** é para cima. Com o **sorteie**, a bola sobe cada vez num ângulo diferente, e o jogo nunca fica igual. Cada bola que chega lá em cima vale **1 ponto**.`,
+Direção **0** é para cima. Com o **número aleatório** (Operadores, verde), a bola sobe cada vez num ângulo diferente, e o jogo nunca fica igual. Cada bola que chega lá em cima vale **1 ponto**.`,
   allowedBlocks: ["sensing_touchingobject", "motion_pointindirection", "operator_random"],
   starter: game(pong(RAQUETE, [PERDEU])),
   checks: {
     maxSeconds: 6,
     checks: [
-      { type: "usesBlock", opcode: "operator_random", min: 1, message: "Use sorteie um número entre -45 e 45 na direção.", goal: "Use **sorteie** para a bola subir num ângulo diferente" },
-      { type: "variableAtLeast", name: "pontos", min: 1, message: "A bola precisa voltar para cima ao tocar na raquete. Use se tocando em Raquete, então aponte para a direção (sorteie -45 a 45).", goal: "A bola rebate na raquete e sobe (**1 ponto**)" },
+      { type: "usesBlock", opcode: "operator_random", min: 1, message: "Use número aleatório entre -45 e 45 na direção.", goal: "Use **número aleatório** para a bola subir num ângulo diferente" },
+      { type: "variableAtLeast", name: "pontos", min: 1, message: "A bola precisa voltar para cima ao tocar na raquete. Use se tocando em Raquete, então aponte para a direção (número aleatório entre -45 e 45).", goal: "A bola rebate na raquete e sobe (**1 ponto**)" },
     ],
   },
   guide: {
     objetivo: "Usar o sensor de toque como condição e o sorteio para o jogo variar.",
     minutos: 15,
-    passos: ["Teste primeiro com aponte para a direção 0 e mostre que o jogo fica repetitivo; depois troque por sorteie.", "Lembre a bússola do Scratch: 0 é para cima, 90 é para a direita, 180 é para baixo."],
+    passos: ["Teste primeiro com aponte para a direção 0 e mostre que o jogo fica repetitivo; depois troque por número aleatório.", "Lembre a bússola do Scratch: 0 é para cima, 90 é para a direita, 180 é para baixo."],
     errosComuns: ["Usar direção 180: a bola continua descendo.", "Sortear entre 0 e 360: às vezes a bola volta para baixo e atravessa a raquete."],
   },
 };

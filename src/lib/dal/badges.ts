@@ -21,7 +21,7 @@ function badgeTracks(organizationId: string | null) {
 async function loadBadgeTracks(organizationId: string | null) {
   const tracks = await db.track.findMany({
     where: { published: true, course: { published: true, comingSoon: false }, OR: [{ organizationId: null }, ...(organizationId ? [{ organizationId }] : [])] },
-    select: { id: true, level: true, modules: { select: { _count: { select: { lessons: { where: { draft: false, optional: false } } } } } } },
+    select: { id: true, level: true, modules: { select: { _count: { select: { lessons: { where: { draft: false } } } } } } },
   });
   return tracks.map((t) => ({ id: t.id, level: t.level, required: t.modules.reduce((n, m) => n + m._count.lessons, 0) }));
 }
@@ -30,12 +30,12 @@ async function computeStats(userId: string, organizationId: string | null) {
   const [rows, tracks] = await Promise.all([
     db.progress.findMany({
       where: { userId, lesson: { draft: false } },
-      select: { status: true, stars: true, attempts: true, lesson: { select: { type: true, mode: true, optional: true, module: { select: { trackId: true } } } } },
+      select: { status: true, stars: true, attempts: true, lesson: { select: { type: true, module: { select: { trackId: true } } } } },
     }),
     badgeTracks(organizationId),
   ]);
   return statsFrom(
-    rows.map((r) => ({ ...r, lesson: { type: r.lesson.type, mode: r.lesson.mode, optional: r.lesson.optional, trackId: r.lesson.module.trackId } })),
+    rows.map((r) => ({ ...r, lesson: { type: r.lesson.type, trackId: r.lesson.module.trackId } })),
     tracks,
   );
 }

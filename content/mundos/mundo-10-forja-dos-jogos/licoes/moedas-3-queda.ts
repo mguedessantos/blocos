@@ -10,6 +10,7 @@ export const licao: LessonContent = {
   content: `## Etapa 3: a moeda cai do céu
 
 Na **Moeda**: quando a bandeira for clicada → **vá para x: 0 y: 170** → **sempre**:
+
 - **adicione -5 a y**
 - **se** posição y < -170 **então** → **vá para x: (número aleatório entre -200 e 200) y: 170**`,
   allowedBlocks: TODOS,
@@ -20,9 +21,9 @@ Na **Moeda**: quando a bandeira for clicada → **vá para x: 0 y: 170** → **s
   checks: {
     maxSeconds: 6,
     checks: [
-      { type: "inside", parent: ["control_forever"], child: ["motion_changeyby"], label: "A moeda cai (adicione … a y) dentro de um “sempre”" },
-      { type: "inside", parent: IFS, child: ["motion_gotoxy", "motion_sety", "motion_goto"], label: "Quando chegar embaixo, a moeda volta para o alto" },
-      { type: "walked", sprite: "Moeda", min: 500, message: "A moeda precisa cair e voltar para o alto várias vezes." },
+      { type: "inside", parent: ["control_forever"], child: ["motion_changeyby"], label: "A moeda cai (adicione … a y) dentro de um “sempre”", goal: "A moeda **cai** (adicione -5 a y dentro do **sempre**)" },
+      { type: "inside", parent: IFS, child: ["motion_gotoxy", "motion_sety", "motion_goto"], label: "Quando chegar embaixo, a moeda volta para o alto", goal: "No chão, a moeda **volta para o alto**" },
+      { type: "walked", sprite: "Moeda", min: 500, message: "A moeda precisa cair e voltar para o alto várias vezes.", goal: "A moeda cai **várias vezes**" },
     ],
   },
   guide: {

@@ -1,4 +1,4 @@
-import { BookOpen, Clock, Puzzle, Rocket } from "lucide-react";
+import { BookOpen, Clock, Puzzle } from "lucide-react";
 import { Island } from "@/components/island";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui";
@@ -52,14 +52,13 @@ export default async function CurriculoPage() {
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                   {course.tracks.filter((t) => t.level === lv).map((t) => {
                     const lessons = t.modules.flatMap((m) => m.lessons);
-                    const extras = lessons.filter((l) => l.optional).length;
                     const [label, ...rest] = t.title.split(" · ");
                     return (
                       <Link key={t.id} href={`/professor/trilhas/${t.id}`} className="clay clay-hover group flex flex-col items-center gap-1 p-4 text-center">
                         <Island index={course.tracks.indexOf(t) + 1} className="h-28 w-auto transition-transform group-hover:-translate-y-1" />
                         <span className="text-xs font-extrabold text-brand">{rest.length ? label : ""}</span>
                         <span className="font-display text-lg font-extrabold leading-tight">{rest.length ? rest.join(" · ") : t.title}</span>
-                        <span className="text-xs font-bold text-muted"><Puzzle aria-hidden className="inline h-3.5 w-3.5 text-green-600" /> {lessons.length - extras} lições · <Rocket aria-hidden className="inline h-3.5 w-3.5 text-brand" /> {extras} extra(s)</span>
+                        <span className="text-xs font-bold text-muted"><Puzzle aria-hidden className="inline h-3.5 w-3.5 text-green-600" /> {lessons.length} lições</span>
                       </Link>
                     );
                   })}

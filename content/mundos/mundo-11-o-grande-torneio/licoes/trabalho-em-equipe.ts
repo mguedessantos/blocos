@@ -25,7 +25,7 @@ A equipe trabalha em **um projeto só**. Quem está no teclado é o **piloto**; 
   guide: {
     objetivo: "Organizar papéis, rodízio no teclado e combinados de nomes.",
     minutos: 20,
-    passos: ["Forme as equipes (3–4 alunos) e peça que escolham papéis.", "Use um cronômetro visível para o rodízio piloto/copiloto."],
+    passos: ["Forme as equipes (3 ou 4 alunos) e peça que escolham papéis.", "Use um cronômetro visível para o rodízio piloto/copiloto."],
     errosComuns: ["Um aluno dominando o teclado o tempo todo: reforce o rodízio.", "Mensagens com nomes diferentes em atores feitos por pessoas diferentes."],
   },
 };

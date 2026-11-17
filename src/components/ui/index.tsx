@@ -44,10 +44,6 @@ export function Alert({ children }: { children: ReactNode }) {
   );
 }
 
-export function Badge({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1 text-sm font-extrabold text-brand-shadow ${className}`}>{children}</span>;
-}
-
 /** Título de página com ícone em “pastilha”. */
 export function PageHeader({ icon, title, subtitle, children }: { icon?: ReactNode; title: ReactNode; subtitle?: ReactNode; children?: ReactNode }) {
   return (

@@ -1,9 +1,10 @@
 import "server-only";
+import { cache } from "react";
 import { awardBadges } from "./badges";
 import { Prisma } from "@/generated/prisma/client";
 import { compileProject, normalizeProject } from "../blocks/project";
-import { checkModel, checkProject, checksSchema, type CheckResult } from "../checker";
-import { modelFromSb3, readSb3, Sb3Error } from "../sb3/project";
+import { checkProject, checksSchema, type CheckResult } from "../checker";
+import { readSb3 } from "../sb3/project";
 import { deleteFile, getFile, putFile } from "../storage";
 import { db } from "../db";
 import type { CurrentUser } from "./auth";
@@ -29,35 +30,42 @@ function visibleTracksWhere(user: CurrentUser) {
 const lessonOrder = [{ module: { order: "asc" as const } }, { order: "asc" as const }];
 
 // Só para testes locais: alunos em DESBLOQUEAR_ALUNOS (ex.: "ana") veem todas as lições abertas. Nunca vale em produção.
-async function unlockedForTests(userId: string) {
+// cache(): uma consulta por página, mesmo com várias trilhas.
+const unlockedForTests = cache(async (userId: string) => {
   const names = (process.env.DESBLOQUEAR_ALUNOS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   if (!names.length || process.env.VERCEL_ENV === "production") return false;
   const u = await db.user.findUnique({ where: { id: userId }, select: { username: true, role: true } });
   return u?.role === "STUDENT" && !!u.username && names.includes(u.username);
-}
+});
 
-async function trackLessons(userId: string, trackId: string) {
+/** Lições de várias trilhas (uma consulta só), com o progresso do aluno e a liberação em sequência. */
+async function lessonsByTrack(userId: string, trackIds: string[]) {
   const unlocked = await unlockedForTests(userId);
   const lessons = await db.lesson.findMany({
-    where: { module: { trackId }, draft: false },
+    where: { module: { trackId: { in: trackIds } }, draft: false },
     orderBy: lessonOrder,
     select: {
-      id: true, title: true, type: true, xp: true, mode: true, optional: true,
-      module: { select: { id: true, title: true } },
+      id: true, title: true, type: true, xp: true,
+      module: { select: { id: true, title: true, trackId: true } },
       progress: { where: { userId }, select: { status: true, stars: true } },
     },
   });
-  // Liberação em sequência: cada lição abre quando a lição OBRIGATÓRIA anterior foi concluída.
-  // Missões opcionais (ex.: levar ao PictoBlox) nunca bloqueiam o caminho.
-  let prevDone = true;
-  return lessons.map((l) => {
+  // Liberação em sequência: cada lição abre quando a anterior da mesma trilha foi concluída.
+  const prevDone = new Map<string, boolean>();
+  const out = new Map<string, ReturnType<typeof toItem>[]>(trackIds.map((id) => [id, []]));
+  function toItem(l: (typeof lessons)[number]) {
     const p = l.progress[0];
     const done = p?.status === "CONCLUIDO";
-    const item = { id: l.id, title: l.title, type: l.type, mode: l.mode, optional: l.optional, xp: l.xp, module: l.module, done, stars: p?.stars ?? 0, locked: !prevDone && !unlocked };
-    if (!l.optional) prevDone = done;
+    const { trackId, ...module } = l.module;
+    const item = { id: l.id, title: l.title, type: l.type, xp: l.xp, module, done, stars: p?.stars ?? 0, locked: prevDone.get(trackId) === false && !unlocked };
+    prevDone.set(trackId, done);
     return item;
-  });
+  }
+  for (const l of lessons) out.get(l.module.trackId)!.push(toItem(l));
+  return out;
 }
+
+const trackLessons = async (userId: string, trackId: string) => (await lessonsByTrack(userId, [trackId])).get(trackId)!;
 
 /** Cursos liberados para o aluno, com o progresso de cada trilha. */
 export async function listStudentCourses(user: CurrentUser) {
@@ -69,24 +77,14 @@ export async function listStudentCourses(user: CurrentUser) {
       tracks: { where: { published: true }, orderBy: [{ level: "asc" }, { order: "asc" }], select: { id: true, title: true, description: true, level: true } },
     },
   });
-  return Promise.all(
-    courses.map(async (c) => ({
-      ...c,
-      tracks: await Promise.all(
-        c.tracks.map(async (t) => {
-          const lessons = await trackLessons(user.id, t.id);
-          const required = lessons.filter((l) => !l.optional);
-          return {
-            ...t,
-            total: required.length,
-            done: required.filter((l) => l.done).length,
-            extras: lessons.length - required.length,
-            next: required.find((l) => !l.done && !l.locked),
-          };
-        }),
-      ),
-    })),
-  );
+  const byTrack = await lessonsByTrack(user.id, courses.flatMap((c) => c.tracks.map((t) => t.id)));
+  return courses.map((c) => ({
+    ...c,
+    tracks: c.tracks.map((t) => {
+      const lessons = byTrack.get(t.id)!;
+      return { ...t, total: lessons.length, done: lessons.filter((l) => l.done).length, next: lessons.find((l) => !l.done && !l.locked) };
+    }),
+  }));
 }
 
 export async function getStudentTrack(user: CurrentUser, trackId: string) {
@@ -115,44 +113,32 @@ export async function getStudentLesson(user: CurrentUser, lessonId: string) {
   const lessons = await trackLessons(user.id, lesson.module.track.id);
   const idx = lessons.findIndex((l) => l.id === lesson.id);
   const me = lessons[idx];
-  const lastSubmission = await db.submission.findFirst({
-    where: { userId: user.id, lessonId },
-    orderBy: { createdAt: "desc" },
-    select: { workspace: true },
-  });
   return {
     lesson,
     locked: me.locked,
     done: me.done,
     stars: me.stars,
     position: { index: idx + 1, total: lessons.length },
-    nextLessonId: lessons.slice(idx + 1).find((l) => !l.optional)?.id ?? null,
-    savedWorkspace: lastSubmission?.workspace ?? null,
-    extraDone: (await db.progress.findUnique({ where: { userId_lessonId: { userId: user.id, lessonId } }, select: { extraDone: true } }))?.extraDone ?? false,
+    nextLessonId: lessons[idx + 1]?.id ?? null,
   };
+}
+
+/** Blocos da última tentativa verificada (para reabrir a lição quando não há projeto salvo). */
+export async function lastWorkspace(user: CurrentUser, lessonId: string) {
+  const last = await db.submission.findFirst({ where: { userId: user.id, lessonId }, orderBy: { createdAt: "desc" }, select: { workspace: true } });
+  return last?.workspace ?? null;
 }
 
 const MAX_WORKSPACE_BYTES = 200_000;
 
 export type NewBadge = { id: string; name: string; icon: string };
-/** XP bônus do desafio extra (só na primeira vez). */
-export const EXTRA_XP = 10;
-export type ExtraOutcome = { done: boolean; xpGained: number } | null;
-export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; newBadges: NewBadge[]; extra?: ExtraOutcome } | { ok: false; error: string };
-
-/** Confere o desafio extra no mesmo programa; null quando a lição não tem verificação de extra. */
-function checkExtra(lesson: { extraChecks: unknown }, project: Parameters<typeof checkProject>[0]) {
-  if (!lesson.extraChecks) return null;
-  const parsed = checksSchema.safeParse(lesson.extraChecks);
-  return parsed.success ? checkProject(project, parsed.data).passed : null;
-}
+export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; newBadges: NewBadge[] } | { ok: false; error: string };
 
 /** Verifica no SERVIDOR (o resultado do navegador nunca é confiável) e registra o progresso. */
 export async function submitAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<AttemptOutcome> {
   const { lesson, locked } = await getStudentLesson(user, lessonId);
   if (locked) return { ok: false, error: "Conclua a lição anterior primeiro." };
   if (lesson.type === "TEORIA") return { ok: false, error: "Esta lição não tem exercício." };
-  if (lesson.mode === "SB3") return { ok: false, error: "Esta missão é feita no PictoBlox: envie o arquivo .sb3." };
   if (typeof workspaceJson !== "string" || workspaceJson.length > MAX_WORKSPACE_BYTES) return { ok: false, error: "Programa grande demais." };
   let workspace: ReturnType<typeof normalizeProject>;
   try {
@@ -165,56 +151,21 @@ export async function submitAttempt(user: CurrentUser, lessonId: string, workspa
 
   const parsedChecks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
   if (!parsedChecks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada. Avise seu professor." };
-  const compiled = compileProject(workspace);
-  const result = checkProject(compiled, parsedChecks.data);
+  const result = checkProject(compileProject(workspace), parsedChecks.data);
   const xpGained = await recordProgress(user, lesson.id, lesson.xp, result.passed, result.stars, {
     workspace,
     result: { passed: result.passed, stars: result.stars, items: result.items },
-  });
-  const extraPassed = checkExtra(lesson, compiled);
-  let extra: ExtraOutcome = null;
-  if (extraPassed !== null) {
-    // vale depois de a missão estar concluída (agora ou antes: o extra pode pedir outro programa);
-    // o XP bônus vem uma única vez (updateMany com extraDone: false evita contar duas vezes)
-    const won = extraPassed
-      ? (await db.progress.updateMany({ where: { userId: user.id, lessonId: lesson.id, status: "CONCLUIDO", extraDone: false }, data: { extraDone: true } })).count === 1
-      : false;
-    if (won) await db.user.update({ where: { id: user.id }, data: { xp: { increment: EXTRA_XP } } });
-    const done = won || (await db.progress.findUnique({ where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } }, select: { extraDone: true } }))?.extraDone === true;
-    extra = { done, xpGained: won ? EXTRA_XP : 0 };
-  }
-  return { ok: true, result, xpGained, newBadges: await awardBadges(user), extra };
-}
-
-/** Missões feitas no PictoBlox: o aluno envia o .sb3 e o servidor verifica a estrutura do projeto. */
-export async function submitSb3Attempt(user: CurrentUser, lessonId: string, bytes: Uint8Array): Promise<AttemptOutcome> {
-  const { lesson, locked } = await getStudentLesson(user, lessonId);
-  if (locked) return { ok: false, error: "Conclua a lição anterior primeiro." };
-  if (lesson.mode === "EDITOR" || lesson.type === "TEORIA" || lesson.type === "DEMO") return { ok: false, error: "Esta lição é feita aqui no site, no editor de blocos." };
-  const parsedChecks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
-  if (!parsedChecks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada. Avise seu professor." };
-
-  let result: CheckResult;
-  try {
-    result = checkModel(await modelFromSb3(bytes), parsedChecks.data);
-  } catch (err) {
-    if (err instanceof Sb3Error) return { ok: false, error: err.message };
-    throw err;
-  }
-  const xpGained = await recordProgress(user, lesson.id, lesson.xp, result.passed, result.stars, {
-    workspace: null,
-    result: { passed: result.passed, stars: result.stars, items: result.items, origem: "sb3", bytes: bytes.byteLength },
   });
   return { ok: true, result, xpGained, newBadges: await awardBadges(user) };
 }
 
 /** Lições de teoria/demonstração: concluir é só marcar como lida. */
 export async function completeTheory(user: CurrentUser, lessonId: string) {
-  const { lesson, locked } = await getStudentLesson(user, lessonId);
+  const { lesson, locked, nextLessonId } = await getStudentLesson(user, lessonId);
   if (locked) return { ok: false as const, error: "Conclua a lição anterior primeiro." };
   if (lesson.type !== "TEORIA" && lesson.type !== "DEMO") return { ok: false as const, error: "Resolva o exercício para concluir." };
   const xpGained = await recordProgress(user, lesson.id, lesson.xp, true, 3, null);
-  return { ok: true as const, xpGained, newBadges: await awardBadges(user) };
+  return { ok: true as const, xpGained, newBadges: await awardBadges(user), nextLessonId, trackId: lesson.module.track.id };
 }
 
 async function recordProgress(
@@ -296,7 +247,7 @@ export async function listCatalogCourses(user: CurrentUser) {
         orderBy: [{ level: "asc" }, { order: "asc" }],
         select: {
           id: true, title: true, description: true, level: true,
-          modules: { select: { lessons: { where: { draft: false }, select: { mode: true, type: true, optional: true } } } },
+          modules: { select: { lessons: { where: { draft: false }, select: { type: true } } } },
         },
       },
     },
@@ -365,9 +316,9 @@ export async function getCatalogLesson(user: CurrentUser, lessonId: string) {
 }
 
 /** O professor resolvendo junto com a turma: verifica igual ao aluno, mas NÃO grava progresso nem XP. */
-export async function previewAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<{ ok: true; result: CheckResult; extra: ExtraOutcome } | { ok: false; error: string }> {
+export async function previewAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<{ ok: true; result: CheckResult } | { ok: false; error: string }> {
   const { lesson } = await getCatalogLesson(user, lessonId);
-  if (lesson.type === "TEORIA" || lesson.mode === "SB3") return { ok: false, error: "Esta lição não tem exercício no editor." };
+  if (lesson.type === "TEORIA") return { ok: false, error: "Esta lição não tem exercício no editor." };
   if (typeof workspaceJson !== "string" || workspaceJson.length > MAX_WORKSPACE_BYTES) return { ok: false, error: "Programa grande demais." };
   let workspace: ReturnType<typeof normalizeProject>;
   try {
@@ -379,8 +330,5 @@ export async function previewAttempt(user: CurrentUser, lessonId: string, worksp
   }
   const checks = checksSchema.safeParse(lesson.checks ?? { checks: [] });
   if (!checks.success) return { ok: false, error: "Esta lição está com a verificação mal configurada." };
-  const compiled = compileProject(workspace);
-  const result = checkProject(compiled, checks.data);
-  const extraPassed = checkExtra(lesson, compiled);
-  return { ok: true, result, extra: extraPassed === null ? null : { done: extraPassed, xpGained: 0 } };
+  return { ok: true, result: checkProject(compileProject(workspace), checks.data) };
 }

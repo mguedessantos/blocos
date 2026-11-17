@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BookOpen, Circle, CircleCheck, CircleX, Flag, LocateFixed, Sparkles, Square, Lightbulb, RotateCcw, X } from "lucide-react";
+import { ArrowRight, BookOpen, Circle, CircleCheck, CircleX, Flag, LocateFixed, Lightbulb, RotateCcw, X } from "lucide-react";
 import { BadgeIcon } from "@/components/badge-icon";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
@@ -15,7 +15,7 @@ import { BlockPreview } from "./block-preview";
 import { ScratchFrame, type ScratchFrameHandle } from "./scratch-frame";
 
 export type VerifyOutcome =
-  | { ok: true; passed: boolean; stars: number; summary: string; items: CheckItem[]; xpGained: number; newBadges?: { id: string; name: string; icon: string }[]; extra?: { done: boolean; xpGained: number } | null }
+  | { ok: true; passed: boolean; stars: number; summary: string; items: CheckItem[]; xpGained: number; newBadges?: { id: string; name: string; icon: string }[] }
   | { ok: false; error: string };
 
 type Props = {
@@ -29,12 +29,8 @@ type Props = {
   /** Barra do topo (mundo, lição, título) e a missão/instruções, mostradas na coluna da esquerda. */
   header?: ReactNode;
   mission?: ReactNode;
-  extra?: ReactNode;
   /** "aula": professor resolvendo na projeção; o rascunho fica só neste computador (nada vai para o servidor). */
   mode?: "aluno" | "aula";
-  /** O desafio extra tem verificação: mostra a caixinha e o XP bônus. `extraDone`: já foi feito antes. */
-  extraBonus?: number;
-  extraDone?: boolean;
   /** Objetivos da missão (de `objectivesOf`): marcados sozinhos enquanto o aluno monta. */
   objectives?: { goal: string; bonus: boolean }[];
   /** Checagens da lição, para marcar os objetivos ao vivo. Só mostra; quem dá estrelas é o Verificar (servidor). */
@@ -68,7 +64,7 @@ function legacyDraft(key: string): unknown {
   }
 }
 
-export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, extra, mode = "aluno", aside, objectives, checks, extraBonus, extraDone }: Props) {
+export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref, verify, header, mission, mode = "aluno", aside, objectives, checks }: Props) {
   const aula = mode === "aula";
   // a chave muda quando o projeto inicial da lição muda: rascunhos da versão antiga deixam de abrir
   const starterTag = useMemo(() => [...JSON.stringify(starter ?? null)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 0).toString(36), [starter]);
@@ -249,15 +245,10 @@ export function LessonPlayer({ lessonId, allowedBlocks, starter, saved, nextHref
           )}
         </div>
 
-        {/* Coluna da direita: missão, desafio extra e Verificar */}
+        {/* Coluna da direita: missão e Verificar */}
         <aside className="max-h-[40dvh] space-y-3 overflow-y-auto border-t-2 border-line p-3 lg:max-h-none lg:border-l-2 lg:border-t-0" aria-label="Missão">
           {mission && <div className="clay p-4 text-[0.95rem]">{mission}</div>}
         {objectives && objectives.length > 0 && <Objectives objectives={objectives} items={live} verified={verified} />}
-          {extra && (
-          <ExtraChallenge bonus={extraBonus} done={!!extraDone || (outcome?.ok === true && !!outcome.extra?.done)}>
-            {extra}
-          </ExtraChallenge>
-        )}
           {!ran && (
           <p className="flex items-center gap-2 rounded-2xl border-2 border-dashed border-line px-3 py-2 text-sm font-bold text-muted">
             <Flag aria-hidden className="h-4 w-4 shrink-0 text-go" /> Clique na bandeira verde para testar seu programa. Depois, o Verificar fica liberado.
@@ -319,24 +310,6 @@ function Objectives({ objectives, items, verified }: { objectives: { goal: strin
   );
 }
 
-/** Desafio extra (opcional). Com verificação, vira uma caixinha que fica marcada quando o aluno faz. */
-function ExtraChallenge({ bonus, done, children }: { bonus?: number; done: boolean; children: ReactNode }) {
-  const Icon = done ? CircleCheck : bonus ? Square : Sparkles;
-  return (
-    <details className={`clay group p-4 ${done ? "border-go" : ""}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 font-extrabold">
-        <Icon aria-hidden className={`h-5 w-5 shrink-0 ${done ? "text-go" : "text-star"}`} /> Desafio extra (opcional)
-        {bonus ? <span className="rounded-full bg-star px-2 py-0.5 text-xs font-extrabold text-night">+{bonus} XP</span> : null}
-        <span className="sr-only">{done ? " (feito)" : ""}</span>
-        <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">›</span>
-      </summary>
-      <div className="mt-3">{children}</div>
-      {bonus && !done ? <p className="mt-2 text-sm font-bold text-muted">Depois de concluir a missão, mude o programa para fazer o desafio e clique em Verificar.</p> : null}
-      {done ? <p className="mt-2 text-sm font-extrabold text-go">Desafio extra feito!</p> : null}
-    </details>
-  );
-}
-
 export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref: string | null }) {
   if (!outcome.ok) return <p role="alert" className="rounded-2xl border-2 border-[#ff6b6b] bg-surface px-4 py-3 text-sm font-bold">{outcome.error}</p>;
   return (
@@ -346,11 +319,6 @@ export function Result({ outcome, nextHref }: { outcome: VerifyOutcome; nextHref
         {outcome.xpGained > 0 && <span className="rounded-full bg-star px-3 py-1 font-display font-extrabold text-night">+{outcome.xpGained} XP!</span>}
       </div>
       <p className="font-display text-xl font-extrabold">{outcome.summary}</p>
-      {outcome.extra?.done && (
-        <p className="flex items-center gap-3 rounded-2xl border-2 border-star px-4 py-2 font-extrabold">
-          <Sparkles aria-hidden className="h-6 w-6 text-star" /> Desafio extra feito!{outcome.extra.xpGained > 0 && ` +${outcome.extra.xpGained} XP bônus`}
-        </p>
-      )}
       {outcome.newBadges?.map((b) => (
         <p key={b.id} className="flex items-center gap-3 rounded-2xl border-2 border-star px-4 py-2 font-extrabold">
           <BadgeIcon name={b.icon} className="h-8 w-8 text-amber-500" /> Nova medalha: {b.name}!

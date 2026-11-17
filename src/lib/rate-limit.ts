@@ -34,11 +34,6 @@ export async function clear(scope: string, id: string) {
   await db.rateLimit.deleteMany({ where: { key } });
 }
 
-/** Limpeza ocasional de contadores vencidos. */
-export async function sweep() {
-  await db.rateLimit.deleteMany({ where: { resetAt: { lt: new Date() } } });
-}
-
 const MIN = 60_000;
 export const LIMITS = {
   staffPerEmail: [10, 15 * MIN],

@@ -83,7 +83,7 @@ export async function getSchoolDashboard(user: CurrentUser) {
         teacher: { select: { name: true } },
         enrollments: { where: { user: { deletedAt: null, active: true } }, select: { userId: true } },
         courses: {
-          select: { course: { select: { tracks: { where: { published: true }, select: { modules: { select: { lessons: { where: { draft: false, optional: false }, select: { id: true } } } } } } } } },
+          select: { course: { select: { tracks: { where: { published: true }, select: { modules: { select: { lessons: { where: { draft: false }, select: { id: true } } } } } } } } },
         },
       },
     }),

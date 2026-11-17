@@ -338,13 +338,3 @@ export function checkProject(project: ProjectProgram, checks: Checks): CheckResu
 export function check(program: Program, checks: Checks): CheckResult {
   return checkProject(singleSpriteProject(program), checks);
 }
-
-/** Verificação de um projeto .sb3 (só checagens estáticas). */
-export function checkModel(model: StaticModel, checks: Checks): CheckResult {
-  const items = checks.checks.flatMap((spec) => {
-    if (spec.type === "visits") return spec.points.map((p) => ({ ok: false, bonus: !!spec.bonus, goal: p.goal, message: "Esta parte só pode ser verificada no editor do site." }));
-    const r = evaluateStatic(spec, model);
-    return r ? item(spec, r) : { ok: false, bonus: !!spec.bonus, message: "Esta parte só pode ser verificada no editor do site." };
-  });
-  return finish(items);
-}

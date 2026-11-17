@@ -175,7 +175,7 @@ export default async function PlataformaPage(props: PageProps<"/plataforma">) {
       <Card className="overflow-hidden p-0">
         <div className="p-5">
           <h2 className="text-xl font-extrabold">Progresso por trilha</h2>
-          <p className="text-sm font-semibold text-muted">Alunos das escolas filtradas · só lições obrigatórias (as extras do PictoBlox ficam de fora).</p>
+          <p className="text-sm font-semibold text-muted">Alunos das escolas filtradas.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">

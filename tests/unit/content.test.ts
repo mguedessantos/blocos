@@ -22,14 +22,7 @@ describe("currículo oficial", () => {
     expect(OFFICIAL_TRACKS.map((tr) => tr.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     expect(new Set(OFFICIAL_TRACKS.map((tr) => tr.level))).toEqual(new Set([1, 2, 3]));
     for (const tr of OFFICIAL_TRACKS) expect(tr.story, tr.slug).toBeTruthy();
-    const required = OFFICIAL_TRACKS.at(-1)!.modules.flatMap((m) => m.lessons).filter((l) => !l.optional);
-    expect(required.at(-1)!.slug).toBe("projeto-final");
-  });
-
-  it("o site vem primeiro: nenhuma lição obrigatória depende do PictoBlox", () => {
-    for (const l of lessons) {
-      if (l.mode === "SB3") expect(l.optional, `${l.slug} é do PictoBlox e não pode ser obrigatória`).toBe(true);
-    }
+    expect(OFFICIAL_TRACKS.at(-1)!.modules.flatMap((m) => m.lessons).at(-1)!.slug).toBe("projeto-final");
   });
 
   it("não menciona robótica nem inteligência artificial", () => {
@@ -42,8 +35,6 @@ describe("currículo oficial", () => {
     for (const op of l.allowedBlocks ?? []) expect(BLOCKS_BY_OPCODE.has(op), op).toBe(true);
     if (!isExercise(l)) return;
     const checks = checksSchema.parse(l.checks);
-
-    expect(l.mode, `${l.slug}: missões do PictoBlox (.sb3) saíram do currículo`).not.toBe("SB3");
 
     const solution = SOLUTIONS[l.slug];
     expect(solution, `falta a solução de referência (export const teste) em ${l.slug}`).toBeDefined();
@@ -84,7 +75,7 @@ import { OFFICIAL_COURSES } from "../../content/cursos";
 describe("cursos oficiais", () => {
   it("o primeiro curso reúne os 11 mundos; o de Arduino está “em breve” e vazio", () => {
     const [intro, arduino] = OFFICIAL_COURSES;
-    expect(intro.title).toBe("PictoBlox e Introdução à Programação de Blocos");
+    expect(intro.title).toBe("Introdução à Programação de Blocos");
     expect(intro.tracks).toHaveLength(11);
     expect(intro.comingSoon).toBeFalsy();
     expect(arduino.title).toBe("Arduino e PictoBlox");
@@ -118,9 +109,6 @@ describe("quem anda não termina onde começou (senão parece que não se mexeu)
 
 // ───────────── Regras das missões ─────────────
 describe("missões", () => {
-  it("nenhuma lição tem desafio extra", () => {
-    expect(lessons.filter((l) => l.extra || l.extraChecks).map((l) => l.slug)).toEqual([]);
-  });
   it("toda missão tem checklist de objetivos", () => {
     for (const l of lessons.filter(isExercise)) expect(objectivesOf(l.checks).length, l.slug).toBeGreaterThan(0);
   });

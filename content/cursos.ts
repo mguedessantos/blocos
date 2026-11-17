@@ -14,8 +14,8 @@ export type CourseContent = {
 export const OFFICIAL_COURSES: CourseContent[] = [
   {
     slug: "pictoblox-introducao-programacao-blocos",
-    title: "PictoBlox e Introdução à Programação de Blocos",
-    description: "Do primeiro bloco até a game jam: 11 mundos com lições no site e missões extras no PictoBlox.",
+    title: "Introdução à Programação de Blocos",
+    description: "Do primeiro bloco até a game jam: 11 mundos, um jogo em cada, tudo no editor do site.",
     order: 1,
     tracks: OFFICIAL_TRACKS,
   },

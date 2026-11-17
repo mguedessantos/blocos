@@ -111,7 +111,7 @@ test("certificado de trilha concluída para o aluno e o professor", async ({ bro
     join "Module" m on m.id = l."moduleId" join "Track" t on t.id = m."trackId"
     join "Organization" o on o.slug = 'escola-demo' join "User" u on u."organizationId" = o.id and u.username = 'bruno'
     where t.slug = (select slug from "Track" where "organizationId" is null and published order by level, "order" limit 1)
-      and t."organizationId" is null and not l.draft and not l.optional`);
+      and t."organizationId" is null and not l.draft`);
   for (const r of rows) {
     await db.query(
       `insert into "Progress" (id, "userId", "lessonId", status, stars, attempts, "updatedAt") values (gen_random_uuid()::text, $1, $2, 'CONCLUIDO', 3, 1, now())

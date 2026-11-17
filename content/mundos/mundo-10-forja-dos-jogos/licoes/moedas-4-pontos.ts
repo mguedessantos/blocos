@@ -22,10 +22,10 @@ A variável **pontos** já existe. Na **Moeda**:
   checks: {
     maxSeconds: 4,
     checks: [
-      { type: "inScript", hat: [FLAG], opcodes: ["data_setvariableto"], label: "Zere os pontos quando a bandeira for clicada" },
-      { type: "inside", parent: IFS, child: ["data_changevariableby"], label: "Some pontos quando a moeda tocar no herói" },
-      { type: "variableAtLeast", name: "pontos", min: 1, message: "A primeira moeda cai em cima do Bloquinho: os pontos precisam subir." },
-      { type: "playedSound", sound: "moeda", bonus: true, message: "Bônus: toque o som Moeda ao pegar." },
+      { type: "inScript", hat: [FLAG], opcodes: ["data_setvariableto"], label: "Zere os pontos quando a bandeira for clicada", goal: "Na bandeira: **mude pontos para 0**" },
+      { type: "inside", parent: IFS, child: ["data_changevariableby"], label: "Some pontos quando a moeda tocar no herói", goal: "Tocou no Bloquinho: **+1 ponto**" },
+      { type: "variableAtLeast", name: "pontos", min: 1, message: "A primeira moeda cai em cima do Bloquinho: os pontos precisam subir.", goal: "A primeira moeda vale **1 ponto**" },
+      { type: "playedSound", sound: "moeda", message: "Toque o som Moeda quando pegar a moeda.", goal: "Toque o som **Moeda** ao pegar" },
     ],
   },
   guide: {

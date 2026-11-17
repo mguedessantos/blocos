@@ -5,7 +5,7 @@
 import ASSETS from "../sb3/assets.json";
 
 export type CharacterId =
-  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio" | "raquete" | "muro";
+  | "bloquinho" | "moeda" | "estrela" | "glitch" | "nave" | "meteoro" | "bola" | "bandeira" | "parede" | "botao" | "coracao" | "fruta" | "raio" | "raquete" | "muro" | "gomo" | "cabeca";
 
 export type Character = {
   id: CharacterId;
@@ -34,6 +34,8 @@ export const DRAWN_CHARACTERS: Record<CharacterId, Character> = {
   fruta: { id: "fruta", name: "Fruta", costumes: ["maçã", "banana"], radius: 14 },
   raio: { id: "raio", name: "Raio", costumes: ["vermelho", "roxo"], radius: 8 },
   raquete: { id: "raquete", name: "Raquete", costumes: ["azul", "laranja"], radius: 48, box: { w: 96, h: 14 } },
+  cabeca: { id: "cabeca", name: "Cabeça", costumes: ["verde", "amarela"], radius: 7, box: { w: 14, h: 14 } }, // cabeça da cobrinha (do tamanho de um gomo)
+  gomo: { id: "gomo", name: "Gomo", costumes: ["verde", "amarelo"], radius: 7, box: { w: 14, h: 14 } }, // pedaço do corpo da cobrinha (14 px com o contorno: 6 px de folga entre gomos vizinhos)
   muro: { id: "muro", name: "Muro", costumes: ["pedra", "tijolo"], radius: 48, box: { w: 96, h: 14 } }, // pedaço de parede do labirinto
 };
 
@@ -69,16 +71,6 @@ export const SOUNDS = {
   derrota: "Derrota",
 } as const;
 export type SoundId = keyof typeof SOUNDS;
-
-export const KEYS: [label: string, value: string][] = [
-  ["espaço", "space"],
-  ["seta para cima", "up arrow"],
-  ["seta para baixo", "down arrow"],
-  ["seta para a direita", "right arrow"],
-  ["seta para a esquerda", "left arrow"],
-  ["qualquer tecla", "any"],
-  ...("abcdefghijklmnopqrstuvwxyz".split("").map((c) => [c, c] as [string, string])),
-];
 
 export const isCharacter = (v: unknown): v is CharacterId => typeof v === "string" && v in CHARACTERS;
 export const isBackdrop = (v: unknown): v is BackdropId => typeof v === "string" && v in BACKDROPS;

@@ -11,10 +11,10 @@ Até agora, só o Bloquinho estava no palco. A partir de agora você pode ter **
 
 ## No painel “Atores e palco”
 
-- **+ Ator**: escolhe um personagem novo (moeda, estrela, Glitch, nave...).
+- **Selecione um Ator** (o botão redondo com uma carinha, no canto da lista de atores): escolhe um personagem novo (moeda, estrela, Glitch, nave...).
 - Clique em um ator para ver e montar **os blocos dele**. Cada ator tem o **seu próprio código**!
 - Arraste os atores no palco para escolher **onde eles começam**.
-- **Palco**: escolha os **cenários** (fundos) com o botão **Cenário**.
+- **Selecionar Cenário** (o botão redondo com uma imagem, embaixo de **Palco**, à direita): escolhe os **cenários** (fundos).
 
 ## Fantasias e sons
 

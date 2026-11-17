@@ -70,6 +70,12 @@ describe("motor de jogo", () => {
     expect(s.vars.pontos).toBeGreaterThanOrEqual(1);
   });
 
+  it("tecla segurada repete o evento depois de 0,5 s, como o teclado do computador", () => {
+    const run = (to: number) => new World(compiled({ sprites: [{ code: [[whenKey("up arrow"), b_changeY(10)]] }] })).runToEnd(2, [{ key: "up arrow", from: 0.1, to }]).targets[0].y;
+    expect(run(0.3)).toBe(10); // toque curto: um passo só
+    expect(run(1.1)).toBeGreaterThan(100); // segurando 1 s: repete
+  });
+
   it("raquete colide como caixa, não como círculo", () => {
     const bola = (name: string, x: number, y: number) =>
       ({ name, character: "bola" as const, x, y, code: [[flag(), iff(touching("Raquete"), setVar(name, n1()))]] });

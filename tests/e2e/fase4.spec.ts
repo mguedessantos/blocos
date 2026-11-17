@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { expect, test, type Page } from "@playwright/test";
-import { changeX, flag, project, whenKey } from "../../src/lib/blocks/build";
+import { Client } from "pg";
+import { changeX, project, whenKey } from "../../src/lib/blocks/build";
 
 const ESCOLA = "http://escola-demo.localhost:3000";
 const run = Date.now().toString(36);
@@ -26,7 +27,8 @@ async function openWithProgram(page: Page, state: object) {
 }
 
 /** O editor de blocos (iframe) abriu com o projeto. */
-const editorFrame = (page: Page) => page.frameLocator("iframe[title='Editor de blocos']");
+// só o visível: o Next guarda a lição anterior escondida (para o voltar), com o editor dela
+const editorFrame = (page: Page) => page.locator("iframe[title='Editor de blocos']").filter({ visible: true }).first().contentFrame();
 async function editorReady(page: Page) {
   await expect(editorFrame(page).locator(".blocklySvg").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Abrindo o editor de blocos")).toBeHidden({ timeout: 30_000 });
@@ -69,80 +71,99 @@ async function teacherCreatesStudent(page: Page, className: string, studentName:
   return cred;
 }
 
-/** Abre a 1ª lição de exercício do Mundo 1 (“Ande 100 passos”), concluindo as teorias se preciso. */
-async function openFirstExercise(page: Page) {
-  await page.getByRole("link", { name: "Ver trilha Mundo 1 · Vila do Palco" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /Vila do Palco/ })).toBeVisible();
-  if (await page.getByLabel("Ande 100 passos (trancada)").count()) {
-    const conheca = page.getByRole("link", { name: /Conheça o Bloquinho/ });
-    await ((await conheca.count()) ? conheca : page.getByRole("link", { name: /A Grande Pane/ })).click();
-    const heading = page.getByRole("heading", { level: 1 });
-    while (!(await heading.innerText()).includes("Ande 100 passos")) {
-      await page.getByRole("button", { name: /Entendi|Continuar/ }).click();
-      await page.waitForLoadState("networkidle");
-    }
-    return;
+/**
+ * Abre uma lição oficial pelo slug, como o aluno. As lições anteriores da mesma trilha ficam concluídas direto no banco:
+ * estes testes são sobre o editor, não sobre a ordem do currículo (essa é coberta em "aluno faz a trilha").
+ */
+async function openLesson(page: Page, username: string, slug: string) {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  const { rows } = await db.query(
+    `select l.id, l.slug, u.id student from "Lesson" l
+       join "Module" m on m.id = l."moduleId" join "Track" t on t.id = m."trackId"
+       join "User" u on u.username = $1 and u."organizationId" = (select id from "Organization" where slug = 'escola-demo')
+     where t."organizationId" is null and t.published and not l.draft
+       and t.id = (select m2."trackId" from "Lesson" l2 join "Module" m2 on m2.id = l2."moduleId" join "Track" t2 on t2.id = m2."trackId"
+                   where l2.slug = $2 and not l2.draft and t2."organizationId" is null and t2.published limit 1)
+     order by m."order", l."order"`,
+    [username, slug],
+  );
+  const target = rows.findIndex((r) => r.slug === slug);
+  for (const r of rows.slice(0, target)) {
+    await db.query(
+      `insert into "Progress" (id, "userId", "lessonId", status, stars, attempts, "updatedAt") values (gen_random_uuid()::text, $1, $2, 'CONCLUIDO', 3, 1, now())
+       on conflict ("userId", "lessonId") do update set status = 'CONCLUIDO'`,
+      [r.student, r.id],
+    );
   }
-  await page.getByRole("link", { name: /Ande 100 passos/ }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Ande 100 passos" })).toBeVisible();
+  await db.end();
+  await page.goto(`${ESCOLA}/aluno/licoes/${rows[target].id}`);
 }
 
-test("aluno faz a trilha no site: teoria, erra, acerta, ganha XP e libera a próxima", async ({ page, browser }) => {
-  test.setTimeout(60_000); // fluxo longo; sob carga do conjunto completo passa de 30 s
+/** Verifica no site e espera o resultado (o Verificar só libera depois de rodar o programa). */
+async function runAndVerify(page: Page) {
+  await greenFlag(page).click();
+  await page.getByRole("button", { name: "Verificar", exact: true }).click();
+}
+
+test("aluno faz a trilha no site: teorias, ator, cenário, erra, acerta, ganha XP e libera a próxima", async ({ page, browser }) => {
+  test.setTimeout(120_000); // fluxo longo; sob carga do conjunto completo passa de 60 s
   const cred = await teacherCreatesStudent(page, `Trilha ${run}`, "Iara", "Introdução à Programação de Blocos");
 
   const ctx = await browser.newContext();
   const kid = await ctx.newPage();
   await loginStudent(kid, cred.code, cred.username, cred.password);
-  await expect(kid.getByRole("heading", { name: "PictoBlox e Introdução à Programação de Blocos" })).toBeVisible();
-  await expect(kid.getByText(/0 de 14 lições/)).toBeVisible();
+  await expect(kid.getByRole("heading", { name: "Introdução à Programação de Blocos" })).toBeVisible();
+  await expect(kid.getByText(/0 de 17 lições/)).toBeVisible();
 
+  // teorias: "Entendi" leva à próxima lição
   await kid.getByRole("link", { name: "Ver trilha Mundo 1 · Vila do Palco" }).click();
-  await expect(kid.getByLabel("Ande 100 passos (trancada)")).toBeVisible();
+  await expect(kid.getByLabel("Um novo ator (trancada)")).toBeVisible();
   await kid.getByRole("link", { name: /A Grande Pane/ }).click();
-  await kid.getByRole("button", { name: /Entendi/ }).click();
-  await expect(kid.getByRole("heading", { level: 1, name: "Conheça o Bloquinho" })).toBeVisible();
-  await kid.getByRole("button", { name: /Entendi/ }).click();
+  for (const next of ["Conheça o Bloquinho", "Conheça o editor", "Um novo ator"]) {
+    await kid.getByRole("button", { name: /Entendi/ }).click();
+    await expect(kid.getByRole("heading", { level: 1, name: next })).toBeVisible();
+  }
+
+  // colocar um ator e um cenário pelos botões da biblioteca, como o texto da missão ensina
+  const result = kid.getByRole("status", { name: "Resultado da verificação" });
+  const ed = editorFrame(kid);
+  await editorReady(kid);
+  await ed.locator('[class*="sprite-selector"] [class*="action-menu_main-button"]').first().click();
+  await ed.getByText("Estrela", { exact: true }).first().click();
+  await expect(ed.locator('[class*="sprite-selector-item_sprite-name"]', { hasText: "Estrela" })).toBeVisible();
+  await runAndVerify(kid);
+  await expect(result).toContainText("Perfeito");
+  await kid.getByRole("link", { name: "Próxima lição" }).click();
+  await expect(kid.getByRole("heading", { level: 1, name: "Um novo cenário" })).toBeVisible();
+
+  await editorReady(kid);
+  await ed.locator('[class*="stage-selector"] [class*="action-menu_main-button"]').first().click();
+  await ed.getByText("Floresta", { exact: true }).first().click();
+  await runAndVerify(kid);
+  await expect(result).toContainText("Perfeito");
+  await kid.getByRole("link", { name: "Próxima lição" }).click();
   await expect(kid.getByRole("heading", { level: 1, name: "Ande 100 passos" })).toBeVisible();
 
   // programa errado → sem estrelas e dica amigável
-  const result = kid.getByRole("status", { name: "Resultado da verificação" });
   await openWithProgram(kid, program(move(10)));
-  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
-  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
+  await runAndVerify(kid);
   await expect(result).toContainText("Quase lá");
   await expect(result).toContainText("x: 100");
 
   // programa certo → 3 estrelas, XP e botão para a próxima
   await openWithProgram(kid, program(move(100)));
-  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
-  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
+  await runAndVerify(kid);
   await expect(result).toContainText("Perfeito");
   await expect(result.getByLabel("3 de 3 estrelas")).toBeVisible();
   await expect(kid.getByText("+10 XP!")).toBeVisible();
-
-  // desafio extra (outro programa, depois da missão): caixinha marcada e XP bônus uma vez só
-  await kid.getByRole("button", { name: "Ficar nesta lição" }).click();
-  await openWithProgram(kid, program(move(200), move(40)));
-  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
-  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
-  await expect(result).toContainText("Desafio extra feito! +10 XP bônus");
-  await kid.getByRole("button", { name: "Voltar aos blocos" }).click(); // a missão em si não passa com este programa
-  await expect(kid.getByText("Desafio extra feito!", { exact: true })).toBeAttached();
-  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
-  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
-  await expect(result).toContainText("Desafio extra feito!");
-  await expect(result).not.toContainText("XP bônus");
-  await openWithProgram(kid, program(move(100)));
-  await kid.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click();
-  await kid.getByRole("button", { name: "Verificar", exact: true }).click();
-  await expect(result).toContainText("Perfeito");
   await kid.getByRole("link", { name: "Próxima lição" }).click();
   await expect(kid.getByRole("heading", { level: 1, name: "Virando a esquina" })).toBeVisible();
 
+  // 3 teorias (5 XP cada) + 3 exercícios (10 XP cada)
   await kid.goto(`${ESCOLA}/aluno`);
-  await expect(kid.getByText(/3 de 14 lições/)).toBeVisible();
-  await expect(kid.getByText("30 XP", { exact: true })).toBeVisible(); // + 10 do desafio extra
+  await expect(kid.getByText(/6 de 17 lições/)).toBeVisible();
+  await expect(kid.getByText("45 XP", { exact: true })).toBeVisible();
   await ctx.close();
 });
 
@@ -155,7 +176,7 @@ test("lição inexistente ou fora das trilhas do aluno dá 404", async ({ page }
 test("arrastar um bloco de verdade e clicar na bandeira move o personagem", async ({ page }) => {
   test.setTimeout(60_000);
   await loginStudent(page, "ROBO42", "bruno", "gato123");
-  await openFirstExercise(page);
+  await openLesson(page, "bruno", "primeiros-passos"); // "Ande 100 passos"
   await editorReady(page);
   // o projeto salvo pode ter blocos de execuções anteriores: volta ao inicial
   page.once("dialog", (d) => d.accept());
@@ -184,8 +205,7 @@ test("arrastar um bloco de verdade e clicar na bandeira move o personagem", asyn
   await expect(spriteX(page)).toHaveValue("10");
 
   // ao verificar, o projeto completo (.sb3) fica guardado no servidor para abrir em outro computador
-  await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
-  await page.getByRole("button", { name: "Verificar", exact: true }).click();
+  await runAndVerify(page);
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toBeVisible();
   const lessonId = new URL(page.url()).pathname.split("/").pop();
   await expect.poll(() => page.evaluate(async (u) => (await fetch(u)).status, `/api/licoes/${lessonId}/projeto`)).toBe(200);
@@ -193,17 +213,10 @@ test("arrastar um bloco de verdade e clicar na bandeira move o personagem", asyn
 
 test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ page }) => {
   await loginStudent(page, "ROBO42", "clara", "gato123");
-  await page.getByRole("link", { name: "Ver trilha Mundo 6 · Cidade dos Comandos" }).click();
-  const setas = page.getByRole("link", { name: /Setas do teclado/ });
-  if (!(await setas.isVisible())) {
-    await page.getByRole("link", { name: /Quem começa o código/ }).click();
-    await page.getByRole("button", { name: /Entendi|Continuar/ }).click();
-  } else {
-    await setas.click();
-  }
-  await expect(page.getByRole("heading", { level: 1, name: "Setas do teclado" })).toBeVisible();
+  await openLesson(page, "clara", "glitch-para-a-direita"); // Mundo 4: "Fuja para a direita"
+  await expect(page.getByRole("heading", { level: 1, name: "Fuja para a direita" })).toBeVisible();
 
-  const game = project({ sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(10)], [whenKey("left arrow"), changeX(-10)], [flag()]] }] });
+  const game = project({ sprites: [{ name: "Bloquinho", code: [[whenKey("right arrow"), changeX(20)]] }] });
   await openWithProgram(page, game);
   await greenFlag(page).click();
   await editorFrame(page).locator('[class*="stage_stage"] canvas').first().click({ position: { x: 20, y: 20 } }); // o palco recebe o teclado
@@ -211,10 +224,9 @@ test("jogo no site: controlar o Bloquinho com o teclado e verificar", async ({ p
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(80);
   }
-  await expect(spriteX(page)).toHaveValue("30");
+  await expect(spriteX(page)).toHaveValue("60");
 
-  await page.frameLocator("iframe[title='Editor de blocos']").locator("[class*='green-flag_green-flag']").click(); // Verificar só depois de rodar
-  await page.getByRole("button", { name: "Verificar", exact: true }).click();
+  await runAndVerify(page);
   await expect(page.getByRole("status", { name: "Resultado da verificação" })).toContainText("Perfeito");
 });
 

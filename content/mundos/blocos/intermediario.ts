@@ -1,7 +1,6 @@
 // Listas de blocos e ajudantes compartilhados por várias lições.
 
 export const FLAG = "event_whenflagclicked";
-export const IFS = ["control_if", "control_if_else"];
 
 export const CONTROLE = [
   FLAG, "event_whenkeypressed", "event_whenthisspriteclicked", "motion_movesteps", "motion_ifonedgebounce", "motion_changexby", "motion_changeyby", "motion_gotoxy",

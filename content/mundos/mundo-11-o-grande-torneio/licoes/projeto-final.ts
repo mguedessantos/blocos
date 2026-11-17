@@ -1,5 +1,5 @@
 import { BROADCAST, CONTROLS, IFS, RECEIVE, TODOS } from "../../blocos/avancado";
-import { backdrop, broadcast, changeVar, changeX, changeY, createClone, flag, forever, game, gotoXY, hide, iff, keyPressed, n, random, show, sound, whenClone, whenReceive } from "../../../../src/lib/blocks/build";
+import { backdrop, broadcast, changeVar, changeX, changeY, flag, forever, game, gotoXY, iff, keyPressed, n, random, sound, whenReceive } from "../../../../src/lib/blocks/build";
 import { coinBottom, touchingHero } from "../../teste";
 import type { LessonTest, LessonContent } from "../../tipos";
 
@@ -25,23 +25,21 @@ Quando terminar, clique em **Verificar**. Na game jam de verdade, vocês vão en
   checks: {
     maxSeconds: 5,
     checks: [
-      { type: "sprites", min: 3 },
-      { type: "backdrops", min: 2 },
-      { type: "usesAnyBlock", opcodes: [...CONTROLS, "sensing_mousedown", "event_whenthisspriteclicked", "motion_pointtowards"], label: "O jogador controla o jogo (teclado ou mouse)" },
-      { type: "variables", min: 1 },
-      { type: "usesAnyBlock", opcodes: BROADCAST, label: "Use mensagens entre atores" },
-      { type: "usesBlock", opcode: RECEIVE },
-      { type: "inside", parent: ["control_forever"], child: IFS, label: "Tenha um ciclo de jogo (“se” dentro de “sempre”)" },
-      { type: "sounds", min: 1 },
-      { type: "usesAnyBlock", opcodes: ["control_create_clone_of"], label: "Bônus: use clones", bonus: true },
-      { type: "backdrops", min: 3, bonus: true, message: "Bônus: tenha telas de início, jogo e fim." },
+      { type: "sprites", min: 3, message: "O jogo precisa de pelo menos 3 atores (botão Selecione um Ator, a carinha no canto da lista de atores).", goal: "Pelo menos **3 atores**" },
+      { type: "backdrops", min: 2, message: "O jogo precisa de pelo menos 2 cenários (botão Selecionar Cenário, embaixo de Palco).", goal: "Pelo menos **2 cenários**" },
+      { type: "usesAnyBlock", opcodes: [...CONTROLS, "sensing_mousedown", "event_whenthisspriteclicked", "motion_pointtowards"], label: "O jogador controla o jogo (teclado ou mouse)", goal: "**Controles** pelo teclado ou mouse" },
+      { type: "variables", min: 1, message: "Crie uma variável para o placar, as vidas ou o tempo.", goal: "Um **placar**, **vidas** ou **tempo** (variável)" },
+      { type: "usesAnyBlock", opcodes: BROADCAST, label: "Use transmita para mandar um recado entre atores", goal: "**Mensagens**: transmita..." },
+      { type: "usesBlock", opcode: RECEIVE, message: "Use quando eu receber para algum ator reagir ao recado.", goal: "**Mensagens**: ... e quando eu receber" },
+      { type: "inside", parent: ["control_forever"], child: IFS, label: "Tenha um ciclo de jogo (se dentro de sempre)", goal: "Um **ciclo de jogo** (se dentro de sempre)" },
+      { type: "sounds", min: 1, message: "Toque pelo menos um som no jogo.", goal: "**Sons**" },
     ],
   },
   guide: {
     objetivo: "Aplicar tudo em uma jam de treino, em equipe, com tema e tempo.",
     minutos: 120,
     passos: [
-      "Anuncie o tema e o tempo total (sugestão: 2–3 aulas).",
+      "Anuncie o tema e o tempo total (sugestão: 2 ou 3 aulas).",
       "Marque checkpoints: fim da 1ª aula = ideia + lista do mínimo + atores; fim da 2ª = jogo jogável; 3ª = capricho e testes.",
       "No fim, faça uma mostra: cada equipe apresenta em 2 minutos e as outras jogam.",
       "Use os critérios da jam (diversão, tema, criatividade, capricho) para dar feedback.",
@@ -58,6 +56,6 @@ export const teste: LessonTest = {
   solucao: { backdrops: ["inicio", "floresta", "fim"], variables: ["pontos"], sprites: [
   { name: "Bloquinho", y: -140, code: [[flag(), backdrop("floresta"), forever(iff(keyPressed("right arrow"), changeX(6)), iff(keyPressed("left arrow"), changeX(-6)))], [whenReceive("pegou"), sound("moeda"), changeVar("pontos", n(1))]] },
   { name: "Moeda", character: "moeda", y: 170, code: [[flag(), gotoXY(0, 170), forever(changeY(-5), iff(touchingHero(), broadcast("pegou"), gotoXY(random(-200, 200), 170)), coinBottom())]] },
-  { name: "Glitch", character: "glitch", x: 150, code: [[flag(), hide(), createClone()], [whenClone(), show()]] },
+  { name: "Glitch", character: "glitch", x: 150 },
   ] },
 };

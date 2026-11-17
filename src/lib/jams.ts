@@ -5,14 +5,6 @@ import { cityKey } from "./br";
 
 export type JamPhase = "RASCUNHO" | "EM_BREVE" | "EM_ANDAMENTO" | "JULGAMENTO" | "ENCERRADA";
 
-export const PHASE_LABEL: Record<JamPhase, string> = {
-  RASCUNHO: "Rascunho",
-  EM_BREVE: "Inscrições abertas",
-  EM_ANDAMENTO: "Em andamento",
-  JULGAMENTO: "Em julgamento",
-  ENCERRADA: "Encerrada",
-};
-
 type Dates = { published: boolean; startsAt: Date; endsAt: Date; judgingEndsAt: Date };
 
 /** Fase pelo relógio do SERVIDOR (o navegador só mostra a contagem). */
@@ -167,7 +159,6 @@ export const DEFAULT_CRITERIA = [
 // ───────────── Categorias por ano escolar ─────────────
 
 export const SCHOOL_YEARS = [2, 3, 4, 5, 6, 7, 8, 9] as const;
-export const yearLabel = (y: number) => `${y}º ano`;
 
 export type CategoryRange = { name: string; minYear: number; maxYear: number };
 

@@ -40,8 +40,8 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
               <th className="sticky left-0 z-10 bg-white px-2 text-left">Aluno</th>
               {data.lessons.map((l, i) => (
                 <th key={l.id} scope="col" title={l.title} className="w-9 text-center text-xs font-bold text-muted">
-                  {l.optional ? "★" : i + 1}
-                  <span className="sr-only"> {l.title}{l.optional ? " (extra)" : ""}</span>
+                  {i + 1}
+                  <span className="sr-only"> {l.title}</span>
                 </th>
               ))}
               <th className="px-2 text-right">Feitas</th>
@@ -62,7 +62,7 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
                     <td
                       key={c.lessonId}
                       title={`${lesson.title}: ${label}`}
-                      className={`h-9 w-9 rounded-lg text-center text-xs font-extrabold ${CELL[level]} ${lesson.optional ? "opacity-70" : ""} ${!c.done && c.attempts >= 3 ? "ring-2 ring-amber-500" : ""}`}
+                      className={`h-9 w-9 rounded-lg text-center text-xs font-extrabold ${CELL[level]} ${!c.done && c.attempts >= 3 ? "ring-2 ring-amber-500" : ""}`}
                     >
                       {c.done ? c.stars : c.attempts ? "·" : ""}
                       <span className="sr-only">{label}</span>
@@ -85,7 +85,6 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
         <span><span className="inline-block h-3 w-3 rounded bg-lime-300 align-middle" /> 2</span>
         <span><span className="inline-block h-3 w-3 rounded bg-amber-200 align-middle" /> 1</span>
         <span>· tentou e ainda não concluiu</span>
-        <span>★ missão extra (PictoBlox)</span>
       </p>
     </div>
   );

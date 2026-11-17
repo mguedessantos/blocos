@@ -8,7 +8,7 @@ export const licao: LessonContent = {
   type: "EXERCICIO",
   content: `## Etapa 1: os personagens
 
-1. Adicione uma **Moeda** (botão **+ Ator**) e arraste para o alto do palco.
+1. Adicione uma **Moeda** (botão **Selecione um Ator**) e arraste para o alto do palco.
 2. Arraste o **Bloquinho** para baixo: ele é o herói.
 3. Adicione o cenário **Floresta** e, quando a bandeira for clicada, **mude para o cenário Floresta**.`,
   allowedBlocks: TODOS,
@@ -16,9 +16,9 @@ export const licao: LessonContent = {
   checks: {
     maxSeconds: 1,
     checks: [
-      { type: "sprites", min: 2, message: "Adicione a Moeda com o botão “+ Ator”." },
-      { type: "backdrops", min: 2, message: "Adicione o cenário Floresta com o botão “Cenário”." },
-      { type: "backdropIs", backdrop: "floresta" },
+      { type: "sprites", min: 2, message: "Adicione a Moeda com o botão Selecione um Ator (a carinha no canto da lista de atores).", goal: "Adicione a **Moeda** (botão **Selecione um Ator**)" },
+      { type: "backdrops", min: 2, message: "Adicione o cenário Floresta com o botão Selecionar Cenário (a imagem embaixo de Palco).", goal: "Adicione o cenário **Floresta**" },
+      { type: "backdropIs", backdrop: "floresta", message: "Quando a bandeira for clicada, mude para o cenário Floresta.", goal: "Na bandeira: **mude para o cenário Floresta**" },
     ],
   },
   guide: {

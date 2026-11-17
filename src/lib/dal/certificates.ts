@@ -35,7 +35,7 @@ export async function getCertificate(user: CurrentUser, trackId: string, student
       id: trackId, published: true,
       course: { published: true, comingSoon: false, assignments: { some: { class: { archived: false, enrollments: { some: { userId: student.id } } } } } },
     },
-    select: { title: true, course: { select: { title: true } }, modules: { select: { lessons: { where: { draft: false, optional: false }, select: { id: true } } } } },
+    select: { title: true, course: { select: { title: true } }, modules: { select: { lessons: { where: { draft: false }, select: { id: true } } } } },
   });
   if (!track) throw new AccessError("Certificado não encontrado.");
   const lessonIds = track.modules.flatMap((m) => m.lessons.map((l) => l.id));

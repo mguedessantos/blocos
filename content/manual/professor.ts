@@ -8,7 +8,7 @@ export const PROFESSOR: ManualChapter[] = [
     slug: "primeiro-acesso",
     title: "Primeiro acesso",
     body: `
-Bem-vindo(a) à plataforma! Aqui seus alunos aprendem programação em blocos, primeiro no próprio site e depois levando os projetos para o PictoBlox. Você acompanha tudo de perto.
+Bem-vindo(a) à plataforma! Aqui seus alunos aprendem programação em blocos criando jogos, direto no editor do site. Você acompanha tudo de perto.
 
 ## Como entrar
 1. Abra o endereço da plataforma (ou o endereço da sua escola).
@@ -80,7 +80,7 @@ Na lista **Alunos**, marque o(s) aluno(s) e clique em **Gerar novas senhas e car
     slug: "curriculo",
     title: "Mundos, aulas e cursos",
     body: `
-O curso **PictoBlox e Introdução à Programação de Blocos** tem 11 mundos em três níveis: Básico, Intermediário e Avançado. Cada mundo tem lições no site e uma missão extra opcional no PictoBlox.
+O curso **Introdução à Programação de Blocos** tem 11 mundos em três níveis: Básico, Intermediário e Avançado. Cada mundo ensina um conceito e termina com um jogo, tudo no editor do site.
 
 ![Página do currículo com os mundos por nível](prof-curriculo)
 
@@ -127,7 +127,7 @@ A tela ocupa a janela inteira, sem precisar rolar:
 - **À esquerda, o editor**: as categorias de blocos, a área onde o aluno monta o programa, o palco com a **bandeira verde** (roda o programa) e o **botão vermelho** (para), e a lista de atores e cenários.
 - **Abas Código, Fantasias e Sons**: o aluno pode desenhar fantasias, mudar cores e gravar ou escolher sons, como no Scratch.
 - **Escolher um ator ou cenário**: mostra primeiro os personagens da plataforma e depois os da biblioteca do editor (pessoas, animais, esportes e mais).
-- **À direita**: a missão, o **Desafio extra (opcional)** e o botão **Verificar**.
+- **À direita**: a missão, os **Objetivos** (cada item fica marcado quando o aluno consegue) e o botão **Verificar**.
 - No topo: **Recomeçar** (volta ao projeto inicial da lição) e **Como funciona cada bloco**.
 
 > Dica: em cada lição, a paleta mostra só os blocos que aquela lição ensina. Os outros aparecem nos mundos seguintes.
@@ -151,11 +151,6 @@ No editor, **Arquivo → Baixar para o seu computador** salva o projeto como **.
 
 ## XP, níveis e medalhas
 Cada lição concluída dá XP. O XP sobe o nível do aluno (de Aprendiz de Blocos até Lenda do Torneio), e as conquistas viram medalhas, como "Primeiro passo", "De primeira!" e "Pronto(a) para a Jam".
-
-## Missões extras no PictoBlox
-No fim de cada mundo há uma missão **opcional** para fazer no PictoBlox. O aluno salva o projeto (**Arquivo → Salvar no seu computador**), envia o arquivo **.sb3** na lição e a plataforma confere.
-
-> Dica: as missões no PictoBlox nunca bloqueiam o caminho. Quem não tem o PictoBlox segue normalmente pelo site.
 `,
   },
   {
@@ -169,7 +164,6 @@ Na página da turma, o **Progresso da turma** mostra um mapa: cada linha é um a
 ## Como ler o mapa
 - **Verde forte**: 3 estrelas. **Verde claro**: 2. **Amarelo**: 1.
 - **·**: o aluno tentou e ainda não concluiu.
-- **★** no topo: missão extra (PictoBlox).
 - Troque de mundo pelos botões acima do mapa.
 
 ## Quem precisa de ajuda

@@ -16,7 +16,7 @@ describe("níveis", () => {
   });
 });
 
-const lesson = (o: Partial<{ type: string; mode: string; optional: boolean; trackId: string }> = {}) => ({ type: "EXERCICIO", mode: "EDITOR", optional: false, trackId: "t1", ...o });
+const lesson = (o: Partial<{ type: string; trackId: string }> = {}) => ({ type: "EXERCICIO", trackId: "t1", ...o });
 const done = (o: Partial<{ stars: number; attempts: number }> = {}, l = lesson()) => ({ status: "CONCLUIDO", stars: 3, attempts: 1, ...o, lesson: l });
 
 describe("medalhas", () => {
@@ -34,14 +34,11 @@ describe("medalhas", () => {
     expect(earnedBadges(statsFrom([], tracks))).toEqual([]);
   });
 
-  it("primeira lição, persistência e PictoBlox", () => {
-    const s = statsFrom(
-      [done({ attempts: 4, stars: 2 }), done({}, lesson({ optional: true, mode: "SB3" })), { status: "EM_ANDAMENTO", stars: 0, attempts: 9, lesson: lesson() }],
-      tracks,
-    );
-    expect(s).toMatchObject({ completed: 2, persistent: 1, pictoblox: 1, exercisesFirstTry: 1 });
-    expect(earnedBadges(s)).toEqual(expect.arrayContaining(["primeiro-passo", "persistente", "explorador-pictoblox"]));
-    expect(earnedBadges(s)).not.toContain("primeiro-mundo"); // a extra não conta para terminar a trilha
+  it("primeira lição e persistência", () => {
+    const s = statsFrom([done({ attempts: 4, stars: 2 }), { status: "EM_ANDAMENTO", stars: 0, attempts: 9, lesson: lesson() }], tracks);
+    expect(s).toMatchObject({ completed: 1, persistent: 1 });
+    expect(earnedBadges(s)).toEqual(expect.arrayContaining(["primeiro-passo", "persistente"]));
+    expect(earnedBadges(s)).not.toContain("primeiro-mundo"); // falta 1 das 2 lições da trilha
   });
 
   it("terminar trilhas e o nível inteiro", () => {

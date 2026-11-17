@@ -20,6 +20,6 @@ Quando o tema sair:
     objetivo: "Transformar um tema em uma ideia de jogo com escopo realista.",
     minutos: 20,
     passos: ["Treino com tema surpresa e 10 minutos para a equipe apresentar a ideia em 1 frase.", "Peça a “lista do mínimo” de cada equipe e ajude a cortar o excesso."],
-    errosComuns: ["Lista do mínimo com 10 itens: o mínimo deve caber em 3–4 itens."],
+    errosComuns: ["Lista do mínimo com 10 itens: o mínimo deve caber em 3 ou 4 itens."],
   },
 };

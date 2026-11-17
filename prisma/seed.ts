@@ -198,13 +198,10 @@ async function main() {
       if (mod.title !== m.title) await db.module.update({ where: { id: mod.id }, data: { title: m.title } });
       for (const [li, l] of m.lessons.entries()) {
         const lesson = {
-          title: l.title, type: l.type, mode: l.mode ?? "EDITOR", order: li, content: l.content, xp: l.xp ?? 10,
+          title: l.title, type: l.type, order: li, content: l.content, xp: l.xp ?? 10,
           teacherGuide: l.guide ? guideMarkdown(l.guide) : null,
-          extra: l.extra ?? null,
-          extraChecks: l.extraChecks ?? Prisma.DbNull,
           allowedBlocks: l.allowedBlocks ?? [],
           starterWorkspace: l.starter ?? (l.startWithFlag ? FLAG_STARTER : Prisma.DbNull),
-          optional: l.optional ?? false,
           checks: l.checks ?? Prisma.DbNull,
           draft: false,
         };
@@ -221,6 +218,8 @@ async function main() {
   }
 
   // Catálogo de medalhas (regras em src/lib/gamification.ts)
+  // medalhas que saíram do catálogo somem (e das contas que as tinham, pelo cascade)
+  await db.badge.deleteMany({ where: { id: { notIn: BADGES.map((b) => b.id) } } });
   for (const { id, name, description, icon } of BADGES) {
     await db.badge.upsert({ where: { id }, update: { name, description, icon }, create: { id, name, description, icon } });
   }

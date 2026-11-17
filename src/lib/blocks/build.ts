@@ -57,7 +57,6 @@ export const deleteClone = () => b("control_delete_this_clone");
 export const hide = () => b("looks_hide");
 export const show = () => b("looks_show");
 export const backdrop = (id: string) => b("looks_switchbackdropto", {}, { BACKDROP: id });
-export const pen = () => b("pen_penDown");
 
 // variáveis: ids "v_<nome>"
 export const setVar = (name: string, v: In[string]) => b("data_setvariableto", { VALUE: v }, { VARIABLE: { id: `v_${name}` } });
@@ -95,8 +94,6 @@ export const timer = () => b("sensing_timer");
 export const resetTimer = () => b("sensing_resettimer");
 export const roundOf = (v: BlocklyBlock) => b("operator_round", { NUM: r(v) });
 export const join = (a: In[string], z: In[string]) => b("operator_join", { STRING1: a, STRING2: z });
-export const setY = (y: number) => b("motion_sety", { Y: n(y) });
-export const setX = (x: number | BlocklyBlock) => b("motion_setx", { X: typeof x === "number" ? n(x) : r(x) });
 export const rotationLR = () => b("motion_setrotationstyle", {}, { STYLE: "left-right" });
 export const effect = (e: "color" | "ghost", by: number) => b("looks_changeeffectby", { CHANGE: n(by) }, { EFFECT: e });
 export const playUntilDone = (s: string) => b("sound_playuntildone", {}, { SOUND_MENU: s });

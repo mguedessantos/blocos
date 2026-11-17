@@ -28,7 +28,9 @@ export function Markdown({ source }: { source: string }) {
         if (lines.every((l) => /^\s*([-*]|\d+\.)\s+/.test(l))) {
           const ordered = /^\s*\d+\./.test(lines[0]);
           const items = lines.map((l, j) => <li key={j}>{inline(l.replace(/^\s*([-*]|\d+\.)\s+/, ""))}</li>);
-          return ordered ? <ol key={i} className="list-decimal space-y-1 pl-6">{items}</ol> : <ul key={i} className="list-disc space-y-1 pl-6">{items}</ul>;
+          // lista que continua outra ("8. ...") começa no número escrito
+          const start = ordered ? Number(/^\s*(\d+)\./.exec(lines[0])![1]) : 1;
+          return ordered ? <ol key={i} start={start} className="list-decimal space-y-1 pl-6">{items}</ol> : <ul key={i} className="list-disc space-y-1 pl-6">{items}</ul>;
         }
         const h = /^(#{1,3})\s+(.*)$/.exec(lines[0]);
         if (h && lines.length === 1) {

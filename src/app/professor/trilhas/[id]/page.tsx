@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, GraduationCap, Map as MapIcon, Presentation, Rocket, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, GraduationCap, Map as MapIcon, Presentation } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LESSON_KIND } from "@/components/lesson-icon";
@@ -47,7 +47,7 @@ export default async function TrilhaProfessorPage(props: PageProps<"/professor/t
             const kind = LESSON_KIND[l.type];
             const Icon = kind.icon;
             const min = minutesOf(l.teacherGuide);
-            const where = l.mode === "SB3" ? " · PictoBlox (opcional)" : l.optional ? " · opcional" : l.type === "TEORIA" ? "" : " · editor do site";
+            const where = l.type === "TEORIA" ? "" : " · editor do site";
             return (
               <details key={l.id} className="clay group overflow-hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
@@ -58,7 +58,6 @@ export default async function TrilhaProfessorPage(props: PageProps<"/professor/t
                     <span className="block text-xs font-extrabold uppercase tracking-wide text-muted">{number.get(l.id)}. {kind.label}{where}</span>
                     <span className="block font-extrabold">{l.title}</span>
                   </span>
-                  {l.mode === "SB3" && <Rocket aria-label="Missão no PictoBlox" className="h-5 w-5 text-brand" />}
                   <Link href={`/professor/licoes/${l.id}`} className={buttonClass("primary", "sm")} title="Abrir como o aluno vê, para resolver junto com a turma">
                     <Presentation aria-hidden className="h-4 w-4" /> Dar aula
                   </Link>
@@ -71,12 +70,6 @@ export default async function TrilhaProfessorPage(props: PageProps<"/professor/t
                   <div>
                     <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">O que o aluno vê</p>
                     <Markdown source={l.content} />
-                    {l.extra && (
-                      <div className="mt-4 rounded-2xl bg-amber-50 p-4">
-                        <p className="mb-1 flex items-center gap-1 text-sm font-extrabold text-amber-800"><Sparkles aria-hidden className="h-4 w-4" /> Desafio extra</p>
-                        <Markdown source={l.extra} />
-                      </div>
-                    )}
                   </div>
                   <div className="rounded-2xl bg-brand-soft p-4">
                     <p className="mb-2 flex items-center gap-1 text-xs font-extrabold uppercase tracking-wide text-brand-shadow">

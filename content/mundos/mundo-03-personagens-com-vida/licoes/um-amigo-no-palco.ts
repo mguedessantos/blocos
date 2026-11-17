@@ -8,7 +8,7 @@ export const licao: LessonContent = {
   type: "EXERCICIO",
   content: `## Missão: um diálogo entre dois atores
 
-1. Clique em **+ Ator** e escolha um amigo para o Bloquinho (a **Estrela**, por exemplo).
+1. Clique em **Selecione um Ator** (a carinha no canto da lista de atores) e escolha um amigo para o Bloquinho (a **Estrela**, por exemplo).
 2. No **Bloquinho**: quando a bandeira for clicada → **diga “Oi, tudo bem?” por 2 segundos**.
 3. No **amigo**: quando a bandeira for clicada → **espere 2 segundos** → **diga “Tudo ótimo!” por 2 segundos**.
 
@@ -17,7 +17,7 @@ export const licao: LessonContent = {
   starter: game({ sprites: [{ name: "Bloquinho", x: -100, code: [[flag()]] }] }),
   checks: {
     checks: [
-      { type: "sprites", min: 2, message: "Adicione um amigo com o botão “+ Ator”.", goal: "Adicione um **amigo** no palco" },
+      { type: "sprites", min: 2, message: "Adicione um amigo com o botão Selecione um Ator (a carinha no canto da lista de atores).", goal: "Adicione um **amigo** no palco" },
       { type: "usesAnyBlock", opcodes: ["looks_sayforsecs", "looks_say"], min: 2, label: "Os dois atores precisam falar (um bloco “diga” em cada)", goal: "Os **dois atores** falam (um **diga** em cada)" },
       { type: "usesBlock", opcode: "control_wait", message: "Use uma espera para o amigo responder depois.", goal: "Use **espere** para o amigo responder depois" },
     ],

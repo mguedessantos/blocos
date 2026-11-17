@@ -2,7 +2,7 @@
 // É o que o aluno salva, o que o servidor verifica e o que será exportado como .sb3.
 // Toda entrada vem do navegador: `normalizeProject` valida e limita tudo.
 
-import { BACKDROPS, CHARACTERS, isBackdrop, isCharacter, type BackdropId, type CharacterId } from "./library";
+import { CHARACTERS, isBackdrop, isCharacter, type BackdropId, type CharacterId } from "./library";
 import { programFromBlockly, type BlocklyState, type Program } from "./program";
 
 export type SpriteState = {
@@ -129,5 +129,3 @@ export function singleSpriteProject(program: Program): ProjectProgram {
     blockCount: program.blockCount,
   };
 }
-
-export const BACKDROP_IDS = Object.keys(BACKDROPS) as BackdropId[];

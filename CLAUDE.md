@@ -55,11 +55,11 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - O .sb3 completo do aluno fica no armazenamento privado (`Progress.projectKey`, rota `/api/licoes/[id]/projeto`) e no IndexedDB; abre o mais novo.
 
 ## Currículo (o site vem primeiro)
-- 11 mundos em 3 níveis (`content/mundos/`), um minijogo por mundo. Toda habilidade é ensinada e verificada NO EDITOR DO SITE (as missões do PictoBlox saíram do currículo).
+- 11 mundos em 3 níveis (`content/mundos/`), um minijogo por mundo. Toda habilidade é ensinada e verificada NO EDITOR DO SITE.
 - Não mencionar robótica nem IA no conteúdo (o teste de conteúdo confere).
 - Projetos do editor: `src/lib/blocks/project.ts` (vários atores + palco + variáveis globais); motor em `interpreter.ts` (`World`: teclas, cliques, mensagens, clones, sons). Biblioteca original de personagens/cenários/sons em `library.ts` + desenhos em `components/editor/art.ts`.
 - Objetivos da missão: `goal` em cada checagem (checagens com o mesmo `goal` viram um objetivo) e `visits` (pontos do caminho, na ordem; cada ponto é um objetivo). `objectivesOf` mostra a lista; os objetivos marcam sozinhos (checagem no navegador a cada mudança) e o ✗ só aparece depois de Verificar. O Verificar só libera depois de rodar o programa (mensagem `run` do editor). Mundo 1 já usa.
-- Desafio extra verificado: `extraChecks` na lição (4º argumento de `editor()`). Depois da missão concluída, se o programa passar no extra, `Progress.extraDone` e +`EXTRA_XP` uma vez só. Toda lição com `extraChecks` precisa de solução em `EXTRA_SOLUTIONS` (content.test).
+- Sem desafios extras nem missões opcionais (removidos do código e do banco em 2026-11-17): toda lição é obrigatória e feita no editor do site.
 - Lições de jogos usam `starter: game({...})` (de `src/lib/blocks/build.ts`) e podem simular teclas/cliques na verificação (`checks.inputs`).
 - `tests/unit/content.test.ts` exige: guia do professor em toda lição, solução de referência com 3 estrelas e que o projeto inicial NÃO passe sem o aluno fazer nada.
 - Depois de mudar o schema do Prisma, REINICIE o `npm run dev` (ele mantém o client antigo em memória).

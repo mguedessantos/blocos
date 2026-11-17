@@ -197,6 +197,34 @@
         "rotationCenterY": 100
       }
     ],
+    "cabeca": [
+      {
+        "name": "verde",
+        "md5ext": "f6d5af85882992f2d94ce956890b40fe.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      },
+      {
+        "name": "amarela",
+        "md5ext": "e56347154826a8b5aefa3393ac107c9e.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      }
+    ],
+    "gomo": [
+      {
+        "name": "verde",
+        "md5ext": "0932c6d0efa56d16383a978a0218ff53.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      },
+      {
+        "name": "amarelo",
+        "md5ext": "54cb46ff42da4836a0a41c391b229641.png",
+        "rotationCenterX": 100,
+        "rotationCenterY": 100
+      }
+    ],
     "muro": [
       {
         "name": "pedra",

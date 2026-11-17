@@ -19,7 +19,7 @@ test("professor dá aula: abre a lição como o aluno, verifica e nada é gravad
   await loginStaff(page, ESCOLA, "prof@aurora.dev", "senha123");
   await page.getByRole("link", { name: "Mundos e aulas" }).first().click();
   await page.getByRole("link", { name: /Vila do Palco/ }).click();
-  await page.getByRole("link", { name: "Dar aula" }).nth(2).click(); // 3ª lição: exercício no editor
+  await page.locator("details", { hasText: "Ande 100 passos" }).getByRole("link", { name: "Dar aula" }).click(); // exercício no editor
   await expect(page.getByText("Modo aula")).toBeVisible();
   await expect(page.frameLocator("iframe[title='Editor de blocos']").locator(".blocklySvg").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Abrindo o editor de blocos")).toBeHidden({ timeout: 30_000 });

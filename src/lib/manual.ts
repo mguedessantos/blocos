@@ -49,8 +49,6 @@ export function inlineParts(text: string): { text: string; bold: boolean }[] {
   return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((p) => (p.startsWith("**") ? { text: p.slice(2, -2), bold: true } : { text: p, bold: false }));
 }
 
-export const plain = (text: string) => text.replace(/\*\*/g, "");
-
 export function getGuide(slugName: string): ManualGuide | undefined {
   return GUIDES.find((g) => g.slug === slugName);
 }
@@ -75,6 +73,4 @@ export function guidesFor(role: Role): ManualGuide[] {
 /** Todas as imagens citadas (para conferir que existem e para o script de capturas). */
 export function imagesOf(guide: ManualGuide) {
   return guide.chapters.flatMap((c) => parseBlocks(c.body).filter((b): b is Extract<Block, { t: "img" }> => b.t === "img"));
-}
-
-export const MANUAL_IMAGE_DIR = "manual"; // public/manual/<id>.png
+} // public/manual/<id>.png

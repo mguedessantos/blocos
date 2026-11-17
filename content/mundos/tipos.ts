@@ -17,10 +17,6 @@ export type LessonContent = {
   slug: string;
   title: string;
   type: "TEORIA" | "DEMO" | "EXERCICIO" | "DESAFIO";
-  /** EDITOR = editor de blocos do site (padrão); SB3 = feito no PictoBlox e enviado como arquivo .sb3. */
-  mode?: "EDITOR" | "SB3";
-  /** Missão extra que não bloqueia a trilha (ex.: levar a habilidade ao PictoBlox). */
-  optional?: boolean;
   /** Projeto inicial (formato do editor); sobrescreve `startWithFlag`. */
   starter?: object;
   xp?: number;
@@ -32,10 +28,6 @@ export type LessonContent = {
   startWithFlag?: boolean;
   checks?: Checks;
   guide?: TeacherGuide;
-  /** Desafio extra opcional (markdown), para quem termina antes ou alunos mais velhos. */
-  extra?: string;
-  /** Verificação do desafio extra: quando passa, o aluno ganha XP bônus (uma vez). */
-  extraChecks?: Checks;
 };
 
 export type TrackContent = {

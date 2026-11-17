@@ -87,7 +87,7 @@ export default async function AlunoPage() {
                     <p className="font-display text-sm font-extrabold text-star">{rest.length ? label : `Mundo ${i + 1}`}</p>
                     <p className="font-display text-lg font-extrabold leading-tight">{rest.length ? rest.join(" · ") : t.title}</p>
                     <p className="mt-1 text-xs font-bold text-muted">
-                      {t.done} de {t.total} lições{t.extras ? ` · +${t.extras} extra${t.extras > 1 ? "s" : ""}` : ""}
+                      {t.done} de {t.total} lições
                     </p>
                     <div className="mx-auto mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-black/40" aria-hidden>
                       <div className="h-full rounded-full bg-star" style={{ width: `${t.total ? Math.round((100 * t.done) / t.total) : 0}%` }} />
