@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     ".data/**",
     // editor de blocos compilado (fork GPL, código em ../blocos-editor)
     "public/editor/**",
+    // kit da página inicial estática (skill taste, código de terceiros)
+    "public/inicio/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

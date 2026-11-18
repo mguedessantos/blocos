@@ -41,6 +41,11 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
   - Nomes de pasta seguem o número do site (mundo-07 = Mundo 7); os slugs no banco são os antigos (ex.: `mundo-6-observatorio-dos-sensores`) e NÃO podem mudar (identificam o progresso).
 - O estado do editor vai para a server action como string JSON (objetos do Blockly não serializam).
 
+## Página inicial pública (HTML estático)
+- `public/inicio/index.html` + kit da skill taste em `public/inicio/assets` (CSS/JS próprios, isolados do Tailwind do app). Edite o HTML direto; caminhos sempre absolutos (`/inicio/...`).
+- `src/proxy.ts` entrega essa página em `/` só no domínio da plataforma e sem sessão (rewrite, a URL continua `/`). Logado → painel; domínio de escola → escolha de entrada (`src/app/page.tsx`).
+- Capturas em `public/inicio/img/` (tiradas do localhost, logo trocado para Blocos). Com `BILLING_ENABLED="true"` a página não mostra "Preços": ajustar o HTML se ligar a cobrança.
+
 ## Cobrança desligada por padrão
 - `BILLING_ENABLED="false"` (padrão): sem preços, assinatura, banner de teste, bloqueio somente-leitura nem limites de plano; webhook do Stripe responde 404. White-label continua seguindo o plano da organização.
 - Para ligar: `BILLING_ENABLED="true"` no `.env` (testes de cobrança do Playwright só rodam assim; os unitários sempre ligam).

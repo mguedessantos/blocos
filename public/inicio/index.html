@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR" data-type="software" data-radius="soft" data-ground="sky" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blocos: curso de programação em blocos para escolas</title>
+<meta name="description" content="Alunos do 2º ao 9º ano criam 11 jogos no navegador, com lições que se corrigem sozinhas e um mapa de progresso para o professor.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blocos: curso de programação em blocos para escolas">
+<meta property="og:description" content="11 mundos, um jogo em cada, tudo no navegador.">
+<meta property="og:image" content="/inicio/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/inicio/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d0b2a">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:wght@400..800&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/inicio/assets/system.css">
+<link rel="stylesheet" href="/inicio/assets/ui/cards.css">
+<link rel="stylesheet" href="/inicio/assets/motion/motion.css">
+<link rel="stylesheet" href="/inicio/assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="/inicio/assets/layout/layout.css">
+<link rel="stylesheet" href="/inicio/assets/icons/icon.css">
+<style>
+:root {
+  --p-bg: #0d0b2a; --p-surface: #1b1745; --p-ink: #f4f1ff; --p-muted: #b9b2e6;
+  --p-accent: #ffd84d; --p-accent-ink: #0d0b2a; --p-action: #ffd84d; --p-action-ink: #0d0b2a;
+  --p-inv-bg: #f4f1ff; --p-inv-surface: #e1dfef; --p-inv-ink: #0d0b2a; --p-inv-muted: #585975;
+  --p-inv-accent: #0d0b2a; --p-inv-accent-ink: #f4f1ff; --p-inv-action: #0d0b2a; --p-inv-action-ink: #f4f1ff;
+  --font-display: "Baloo 2", system-ui, sans-serif;
+  --font-text: "Nunito", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 800;
+  --display-tracking: -0.01em;
+  --display-tracking-xl: -0.015em;
+  --ly-scale: 0.97;
+}
+</style>
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+<script src="/inicio/assets/backgrounds/backgrounds.js"></script>
+<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+<link rel="modulepreload" href="/inicio/assets/moments/moments.js">
+<link rel="modulepreload" href="/inicio/assets/moments/lib.js">
+<link rel="modulepreload" href="/inicio/assets/moments/liquid-type/moment.js">
+<style>
+  /* pedido do cliente: letras com mais peso, como no resto do site (Baloo 800 nos títulos, Nunito 600 a 800 no texto) */
+  body { font-weight: 600; }
+  h3, .t-card, .faq__item h3, .footer__col h3, .person__name { font-family: var(--font-display); font-weight: 800; }
+  .btn, .nav__link, .nav__logo, .t-label, .link, .step-num, .footer__col a { font-weight: 800; }
+  .nav__logo, .btn { font-family: var(--font-display); }
+  .t-lead, .hero__lead, .muted { font-weight: 700; }
+  /* peças da colagem do topo: capturas do produto e cartões pequenos com o que a tela mostra */
+  .ly-collage .ly-piece > img { object-position: left top; }
+  .ly-collage .pc-chip { background: var(--p-accent); color: var(--p-accent-ink); padding: 10px 14px; font-weight: 600; font-size: 15px; text-align: center; height: auto; }
+  .ly-collage .pc-card { background: #fff; color: #0d0b2a; padding: 14px 16px; display: grid; gap: 6px; font-size: 13px; line-height: 1.3; height: auto; }
+  .pc-card b { font-size: 15px; font-weight: 600; }
+  .pc-card .ok { display: flex; gap: 8px; align-items: center; }
+  .pc-card .ok::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: #2bd39e; }
+  /* a tela do editor, grande */
+  #editor .tela { border-radius: var(--r-lg); overflow: hidden; border: 1px solid rgb(255 255 255 / .12); }
+  #editor .tela img { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+  /* mundos */
+  #mundos .mundo { display: flex; flex-direction: row; gap: var(--s-4); align-items: center; padding: var(--s-4); }
+  #mundos .ilha { width: 72px; height: auto; flex: none; }
+  #mundos .mundo h3 { margin: 2px 0; }
+  #professor .frame img { object-fit: cover; object-position: left top; }
+  /* game jam: pódio e faixas */
+  #jam .panel { --p-h: 300px; display: grid; place-items: center; }
+  .podio { display: flex; align-items: end; gap: 12px; }
+  .podio span { width: 64px; border-radius: 12px 12px 0 0; display: grid; justify-content: center; padding-top: 8px; font-weight: 600; font-size: 24px; color: #0d0b2a; }
+  .faixas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 0 24px; }
+  .faixas span { background: #fff; color: #0d0b2a; border-radius: 99px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
+  @media (max-width: 639px) {
+    #mundos .grid { grid-template-columns: 1fr 1fr; }
+    #mundos .mundo { flex-direction: column; text-align: center; gap: 4px; padding: 12px; grid-column: auto; }
+    #mundos .mundo .t-small { display: none; }
+    #mundos .ilha { width: 48px; }
+    #jam .panel { --p-h: 150px; }
+  }
+  .anonimo { background: #fff; color: #0d0b2a; border-radius: 12px; padding: 16px 20px; display: grid; gap: 6px; width: min(260px, 80%); font-size: 15px; }
+  .anonimo b { font-family: var(--font-mono); font-size: 18px; }
+  .estudio { display: grid; gap: 6px; width: min(260px, 80%); }
+  .estudio i { font-style: normal; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+<!-- type: software
+     deal: hero triptych, nav nav-centre, close close-type, footer footer-statement, rhythm space, buttons solid, mark stack, grounds sky (lit ground)
+     palette: cores da marca (start.mjs brand: noite #0d0b2a, tinta #f4f1ff, destaque amarelo #ffd84d), fontes do site: Baloo 2 + Nunito (pedido do cliente)
+     moments: liquid-type na seção #frase -->
+
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">Pular para o conteúdo</a>
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>Blocos</a>
+    <nav class="nav__links" aria-label="Principal">
+      <div class="nav__item"><a class="nav__link" href="#editor">Editor</a></div>
+      <div class="nav__item"><a class="nav__link" href="#mundos">Mundos</a></div>
+      <div class="nav__item"><a class="nav__link" href="#professor">Professor</a></div>
+      <div class="nav__item"><a class="nav__link" href="#jam">Game jam</a></div>
+      <div class="nav__item"><a class="nav__link" href="#perguntas">Perguntas</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="nav__link" href="/entrar">Entrar</a>
+      <a class="btn btn--primary" href="/cadastro">Criar conta grátis</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--triptych" data-enter aria-labelledby="hero-h">
+    <div class="wrap"><div class="hero-text grid hero__grid">
+      <div class="span-3">
+        <h1 id="hero-h">Programação em blocos para escolas</h1>
+        <p class="hero__lead">Do 2º ao 9º ano, os alunos criam 11 jogos no navegador. Cada lição se corrige sozinha.</p>
+      </div>
+      <div class="ly-collage span-6 start-4" role="img" aria-label="O mapa dos mundos do aluno, uma lição no editor de blocos e o progresso da turma no painel do professor">
+        <div class="ly-collage__set is-on">
+          <div class="ly-piece" style="left: 4%; top: 6%; width: 78%; height: 62%"><img src="/inicio/img/mundos.png" alt=""></div>
+          <div class="ly-piece pc-chip" style="left: 62%; top: 74%; width: 30%">3 estrelas · +10 XP</div>
+          <div class="ly-piece pc-card" style="left: 10%; top: 74%; width: 44%"><b>Mundo 2 · Torre das Repetições</b><span>Lição 1 de 8 · Bola quicando</span></div>
+        </div>
+        <div class="ly-collage__set" aria-hidden="true">
+          <div class="ly-piece" style="left: 4%; top: 6%; width: 70%; height: 70%"><img src="/inicio/img/editor.png" alt=""></div>
+          <div class="ly-piece pc-card" style="left: 58%; top: 52%; width: 38%"><b>Objetivos</b><span class="ok">Pegue as 4 moedas</span><span class="ok">Veja a tela de CONCLUÍDO</span></div>
+        </div>
+        <div class="ly-collage__set" aria-hidden="true">
+          <div class="ly-piece" style="left: 4%; top: 8%; width: 84%; height: 40%"><img src="/inicio/img/progresso.png" alt=""></div>
+          <div class="ly-piece pc-card" style="left: 30%; top: 58%; width: 50%"><b>Certificado em PDF</b><span>Introdução à Programação de Blocos · 11 de 11 mundos</span></div>
+        </div>
+      </div>
+      <div class="span-3 start-10 hero__cta"><a class="btn btn--primary" href="/cadastro">Criar conta grátis</a></div>
+    </div></div>
+  </section>
+
+  <section class="section" id="editor" aria-labelledby="editor-h">
+    <div class="wrap">
+      <div class="grid">
+        <h2 class="span-5" id="editor-h">O editor de blocos, dentro do site</h2>
+        <div class="span-6 start-7 stack-4">
+          <p class="muted">O aluno lê a missão, monta os blocos, roda o jogo no palco e clica em Verificar. Os objetivos marcam sozinhos e a lição dá até 3 estrelas.</p>
+          <a class="link" href="#mundos">Ver os 11 mundos</a>
+        </div>
+      </div>
+      <div class="tela fill"><img src="/inicio/img/editor.png" alt="Lição do Mundo 1: blocos à esquerda, palco com o Bloquinho e quatro moedas, missão e objetivos à direita" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="section" id="mundos" style="--hm: 2" aria-labelledby="mundos-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="mundos-h">11 mundos, do primeiro bloco à game jam. <span class="muted">Cada um termina num jogo.</span></h2>
+      </div>
+      <div class="grid">
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(76,50,32)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(97,63,41)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(110,72,47)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#8a5a3b"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#55d97a"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(68,174,98)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(77,195,110)"></polygon><g><polygon points="84.0,62.4 101.6,71.2 101.6,53.2 84.0,44.4" fill="rgb(184,99,66)"></polygon><polygon points="101.6,71.2 117.6,63.2 117.6,45.2 101.6,53.2" fill="rgb(224,121,81)"></polygon><polygon points="100.0,36.4 117.6,45.2 101.6,53.2 84.0,44.4" fill="#ff8a5c"></polygon></g><g><polygon points="114.4,76.8 138.4,88.8 138.4,74.8 114.4,62.8" fill="rgb(184,156,55)"></polygon><polygon points="138.4,88.8 156.0,80.0 156.0,66.0 138.4,74.8" fill="rgb(224,190,68)"></polygon><polygon points="132.0,54.0 156.0,66.0 138.4,74.8 114.4,62.8" fill="#ffd84d"></polygon></g><rect x="127.6" y="49.2" width="22" height="8" rx="2" fill="#d6286f"></rect><g><polygon points="57.6,81.2 72.0,88.4 72.0,72.4 57.6,65.2" fill="rgb(88,132,184)"></polygon><polygon points="72.0,88.4 86.4,81.2 86.4,65.2 72.0,72.4" fill="rgb(107,162,224)"></polygon><polygon points="72.0,58.0 86.4,65.2 72.0,72.4 57.6,65.2" fill="#7ab8ff"></polygon></g><g><rect x="108.9" y="85.80000000000001" width="3" height="9" fill="#7a4a2a"></rect><circle cx="110.4" cy="80.80000000000001" r="7" fill="#3ddc84"></circle><circle cx="108.4" cy="78.80000000000001" r="3" fill="rgb(76,255,165)"></circle></g><g><rect x="132.1" y="79.8" width="3" height="9" fill="#7a4a2a"></rect><circle cx="133.6" cy="74.8" r="7" fill="#3ddc84"></circle><circle cx="131.6" cy="72.8" r="3" fill="rgb(76,255,165)"></circle></g></svg><div><p class="t-label muted">Mundo 1 · Básico</p><h3>Caça ao tesouro</h3><p class="t-small muted">Vila do Palco</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(50,41,76)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(64,52,97)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(73,59,110)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#5b4a8a"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#4fc2ff"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(63,155,204)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(71,175,230)"></polygon><g transform="translate(0 0)"><g><polygon points="80.8,80.0 100.0,89.6 100.0,74.6 80.8,65.0" fill="rgb(129,112,184)"></polygon><polygon points="100.0,89.6 119.2,80.0 119.2,65.0 100.0,74.6" fill="rgb(158,137,224)"></polygon><polygon points="100.0,55.4 119.2,65.0 100.0,74.6 80.8,65.0" fill="#b39cff"></polygon></g></g><g transform="translate(0 -15)"><g><polygon points="80.8,80.0 100.0,89.6 100.0,74.6 80.8,65.0" fill="rgb(100,78,184)"></polygon><polygon points="100.0,89.6 119.2,80.0 119.2,65.0 100.0,74.6" fill="rgb(122,95,224)"></polygon><polygon points="100.0,55.4 119.2,65.0 100.0,74.6 80.8,65.0" fill="#8b6cff"></polygon></g></g><g transform="translate(0 -30)"><g><polygon points="80.8,80.0 100.0,89.6 100.0,74.6 80.8,65.0" fill="rgb(129,112,184)"></polygon><polygon points="100.0,89.6 119.2,80.0 119.2,65.0 100.0,74.6" fill="rgb(158,137,224)"></polygon><polygon points="100.0,55.4 119.2,65.0 100.0,74.6 80.8,65.0" fill="#b39cff"></polygon></g></g><g transform="translate(0 -45)"><g><polygon points="80.8,80.0 100.0,89.6 100.0,74.6 80.8,65.0" fill="rgb(100,78,184)"></polygon><polygon points="100.0,89.6 119.2,80.0 119.2,65.0 100.0,74.6" fill="rgb(122,95,224)"></polygon><polygon points="100.0,55.4 119.2,65.0 100.0,74.6 80.8,65.0" fill="#8b6cff"></polygon></g></g><g transform="translate(0 -60)"><g><polygon points="80.8,80.0 100.0,89.6 100.0,74.6 80.8,65.0" fill="rgb(129,112,184)"></polygon><polygon points="100.0,89.6 119.2,80.0 119.2,65.0 100.0,74.6" fill="rgb(158,137,224)"></polygon><polygon points="100.0,55.4 119.2,65.0 100.0,74.6 80.8,65.0" fill="#b39cff"></polygon></g></g><g><rect x="54.50000000000001" y="65" width="3" height="9" fill="#7a4a2a"></rect><circle cx="56.00000000000001" cy="60" r="7" fill="#3ddc84"></circle><circle cx="54.00000000000001" cy="58" r="3" fill="rgb(76,255,165)"></circle></g><g><rect x="146.5" y="71" width="3" height="9" fill="#7a4a2a"></rect><circle cx="148" cy="66" r="7" fill="#3ddc84"></circle><circle cx="146" cy="64" r="3" fill="rgb(76,255,165)"></circle></g></svg><div><p class="t-label muted">Mundo 2</p><h3>Bola quicando</h3><p class="t-small muted">Torre das Repetições</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(67,35,61)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(85,44,77)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(98,50,88)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#7a3f6e"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#ff9ec7"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(204,126,159)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(230,142,179)"></polygon><g><ellipse cx="96" cy="62" rx="9" ry="4" fill="rgb(0 0 0 / 0.18)"></ellipse><rect x="89" y="40" width="14" height="18" rx="6" fill="#ffd84d"></rect><circle cx="93" cy="47" r="2" fill="#0d0b2a"></circle><circle cx="99" cy="47" r="2" fill="#0d0b2a"></circle></g><g><ellipse cx="128" cy="74" rx="9" ry="4" fill="rgb(0 0 0 / 0.18)"></ellipse><rect x="121" y="52" width="14" height="18" rx="6" fill="#4fc2ff"></rect><circle cx="125" cy="59" r="2" fill="#0d0b2a"></circle><circle cx="131" cy="59" r="2" fill="#0d0b2a"></circle></g><g><ellipse cx="88" cy="82" rx="9" ry="4" fill="rgb(0 0 0 / 0.18)"></ellipse><rect x="81" y="60" width="14" height="18" rx="6" fill="#2bd39e"></rect><circle cx="85" cy="67" r="2" fill="#0d0b2a"></circle><circle cx="91" cy="67" r="2" fill="#0d0b2a"></circle></g><g><ellipse cx="112" cy="94" rx="9" ry="4" fill="rgb(0 0 0 / 0.18)"></ellipse><rect x="105" y="72" width="14" height="18" rx="6" fill="#ff6b6b"></rect><circle cx="109" cy="79" r="2" fill="#0d0b2a"></circle><circle cx="115" cy="79" r="2" fill="#0d0b2a"></circle></g></svg><div><p class="t-label muted">Mundo 3</p><h3>Corrida animada</h3><p class="t-small muted">Personagens com Vida</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(61,50,32)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(77,63,41)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(88,72,46)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#6e5a3a"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#7be0a0"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(98,179,128)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(111,202,144)"></polygon><polygon points="133.6,56.8 146.4,63.2 66.4,103.2 53.6,96.8" fill="#3ab3ff"></polygon><g><polygon points="84.0,76.8 106.4,88.0 106.4,82.0 84.0,70.8" fill="rgb(145,99,54)"></polygon><polygon points="106.4,88.0 117.6,82.4 117.6,76.4 106.4,82.0" fill="rgb(177,121,66)"></polygon><polygon points="95.2,65.2 117.6,76.4 106.4,82.0 84.0,70.8" fill="#c98a4b"></polygon></g><g><polygon points="81.6,58.8 97.6,66.8 97.6,52.8 81.6,44.8" fill="rgb(184,156,55)"></polygon><polygon points="97.6,66.8 113.6,58.8 113.6,44.8 97.6,52.8" fill="rgb(224,190,68)"></polygon><polygon points="97.6,36.8 113.6,44.8 97.6,52.8 81.6,44.8" fill="#ffd84d"></polygon></g><g><polygon points="92.0,100.0 108.0,108.0 108.0,94.0 92.0,86.0" fill="rgb(184,99,66)"></polygon><polygon points="108.0,108.0 122.4,100.8 122.4,86.8 108.0,94.0" fill="rgb(224,121,81)"></polygon><polygon points="106.4,78.8 122.4,86.8 108.0,94.0 92.0,86.0" fill="#ff8a5c"></polygon></g><g><rect x="55.3" y="67" width="3" height="9" fill="#7a4a2a"></rect><circle cx="56.8" cy="62" r="7" fill="#3ddc84"></circle><circle cx="54.8" cy="60" r="3" fill="rgb(76,255,165)"></circle></g><g><rect x="146.5" y="71" width="3" height="9" fill="#7a4a2a"></rect><circle cx="148" cy="66" r="7" fill="#3ddc84"></circle><circle cx="146" cy="64" r="3" fill="rgb(76,255,165)"></circle></g></svg><div><p class="t-label muted">Mundo 4</p><h3>Desvie dos raios</h3><p class="t-small muted">O Ataque do Glitch</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(32,35,56)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(41,44,71)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(46,50,82)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#3a3f66"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#9aa7c7"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(123,134,159)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(139,150,179)"></polygon><g><polygon points="84.0,57.6 100.0,65.6 100.0,31.6 84.0,23.6" fill="rgb(57,140,184)"></polygon><polygon points="100.0,65.6 116.0,57.6 116.0,23.6 100.0,31.6" fill="rgb(70,171,224)"></polygon><polygon points="100.0,15.6 116.0,23.6 100.0,31.6 84.0,23.6" fill="#4fc2ff"></polygon></g><g><polygon points="108.0,69.6 124.0,77.6 124.0,27.6 108.0,19.6" fill="rgb(100,78,184)"></polygon><polygon points="124.0,77.6 141.6,68.8 141.6,18.8 124.0,27.6" fill="rgb(122,95,224)"></polygon><polygon points="125.6,10.8 141.6,18.8 124.0,27.6 108.0,19.6" fill="#8b6cff"></polygon></g><g><polygon points="128.0,82.0 142.4,89.2 142.4,63.2 128.0,56.0" fill="rgb(184,66,99)"></polygon><polygon points="142.4,89.2 158.4,81.2 158.4,55.2 142.4,63.2" fill="rgb(224,81,121)"></polygon><polygon points="144.0,48.0 158.4,55.2 142.4,63.2 128.0,56.0" fill="#ff5c8a"></polygon></g><g><polygon points="58.4,76.8 76.0,85.6 76.0,63.6 58.4,54.8" fill="rgb(184,156,55)"></polygon><polygon points="76.0,85.6 92.0,77.6 92.0,55.6 76.0,63.6" fill="rgb(224,190,68)"></polygon><polygon points="74.4,46.8 92.0,55.6 76.0,63.6 58.4,54.8" fill="#ffd84d"></polygon></g><g><polygon points="84.8,94.0 104.0,103.6 104.0,65.6 84.8,56.0" fill="rgb(31,152,114)"></polygon><polygon points="104.0,103.6 121.6,94.8 121.6,56.8 104.0,65.6" fill="rgb(38,186,139)"></polygon><polygon points="102.4,47.2 121.6,56.8 104.0,65.6 84.8,56.0" fill="#2bd39e"></polygon></g></svg><div><p class="t-label muted">Mundo 5 · Intermediário</p><h3>Pong</h3><p class="t-small muted">Ponte das Decisões</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(35,44,67)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(45,56,85)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(51,64,98)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#40507a"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#5fd4c4"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(76,170,157)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(86,191,176)"></polygon><g><polygon points="76.0,77.6 104.8,92.0 104.8,70.0 76.0,55.6" fill="rgb(156,158,176)"></polygon><polygon points="104.8,92.0 130.4,79.2 130.4,57.2 104.8,70.0" fill="rgb(191,194,216)"></polygon><polygon points="101.6,42.8 130.4,57.2 104.8,70.0 76.0,55.6" fill="#d9dcf5"></polygon></g><path d="M 78 48 A 26 22 0 0 1 130 48 Z" fill="#b9b2e6"></path><rect x="110" y="18" width="8" height="26" rx="3" transform="rotate(35 114 44)" fill="#7a55f5"></rect><g><rect x="50.5" y="67" width="3" height="9" fill="#7a4a2a"></rect><circle cx="52" cy="62" r="7" fill="#3ddc84"></circle><circle cx="50" cy="60" r="3" fill="rgb(76,255,165)"></circle></g><g><rect x="144.1" y="73.8" width="3" height="9" fill="#7a4a2a"></rect><circle cx="145.6" cy="68.8" r="7" fill="#3ddc84"></circle><circle cx="143.6" cy="66.8" r="3" fill="rgb(76,255,165)"></circle></g></svg><div><p class="t-label muted">Mundo 6</p><h3>Clique no Glitch</h3><p class="t-small muted">Cidade dos Comandos</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(76,58,23)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(97,74,29)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(110,85,34)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#8a6a2a"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#ffd84d"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(204,173,62)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(230,194,69)"></polygon><g><polygon points="72.8,77.6 104.8,93.6 104.8,61.6 72.8,45.6" fill="rgb(100,78,184)"></polygon><polygon points="104.8,93.6 132.0,80.0 132.0,48.0 104.8,61.6" fill="rgb(122,95,224)"></polygon><polygon points="100.0,32.0 132.0,48.0 104.8,61.6 72.8,45.6" fill="#8b6cff"></polygon></g><circle cx="122" cy="60" r="8" fill="#ffd84d" stroke="#0d0b2a" stroke-width="2"></circle><ellipse cx="56" cy="75" rx="6" ry="3.5" fill="#ffe680" stroke="#c99a1a"></ellipse><ellipse cx="60" cy="81" rx="6" ry="3.5" fill="#ffe680" stroke="#c99a1a"></ellipse><ellipse cx="106.4" cy="96.2" rx="6" ry="3.5" fill="#ffe680" stroke="#c99a1a"></ellipse></svg><div><p class="t-label muted">Mundo 7</p><h3>Labirinto</h3><p class="t-small muted">Observatório dos Sensores</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(35,21,61)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(45,27,77)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(51,30,88)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#40266e"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#b06cff"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(141,86,204)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(158,97,230)"></polygon><g><polygon points="88.8,57.6 100.0,63.2 100.0,29.2 88.8,23.6" fill="rgb(91,99,121)"></polygon><polygon points="100.0,63.2 111.2,57.6 111.2,23.6 100.0,29.2" fill="rgb(112,121,148)"></polygon><polygon points="100.0,18.0 111.2,23.6 100.0,29.2 88.8,23.6" fill="#7f8aa8"></polygon></g><g><polygon points="133.6,80.0 144.8,85.6 144.8,51.6 133.6,46.0" fill="rgb(91,99,121)"></polygon><polygon points="144.8,85.6 156.0,80.0 156.0,46.0 144.8,51.6" fill="rgb(112,121,148)"></polygon><polygon points="144.8,40.4 156.0,46.0 144.8,51.6 133.6,46.0" fill="#7f8aa8"></polygon></g><g><polygon points="101.6,62.4 135.2,79.2 135.2,57.2 101.6,40.4" fill="rgb(117,124,143)"></polygon><polygon points="135.2,79.2 143.2,75.2 143.2,53.2 135.2,57.2" fill="rgb(143,151,174)"></polygon><polygon points="109.6,36.4 143.2,53.2 135.2,57.2 101.6,40.4" fill="#a3acc6"></polygon></g><g><polygon points="80.0,82.0 96.0,90.0 96.0,50.0 80.0,42.0" fill="rgb(66,73,98)"></polygon><polygon points="96.0,90.0 112.0,82.0 112.0,42.0 96.0,50.0" fill="rgb(81,90,120)"></polygon><polygon points="96.0,34.0 112.0,42.0 96.0,50.0 80.0,42.0" fill="#5c6688"></polygon></g><g><polygon points="60.0,77.6 65.6,80.4 65.6,73.4 60.0,70.6" fill="rgb(184,66,99)"></polygon><polygon points="65.6,80.4 71.2,77.6 71.2,70.6 65.6,73.4" fill="rgb(224,81,121)"></polygon><polygon points="65.6,67.8 71.2,70.6 65.6,73.4 60.0,70.6" fill="#ff5c8a"></polygon></g><g><polygon points="60.8,83.6 66.4,86.4 66.4,79.4 60.8,76.6" fill="rgb(31,152,114)"></polygon><polygon points="66.4,86.4 72.0,83.6 72.0,76.6 66.4,79.4" fill="rgb(38,186,139)"></polygon><polygon points="66.4,73.8 72.0,76.6 66.4,79.4 60.8,76.6" fill="#2bd39e"></polygon></g><g><polygon points="102.4,96.4 108.0,99.2 108.0,92.2 102.4,89.4" fill="rgb(57,140,184)"></polygon><polygon points="108.0,99.2 113.6,96.4 113.6,89.4 108.0,92.2" fill="rgb(70,171,224)"></polygon><polygon points="108.0,86.6 113.6,89.4 108.0,92.2 102.4,89.4" fill="#4fc2ff"></polygon></g></svg><div><p class="t-label muted">Mundo 8</p><h3>Pega-frutas</h3><p class="t-small muted">Cofre dos Pontos</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(61,32,20)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(77,41,25)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(88,46,29)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#6e3a24"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#ff9a5c"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(204,123,74)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(230,139,83)"></polygon><g><polygon points="76.8,74.0 108.8,90.0 108.8,64.0 76.8,48.0" fill="rgb(145,99,77)"></polygon><polygon points="108.8,90.0 134.4,77.2 134.4,51.2 108.8,64.0" fill="rgb(177,121,94)"></polygon><polygon points="102.4,35.2 134.4,51.2 108.8,64.0 76.8,48.0" fill="#c98a6b"></polygon></g><g><polygon points="116.0,76.8 124.0,80.8 124.0,28.8 116.0,24.8" fill="rgb(79,53,42)"></polygon><polygon points="124.0,80.8 132.0,76.8 132.0,24.8 124.0,28.8" fill="rgb(97,65,51)"></polygon><polygon points="124.0,20.8 132.0,24.8 124.0,28.8 116.0,24.8" fill="#6e4a3a"></polygon></g><path d="M 120 19.599999999999994 q 6 -14 2 -24 q 10 10 8 22 z" fill="#ffd84d"></path><path d="M 122 19.599999999999994 q 4 -8 1 -14 q 6 6 5 13 z" fill="#ff5c8a"></path><g><polygon points="53.6,79.2 64.8,84.8 64.8,74.8 53.6,69.2" fill="rgb(57,140,184)"></polygon><polygon points="64.8,84.8 74.4,80.0 74.4,70.0 64.8,74.8" fill="rgb(70,171,224)"></polygon><polygon points="63.2,64.4 74.4,70.0 64.8,74.8 53.6,69.2" fill="#4fc2ff"></polygon></g></svg><div><p class="t-label muted">Mundo 9 · Avançado</p><h3>Cobrinha</h3><p class="t-small muted">Fortaleza do Glitch</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(50,20,40)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(63,25,50)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(72,29,58)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#5a2448"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#ff5c8a"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(204,74,110)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(230,83,124)"></polygon><ellipse cx="100" cy="80" rx="52" ry="26" fill="#ffd84d"></ellipse><ellipse cx="100" cy="80" rx="40" ry="19" fill="#ff9ec7"></ellipse><ellipse cx="100" cy="70" rx="52" ry="26" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="6 5"></ellipse><g><rect x="59" y="28" width="2.5" height="30" fill="#f4f1ff"></rect><polygon points="61.5,28 76,34 61.5,40" fill="#4fc2ff"></polygon></g><g><rect x="99" y="28" width="2.5" height="30" fill="#f4f1ff"></rect><polygon points="101.5,28 116,34 101.5,40" fill="#ffd84d"></polygon></g><g><rect x="139" y="28" width="2.5" height="30" fill="#f4f1ff"></rect><polygon points="141.5,28 156,34 141.5,40" fill="#2bd39e"></polygon></g></svg><div><p class="t-label muted">Mundo 10</p><h3>Caça-moedas e Fuga</h3><p class="t-small muted">Forja dos Jogos</p></div></article>
+        <article class="card mundo span-3"><svg class="ilha" aria-hidden="true" viewBox="0 -30 200 230" aria-hidden="true"><ellipse cx="100" cy="188" rx="70" ry="10" fill="#8b6cff" opacity="0.35"></ellipse><polygon points="20.0,106.0 100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0 80.0,176.0 48.0,148.0" fill="rgb(76,50,32)"></polygon><polygon points="100.0,146.0 180.0,106.0 150.0,150.0 118.0,178.0 100.0,196.0" fill="rgb(97,63,41)"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,146.0 20.0,106.0" fill="rgb(110,72,47)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,106.0 100.0,146.0" fill="#8a5a3b"></polygon><polygon points="100.0,40.0 180.0,80.0 100.0,120.0 20.0,80.0" fill="#55d97a"></polygon><polygon points="20.0,80.0 100.0,120.0 100.0,125.0 20.0,85.0" fill="rgb(68,174,98)"></polygon><polygon points="100.0,120.0 180.0,80.0 180.0,85.0 100.0,125.0" fill="rgb(77,195,110)"></polygon><g><polygon points="84.0,62.4 101.6,71.2 101.6,53.2 84.0,44.4" fill="rgb(184,99,66)"></polygon><polygon points="101.6,71.2 117.6,63.2 117.6,45.2 101.6,53.2" fill="rgb(224,121,81)"></polygon><polygon points="100.0,36.4 117.6,45.2 101.6,53.2 84.0,44.4" fill="#ff8a5c"></polygon></g><g><polygon points="114.4,76.8 138.4,88.8 138.4,74.8 114.4,62.8" fill="rgb(184,156,55)"></polygon><polygon points="138.4,88.8 156.0,80.0 156.0,66.0 138.4,74.8" fill="rgb(224,190,68)"></polygon><polygon points="132.0,54.0 156.0,66.0 138.4,74.8 114.4,62.8" fill="#ffd84d"></polygon></g><rect x="127.6" y="49.2" width="22" height="8" rx="2" fill="#d6286f"></rect><g><polygon points="57.6,81.2 72.0,88.4 72.0,72.4 57.6,65.2" fill="rgb(88,132,184)"></polygon><polygon points="72.0,88.4 86.4,81.2 86.4,65.2 72.0,72.4" fill="rgb(107,162,224)"></polygon><polygon points="72.0,58.0 86.4,65.2 72.0,72.4 57.6,65.2" fill="#7ab8ff"></polygon></g><g><rect x="108.9" y="85.80000000000001" width="3" height="9" fill="#7a4a2a"></rect><circle cx="110.4" cy="80.80000000000001" r="7" fill="#3ddc84"></circle><circle cx="108.4" cy="78.80000000000001" r="3" fill="rgb(76,255,165)"></circle></g><g><rect x="132.1" y="79.8" width="3" height="9" fill="#7a4a2a"></rect><circle cx="133.6" cy="74.8" r="7" fill="#3ddc84"></circle><circle cx="131.6" cy="72.8" r="3" fill="rgb(76,255,165)"></circle></g></svg><div><p class="t-label muted">Mundo 11</p><h3>Jogo da equipe</h3><p class="t-small muted">O Grande Torneio</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="professor" aria-labelledby="professor-h">
+    <div class="wrap">
+      <div class="grid">
+        <div class="span-5 stack-6">
+          <h2 id="professor-h">A turma inteira num mapa</h2>
+          <p class="t-lead">Cada linha é um aluno e cada quadrado é uma lição. Você vê quem terminou e quem travou, sem corrigir nada à mão.</p>
+          <ul class="stack-3">
+            <li>Guia do professor em cada lição, com tempo em sala</li>
+            <li>Cartões de acesso para imprimir, sem e-mail de aluno</li>
+            <li>Certificado em PDF no fim do curso</li>
+          </ul>
+          <a class="link" href="#perguntas">Ler as perguntas frequentes</a>
+        </div>
+        <div class="frame frame--split span-6 start-7"><img class="frame__img" src="/inicio/img/progresso.png" alt="Progresso da turma: Ana, Bruno e Clara, com um quadrado verde para cada lição concluída" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section statement" id="frase" data-moment="liquid-type" aria-labelledby="frase-h">
+    <div class="wrap">
+      <p class="t-label muted">O curso</p>
+      <h2 class="mo-lt__type" id="frase-h">Um jogo em cada mundo</h2>
+      <p class="t-lead muted">Caça ao tesouro, Pong, labirinto, cobrinha: cada jogo é montado peça por peça, uma lição de cada vez.</p>
+    </div>
+  </section>
+
+  <section class="section" id="jam" style="--hm: 2" aria-labelledby="jam-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="jam-h">Game jams em 3 passos. <span class="muted">Equipes da mesma faixa de ano.</span></h2>
+      </div>
+      <div class="grid">
+        <article class="card card--row span-4">
+          <span class="step-num">1</span>
+          <h3>Monte a equipe</h3>
+          <p>Alunos da mesma faixa de ano escolar, do 2º ao 9º.</p>
+          <div class="panel"><div class="faixas"><span>2º e 3º ano</span><span>4º e 5º ano</span><span>6º e 7º ano</span><span>8º e 9º ano</span></div></div>
+        </article>
+        <article class="card card--row span-4">
+          <span class="step-num">2</span>
+          <h3>Crie o jogo no estúdio</h3>
+          <p>A equipe programa no mesmo editor das lições e entrega o projeto no prazo.</p>
+          <div class="panel"><div class="estudio"><i style="background:#ffbf00">quando a bandeira for clicada</i><i style="background:#ffab19">sempre</i><i style="background:#4c97ff">mova 10 passos</i></div></div>
+        </article>
+        <article class="card card--row span-4">
+          <span class="step-num">3</span>
+          <h3>O jurado avalia às cegas</h3>
+          <p>Ele joga e dá a nota sem ver escola nem nomes. Há pódio em cada faixa.</p>
+          <div class="panel"><div class="anonimo"><span>Projeto</span><b>projeto-K7Q2.sb3</b><span>Escola e equipe ocultas</span></div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="perguntas" aria-labelledby="perguntas-h">
+    <div class="wrap">
+      <div class="section-head"><h2 id="perguntas-h">Perguntas frequentes</h2></div>
+      <div class="faq">
+        <div class="faq__item"><h3>Precisa instalar alguma coisa?</h3><p>Não. O editor de blocos roda no navegador, dentro do site.</p></div>
+        <div class="faq__item"><h3>O aluno precisa de e-mail?</h3><p>Não. Ele entra com o código da turma, um usuário e uma senha, que vêm num cartão para imprimir.</p></div>
+        <div class="faq__item"><h3>O professor precisa saber programar?</h3><p>Não. Cada lição tem um guia com o objetivo, o tempo em sala, o passo a passo e os erros mais comuns.</p></div>
+        <div class="faq__item"><h3>Para quais anos é o curso?</h3><p>Do 2º ao 9º ano. As game jams separam as equipes por faixa de ano escolar.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer closing footer--statement" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--type">
+      <div class="section-head">
+        <h2 id="close-h">Libere o curso para a sua turma</h2>
+        <p class="t-small muted">Criar a conta é grátis.</p>
+      </div>
+      <a class="btn btn--primary btn--xl btn--wide" href="/cadastro">Criar conta grátis<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>Blocos</a>
+          <p class="footer__lede">Curso de programação em blocos para escolas, com game jams entre turmas.</p>
+        </div>
+        <div class="span-2 footer__col"><h3>Curso</h3><ul><li><a href="#editor">Editor</a></li><li><a href="#mundos">Mundos</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Escolas</h3><ul><li><a href="#professor">Professor</a></li><li><a href="#jam">Game jam</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Ajuda</h3><ul><li><a href="#perguntas">Perguntas</a></li><li><a href="/entrar">Entrar</a></li></ul></div>
+      </div>
+      <div class="footer__legal"><span>&copy; 2026 Blocos</span></div>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="/inicio/assets/system.js"></script>
+<script type="module" src="/inicio/assets/motion/motion.js"></script>
+<script type="module" src="/inicio/assets/layout/layout.js"></script>
+</body>
+</html>
