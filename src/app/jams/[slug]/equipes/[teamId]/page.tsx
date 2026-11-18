@@ -1,4 +1,4 @@
-import { Download, Puzzle } from "lucide-react";
+import { Award, Download, Puzzle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Countdown, PhaseBadge } from "@/components/jams";
@@ -42,7 +42,10 @@ export default async function TeamPage(props: PageProps<"/jams/[slug]/equipes/[t
             <span className="rounded-full bg-black/5 px-3 py-1 font-mono text-sm font-bold">Código anônimo {d.entry.anonCode}</span>
           </div>
           <p className="text-sm text-muted">Última atualização: {fmtDateTime(d.entry.updatedAt)}. Os jurados veem só o código, nunca o nome da equipe ou da escola.</p>
-          <p className="whitespace-pre-line">{d.entry.description}</p>
+          <div>
+            <h3 className="font-extrabold">Como jogar:</h3>
+            <p className="whitespace-pre-line">{d.entry.description}</p>
+          </div>
           <div className="aspect-video max-w-lg overflow-hidden rounded-2xl">
             <iframe src={youtubeEmbed(d.entry.youtubeId)} title="Vídeo do jogo" className="h-full w-full" allow="encrypted-media; picture-in-picture" allowFullScreen loading="lazy" />
           </div>
@@ -50,6 +53,18 @@ export default async function TeamPage(props: PageProps<"/jams/[slug]/equipes/[t
             <a href={`/jams/arquivo/${d.entry.id}/projeto`} className={buttonClass("secondary", "sm")}><Download aria-hidden className="h-4 w-4" /> Projeto (.sb3)</a>
             <a href={`/jams/arquivo/${d.entry.id}/documentacao`} className={buttonClass("secondary", "sm")}><Download aria-hidden className="h-4 w-4" /> Documentação (.{d.entry.docExt})</a>
           </div>
+          {d.phase === "ENCERRADA" && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
+              <span className="inline-flex items-center gap-1 font-extrabold"><Award aria-hidden className="h-4 w-4" /> Certificado de participação:</span>
+              {d.team.members
+                .filter((m) => user.role !== "STUDENT" || m.id === user.id)
+                .map((m) => (
+                  <a key={m.id} href={`/certificados/jam/${d.team.id}${user.role === "STUDENT" ? "" : `?aluno=${m.id}`}`} target="_blank" className={buttonClass("secondary", "sm")}>
+                    {user.role === "STUDENT" ? "Baixar" : m.name}
+                  </a>
+                ))}
+            </div>
+          )}
         </Card>
       )}
 

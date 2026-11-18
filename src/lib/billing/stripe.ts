@@ -12,6 +12,6 @@ export function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error("Stripe não configurado: defina STRIPE_SECRET_KEY no .env");
   }
-  client ??= new Stripe(process.env.STRIPE_SECRET_KEY, { appInfo: { name: "Blocos" } });
+  client ??= new Stripe(process.env.STRIPE_SECRET_KEY, { appInfo: { name: "Blockin Lab" } });
   return client;
 }

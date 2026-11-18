@@ -110,7 +110,7 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   pdf.addPage();
   pdf.setAuthor("Ana - Colégio Aurora");
   await ana.getByLabel("Nome do jogo").fill("Gato Invertido");
-  await ana.getByLabel("Descrição breve").fill("Um gato que anda no teto. Feito no Colégio Aurora!");
+  await ana.getByLabel("Como jogar:").fill("Um gato que anda no teto. Feito no Colégio Aurora!");
   await ana.getByLabel("Link do vídeo no YouTube").fill("https://youtu.be/dQw4w9WgXcQ");
   await ana.getByLabel(/^Arquivo .sb3/).setInputFiles({ name: "meu jogo da escola.sb3", mimeType: "application/octet-stream", buffer: Buffer.from(await sb3Bytes({ sprites: [{ name: "Gato" }] })) });
   await ana.getByLabel(/^Documentação/).setInputFiles({ name: "doc Colegio Aurora.pdf", mimeType: "application/pdf", buffer: Buffer.from(await pdf.save()) });
@@ -128,10 +128,11 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
 
   // corrige a descrição e troca o projeto pelo jogo do estúdio
   await ana.getByLabel("Usar o jogo do estúdio da equipe").check();
-  await ana.getByLabel("Descrição breve").fill("Um gato que anda no teto e pega estrelas.");
+  await ana.getByLabel("Como jogar:").fill("Um gato que anda no teto e pega estrelas.");
   await ana.getByRole("button", { name: "Atualizar entrega" }).click();
   await expect(ana.getByRole("status")).toContainText("Entrega salva");
   await ana.reload();
+  const teamUrl = ana.url();
   const code = (await ana.getByText(/Código anônimo [2-9A-Z]{4}/).innerText()).match(/[2-9A-Z]{4}$/)![0];
 
   // a equipe baixa o próprio projeto já com nome anônimo
@@ -142,6 +143,10 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await shiftJam(jamId, "JULGAMENTO");
   await ana.reload();
   await expect(ana.getByText("O prazo de entrega terminou.")).toBeVisible();
+  // certificado de participação só depois do resultado
+  const certUrl = `/certificados/jam/${teamUrl.split("/equipes/")[1]}`;
+  expect(await ana.evaluate(async (u) => (await fetch(u)).status, certUrl)).toBe(404);
+  await expect(ana.getByText("Certificado de participação")).toHaveCount(0);
 
   const judge = await newPage(browser);
   await loginStaff(judge, ROOT, judgeEmail, password);
@@ -179,6 +184,13 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await judge.getByRole("button", { name: "Salvar avaliação" }).click();
   await expect(judge.getByRole("status")).toContainText("Avaliação salva");
 
+  // a organização vê os finalistas por categoria, pela nota final, ainda anônimos
+  await owner.goto(`${ROOT}/jams/gerenciar/${jamId}`);
+  const fin = owner.getByRole("region", { name: /Finalistas 4º e 5º ano/ });
+  await expect(fin.getByText(code)).toBeVisible();
+  await expect(fin.getByText("80 pts")).toBeVisible();
+  await expect(fin).not.toContainText("Aurora");
+
   // o professor jurado da mesma escola não vê a entrega
   await prof.goto(`${ESCOLA}/jurado/${jamId}`);
   await expect(prof.getByText(/da sua própria escola não aparecem/)).toBeVisible();
@@ -191,9 +203,19 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   expect(blocked.body).not.toContain("Gato Invertido"); // o conteúdo da entrega nunca aparece
 
   // ── resultado: origem revelada, prêmio e comentário para a equipe
+  // só o organizador encerra (todas avaliadas); o professor recebe o resultado por email
   await shiftJam(jamId, "ENCERRADA");
+  await owner.goto(`${ROOT}/jams/gerenciar/${jamId}`);
+  await owner.getByLabel("Próximos passos para os finalistas").fill("A final será on-line em dezembro.");
+  await owner.getByRole("button", { name: "Encerrar julgamento e avisar as equipes" }).click();
+  await expect(owner.getByRole("status").filter({ hasText: "Julgamento encerrado" })).toBeVisible();
+  // o professor da equipe recebe o resultado no sino de avisos
+  await prof.goto(`${ESCOLA}/jams`);
+  await prof.getByRole("button", { name: /^Avisos/ }).click();
+  await expect(prof.getByRole("dialog", { name: "Avisos" })).toContainText(`resultado da equipe ${team}`);
   await ana.goto(`${ESCOLA}/jams`);
-  await ana.getByRole("article").filter({ hasText: title }).getByRole("link", { name: "Ver jam" }).click();
+  await ana.getByText("Encerradas").click(); // encerradas ficam numa lista recolhida
+  await ana.getByRole("link", { name: title, exact: true }).click();
   await ana.waitForURL(new RegExp(`/jams/jam-teste-${run}$`));
   await expect(ana.getByRole("heading", { name: "Categoria 4º e 5º ano" })).toBeVisible();
   const mine = ana.getByRole("listitem").filter({ hasText: "Gato Invertido" });
@@ -202,6 +224,16 @@ test("game jam completa: criação, equipe, entrega, julgamento cego e resultado
   await expect(mine).toContainText("Colégio Aurora");
   await expect(mine).toContainText("Kit de robótica para a escola");
   await expect(mine).toContainText("Adorei o gato no teto!");
+  await expect(ana.getByRole("status").filter({ hasText: "entre os finalistas" })).toContainText("A final será on-line em dezembro.");
+
+  // certificado de participação na página da equipe
+  await ana.goto(teamUrl);
+  const cert = await ana.evaluate(async (u) => {
+    const r = await fetch(u);
+    const b = new Uint8Array(await r.arrayBuffer());
+    return { status: r.status, type: r.headers.get("content-type"), magic: String.fromCharCode(...b.slice(0, 5)) };
+  }, (await ana.getByRole("link", { name: "Baixar" }).getAttribute("href"))!);
+  expect(cert).toEqual({ status: 200, type: "application/pdf", magic: "%PDF-" });
 
   // limpeza: a jam de teste não deve aparecer para as contas de demonstração
   const db = new Client({ connectionString: process.env.DATABASE_URL });

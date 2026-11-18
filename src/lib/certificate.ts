@@ -1,12 +1,15 @@
 import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
 
-// Certificado de conclusão de trilha (A4 paisagem) com a marca da escola.
+// Certificado (A4 paisagem) com a marca da escola: conclusão de nível do curso ou participação em Game Jam.
 
 export type CertificateData = {
   studentName: string;
-  trackTitle: string;
-  courseTitle: string;
-  lessons: number;
+  kind: "conclusão" | "participação";
+  title: string; // nome curto (título do PDF e do arquivo)
+  achievement: string; // linha em destaque, ex.: concluiu o nível “Básico”
+  detail: string;
+  skills: string[]; // habilidades desenvolvidas (até 4, em duas linhas)
+  platformName: string; // referência à plataforma, mesmo com a marca da escola
   schoolName: string;
   brandName: string;
   primary: string; // #rrggbb
@@ -15,6 +18,9 @@ export type CertificateData = {
   code: string; // para conferência
   logo: { bytes: Uint8Array; kind: "png" | "jpg" } | null;
 };
+
+// shortcut: domínio fixo da plataforma; trocar por variável se houver outro domínio principal.
+const PLATFORM_SITE = "blockinlab.com.br";
 
 const hex = (h: string) => {
   const n = parseInt(h.slice(1), 16);
@@ -33,10 +39,10 @@ function centered(page: ReturnType<PDFDocument["addPage"]>, text: string, y: num
 
 export async function buildCertificate(d: CertificateData) {
   const doc = await PDFDocument.create();
-  doc.setTitle(safe(`Certificado - ${d.trackTitle}`));
+  doc.setTitle(safe(`Certificado - ${d.title}`));
   doc.setAuthor(safe(d.brandName));
   doc.setCreator(safe(d.brandName));
-  doc.setProducer(safe(d.brandName));
+  doc.setProducer(safe(d.platformName));
   const page = doc.addPage([841.89, 595.28]); // A4 paisagem
   const { width, height } = page.getSize();
   const [bold, regular] = await Promise.all([doc.embedFont(StandardFonts.HelveticaBold), doc.embedFont(StandardFonts.Helvetica)]);
@@ -71,16 +77,25 @@ export async function buildCertificate(d: CertificateData) {
   }
 
   centered(page, "CERTIFICADO", top - 40, bold, 44, primary);
-  centered(page, "de conclusão", top - 68, regular, 18, rgb(0.39, 0.45, 0.55));
+  centered(page, `de ${d.kind}`, top - 68, regular, 18, rgb(0.39, 0.45, 0.55));
   centered(page, "Certificamos que", top - 118, regular, 16);
   centered(page, safe(d.studentName), top - 160, bold, 34);
   page.drawLine({ start: { x: width / 2 - 200, y: top - 172 }, end: { x: width / 2 + 200, y: top - 172 }, thickness: 1.5, color: secondary });
-  centered(page, safe(`concluiu a trilha “${d.trackTitle}”`), top - 206, bold, 20);
-  centered(page, safe(`do curso ${d.courseTitle}, com ${d.lessons} lições de programação em blocos.`), top - 232, regular, 15);
+  centered(page, safe(d.achievement), top - 206, bold, 20);
+  centered(page, safe(d.detail), top - 232, regular, 15);
+
+  if (d.skills.length) {
+    const muted = rgb(0.39, 0.45, 0.55);
+    centered(page, "HABILIDADES DESENVOLVIDAS", top - 266, bold, 10, primary);
+    const half = Math.ceil(d.skills.length / 2);
+    centered(page, safe(d.skills.slice(0, half).join("  •  ")), top - 284, regular, 12, muted);
+    if (d.skills.length > half) centered(page, safe(d.skills.slice(half).join("  •  ")), top - 300, regular, 12, muted);
+  }
 
   const date = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "America/Sao_Paulo" }).format(d.completedAt);
   centered(page, safe(`${d.schoolName} · ${date}`), 92, regular, 14);
-  centered(page, `Código de conferência: ${d.code}`, 64, regular, 10, rgb(0.5, 0.55, 0.62));
+  centered(page, safe(`Emitido pela plataforma ${d.platformName} · ${PLATFORM_SITE}`), 68, bold, 10, rgb(0.39, 0.45, 0.55));
+  centered(page, `Código de conferência: ${d.code}`, 54, regular, 9, rgb(0.5, 0.55, 0.62));
 
   return doc.save();
 }

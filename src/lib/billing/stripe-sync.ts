@@ -26,6 +26,7 @@ export type SubscriptionUpdate = {
   planId: string;
   status: SubStatus;
   seats: number | null;
+  extraStudents: number;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
   currentPeriodEnd: Date | null;
@@ -35,16 +36,18 @@ export type SubscriptionUpdate = {
 
 /**
  * @param planIdByPriceId mapa price_... → id do plano (tabela Plan)
+ * @param addonStudentsByPriceId mapa price_... → alunos de cada adicional (tabela PlanAddon); somados × quantidade
  * @returns null se o preço da assinatura não corresponde a nenhum plano nosso
  */
 export function subscriptionUpdateFromStripe(
   sub: Stripe.Subscription,
   planIdByPriceId: Map<string, { id: string; perSeat: boolean }>,
+  addonStudentsByPriceId: Map<string, number> = new Map(),
 ): SubscriptionUpdate | null {
-  const item = sub.items.data[0];
+  const item = sub.items.data.find((i) => planIdByPriceId.has(i.price.id));
   if (!item) return null;
-  const plan = planIdByPriceId.get(item.price.id);
-  if (!plan) return null;
+  const plan = planIdByPriceId.get(item.price.id)!;
+  const extraStudents = sub.items.data.reduce((sum, i) => sum + (addonStudentsByPriceId.get(i.price.id) ?? 0) * (i.quantity ?? 1), 0);
 
   // Na API atual do Stripe o fim do período fica no item da assinatura.
   const periodEnd = item.current_period_end;
@@ -52,6 +55,7 @@ export function subscriptionUpdateFromStripe(
     planId: plan.id,
     status: mapStripeStatus(sub.status),
     seats: plan.perSeat ? (item.quantity ?? null) : null,
+    extraStudents,
     stripeCustomerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
     stripeSubscriptionId: sub.id,
     currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,

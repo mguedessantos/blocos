@@ -22,18 +22,22 @@ async function main() {
   // Planos
   // Preços provisórios (centavos, BRL/mês). Ajuste aqui e rode `npm run stripe:setup`.
   const plans = [
-    { id: "professor", name: "Professor", order: 1, orgType: "PROFESSOR_INDEPENDENTE" as const, priceCents: 4900, perSeat: false, minSeats: 1,
-      description: "Para professores e tutores independentes.", maxStudents: 40, maxClasses: 3, features: [], aiMonthlyQuota: 0 },
-    { id: "escola", name: "Escola", order: 2, orgType: "ESCOLA" as const, priceCents: 800, perSeat: true, minSeats: 30,
-      description: "Professores ilimitados, cobrança por aluno.", maxStudents: null, maxClasses: null, features: ["unlimited_jams"], aiMonthlyQuota: 0 },
-    { id: "escola_plus", name: "Escola+", order: 3, orgType: "ESCOLA" as const, priceCents: 1200, perSeat: true, minSeats: 30,
-      description: "Tudo do Escola + marca própria, domínio próprio e certificados com a marca da escola.", maxStudents: null, maxClasses: null,
+    { id: "professor", name: "Professor Independente / Pequenas Escolas", order: 1, orgType: "PROFESSOR_INDEPENDENTE" as const, priceCents: 4900, perSeat: false, minSeats: 1,
+      description: "1 professor e até 10 alunos, com adicionais de +5 ou +10 alunos. Com a marca da sua escola.", maxStudents: 10, maxClasses: 3, maxTeachers: 1,
+      features: ["white_label"], aiMonthlyQuota: 0 },
+    { id: "escola", name: "Escola", order: 2, orgType: "ESCOLA" as const, priceCents: 69000, perSeat: false, minSeats: 1,
+      description: "Para escolas com mais de 100 alunos: alunos e professores ilimitados, com a marca da escola.", maxStudents: null, maxClasses: null, maxTeachers: null,
       features: ["white_label", "unlimited_jams"], aiMonthlyQuota: 0 },
   ];
   for (const p of plans) {
     // não sobrescreve o stripePriceId gravado pelo stripe:setup
     await db.plan.upsert({ where: { id: p.id }, update: p, create: p });
   }
+  const addons = [
+    { id: "professor_mais5", planId: "professor", name: "+5 alunos", students: 5, priceCents: 1500, order: 1 },
+    { id: "professor_mais10", planId: "professor", name: "+10 alunos", students: 10, priceCents: 2500, order: 2 },
+  ];
+  for (const a of addons) await db.planAddon.upsert({ where: { id: a.id }, update: a, create: a });
 
   // Dono da plataforma (produção): conta criada a partir das variáveis de ambiente.
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
@@ -59,7 +63,7 @@ async function main() {
       update: {},
       create: {
         name: "Escola Demonstração", slug: "demo", type: "ESCOLA", city: "São Paulo", state: "SP",
-        subscription: { create: { planId: "escola_plus", status: "ACTIVE", seats: 50, currentPeriodEnd: new Date(Date.now() + 3650 * DAY) } },
+        subscription: { create: { planId: "escola", status: "ACTIVE", seats: 50, currentPeriodEnd: new Date(Date.now() + 3650 * DAY) } },
       },
     });
     const staff = [
@@ -99,7 +103,7 @@ async function main() {
         slug: "escola-demo",
         type: "ESCOLA",
         branding: { create: { displayName: "Aurora Code", primaryColor: "#0f766e", secondaryColor: "#facc15", hidePlatformBrand: false } },
-        subscription: { create: { planId: "escola_plus", status: "ACTIVE", seats: 300, currentPeriodEnd: new Date(Date.now() + 30 * DAY) } },
+        subscription: { create: { planId: "escola", status: "ACTIVE", seats: 300, currentPeriodEnd: new Date(Date.now() + 30 * DAY) } },
       },
     });
 

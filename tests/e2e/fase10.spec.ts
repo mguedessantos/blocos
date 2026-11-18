@@ -102,16 +102,15 @@ test("coordenação personaliza a marca, adiciona domínio e convida com email d
   expect(mail!.html).toContain(`http://${slug}.localhost:3000/marca/arquivo/`);
 });
 
-test("certificado de trilha concluída para o aluno e o professor", async ({ browser }) => {
-  // conclui as lições obrigatórias do Mundo 1 para o Bruno direto no banco
+test("certificado do nível Básico para o aluno e o professor", async ({ browser }) => {
+  // conclui todas as lições do nível Básico (mundos de nível 1) para o Bruno direto no banco
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   const { rows } = await db.query(`
-    select l.id as lesson, u.id as student, t.id as track from "Lesson" l
+    select l.id as lesson, u.id as student, t."courseId" as course from "Lesson" l
     join "Module" m on m.id = l."moduleId" join "Track" t on t.id = m."trackId"
     join "Organization" o on o.slug = 'escola-demo' join "User" u on u."organizationId" = o.id and u.username = 'bruno'
-    where t.slug = (select slug from "Track" where "organizationId" is null and published order by level, "order" limit 1)
-      and t."organizationId" is null and not l.draft`);
+    where t.level = 1 and t.published and t."organizationId" is null and not l.draft`);
   for (const r of rows) {
     await db.query(
       `insert into "Progress" (id, "userId", "lessonId", status, stars, attempts, "updatedAt") values (gen_random_uuid()::text, $1, $2, 'CONCLUIDO', 3, 1, now())
@@ -120,7 +119,7 @@ test("certificado de trilha concluída para o aluno e o professor", async ({ bro
     );
   }
   await db.end();
-  const trackId = rows[0].track;
+  const courseId = rows[0].course;
 
   const kid = await (await browser.newContext()).newPage();
   await kid.goto(`${ESCOLA}/entrar-aluno`);
@@ -129,7 +128,7 @@ test("certificado de trilha concluída para o aluno e o professor", async ({ bro
   await kid.getByLabel("Sua senha").fill("gato123");
   await kid.getByRole("button", { name: /Vamos lá/ }).click();
   await kid.waitForURL(/\/aluno/);
-  const link = kid.getByRole("link", { name: "Certificado da trilha Mundo 1 · Vila do Palco" });
+  const link = kid.getByRole("link", { name: /Certificado do nível Básico/ });
   await expect(link).toBeVisible();
   const res = await kid.evaluate(async (u) => {
     const r = await fetch(u!);
@@ -147,14 +146,14 @@ test("certificado de trilha concluída para o aluno e o professor", async ({ bro
   await clara.getByRole("button", { name: /Vamos lá/ }).click();
   await clara.waitForURL(/\/aluno/);
   const brunoId = rows[0].student;
-  const status = await clara.evaluate(async (u) => (await fetch(u)).status, `/certificados/${trackId}?aluno=${brunoId}`);
+  const status = await clara.evaluate(async (u) => (await fetch(u)).status, `/certificados/nivel/${courseId}/1?aluno=${brunoId}`);
   expect(status).toBe(404);
 
   // o professor baixa pelo mapa da turma
   const prof = await (await browser.newContext()).newPage();
   await loginStaff(prof, ESCOLA, "prof@aurora.dev", "senha123");
   await prof.getByRole("link", { name: /5º ano A/ }).first().click();
-  const cert = prof.getByRole("link", { name: "Certificado de Bruno" });
+  const cert = prof.getByRole("link", { name: /Certificado do nível Básico de Bruno/ });
   await expect(cert).toBeVisible();
   const st = await prof.evaluate(async (u) => (await fetch(u!)).headers.get("content-type"), await cert.getAttribute("href"));
   expect(st).toBe("application/pdf");

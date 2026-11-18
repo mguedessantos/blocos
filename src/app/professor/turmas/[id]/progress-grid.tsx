@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GraduationCap, TriangleAlert } from "lucide-react";
+import { LEVEL_NAMES } from "@/lib/levels";
 import type { getClassProgress } from "@/lib/dal/classes";
 
 type Data = Awaited<ReturnType<typeof getClassProgress>>;
@@ -71,9 +72,9 @@ export function ProgressGrid({ classId, data }: { classId: string; data: Data })
                 })}
                 <td className="px-2 text-right font-bold tabular-nums">
                   {s.done}/{s.total}
-                  {s.total > 0 && s.done >= s.total && (
-                    <a href={`/certificados/${data.track!.id}?aluno=${s.id}`} target="_blank" className="ml-2 text-brand underline" aria-label={`Certificado de ${s.name}`} title="Certificado"><GraduationCap aria-hidden className="inline h-4 w-4" /></a>
-                  )}
+                  {s.levels.map((lv) => (
+                    <a key={`${lv.courseId}:${lv.level}`} href={`/certificados/nivel/${lv.courseId}/${lv.level}?aluno=${s.id}`} target="_blank" className="ml-2 inline-flex items-center gap-0.5 text-brand underline" aria-label={`Certificado do nível ${LEVEL_NAMES[lv.level]} de ${s.name}`} title={`Certificado ${LEVEL_NAMES[lv.level]}`}><GraduationCap aria-hidden className="h-4 w-4" />{LEVEL_NAMES[lv.level][0]}</a>
+                  ))}
                 </td>
               </tr>
             ))}

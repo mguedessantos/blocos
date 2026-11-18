@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getPlatformSchool } from "@/lib/dal/platform";
 import { ROLE_LABEL } from "@/lib/roles";
-import { restoreOrgAction, restoreUserAction } from "../../actions";
+import { restoreOrgAction, restoreUserAction, setFullAccessAction } from "../../actions";
 import { setOrganizerAction } from "@/app/jams/actions";
 import { AddStaffForm, RemoveButton, ResetPasswordButton } from "../../forms";
 
@@ -29,6 +29,12 @@ export default async function EscolaDetalhe(props: PageProps<"/plataforma/escola
             {org.type === "ESCOLA" ? "Escola" : "Professor(a) independente"} · {org.city || "cidade não informada"}
             {org.state ? `/${org.state}` : ""} · {org.slug} · plano {org.subscription?.plan.name ?? "—"}
           </p>
+          {org.subscription && (
+            <form action={setFullAccessAction.bind(null, org.id, org.subscription.status === "TRIAL")} className="mt-2 flex flex-wrap items-center gap-3">
+              <span className="font-bold">{org.subscription.status === "TRIAL" ? "Teste grátis: alunos só no nível Básico." : "Acesso completo."}</span>
+              <button className="btn btn-sm">{org.subscription.status === "TRIAL" ? "Liberar acesso completo" : "Voltar para o teste grátis"}</button>
+            </form>
+          )}
           {org.deletedAt && <p role="status" className="mt-2 font-bold text-red-700">Na lixeira desde {when.format(org.deletedAt)}.</p>}
         </div>
         {org.deletedAt ? (

@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { billingEnabled, checkCanAddClass, checkCanAddStudents, isSubscriptionUsable } from "../billing/entitlements";
+import { billingEnabled, checkCanAddClass, checkCanAddTeacher, checkCanAddStudents, isSubscriptionUsable } from "../billing/entitlements";
 import { confirmCheckoutSession } from "../billing/service";
 import { isStripeConfigured } from "../billing/stripe";
 import { db } from "../db";
@@ -23,7 +23,8 @@ export async function getBillingOverview(user: CurrentUser) {
     db.user.count({ where: { organizationId, role: "STUDENT", active: true, deletedAt: null } }),
     db.class.count({ where: { organizationId, archived: false } }),
   ]);
-  const plans = await db.plan.findMany({ where: { orgType: org.type }, orderBy: { order: "asc" } });
+  // Todos os planos para qualquer conta: pequenas escolas podem usar o plano Professor (1 professor).
+  const plans = await db.plan.findMany({ orderBy: { order: "asc" }, include: { addons: { orderBy: { order: "asc" } } } });
   return { org, subscription, plans, students, classes };
 }
 
@@ -40,9 +41,8 @@ export async function getCheckoutContext(user: CurrentUser) {
 }
 
 export async function getPlanForOrg(user: CurrentUser, planId: string) {
-  const organizationId = requireOrgAdmin(user);
-  const org = await db.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { type: true } });
-  return db.plan.findFirst({ where: { id: planId, orgType: org.type } });
+  requireOrgAdmin(user);
+  return db.plan.findFirst({ where: { id: planId }, include: { addons: true } });
 }
 
 export async function saveStripeCustomerId(user: CurrentUser, stripeCustomerId: string) {
@@ -72,6 +72,15 @@ export async function assertCanAddStudents(user: CurrentUser, adding: number) {
     db.user.count({ where: { organizationId: user.organizationId, role: "STUDENT", active: true, deletedAt: null } }),
   ]);
   return checkCanAddStudents(sub, current, adding);
+}
+
+/** Antes de convidar/criar professor ou coordenação na organização. */
+export async function assertCanAddTeacher(organizationId: string) {
+  const [sub, current] = await Promise.all([
+    getOrgSubscription(organizationId),
+    db.user.count({ where: { organizationId, role: { in: ["TEACHER", "ORG_ADMIN"] }, deletedAt: null } }),
+  ]);
+  return checkCanAddTeacher(sub, current);
 }
 
 export async function assertCanAddClass(user: CurrentUser) {

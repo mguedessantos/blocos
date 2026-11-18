@@ -9,6 +9,7 @@ import {
   canRegisterTeams,
   categoryFor,
   canSubmit,
+  finalists,
   jamOpenTo,
   jamPhase,
   newAnonCode,
@@ -16,12 +17,15 @@ import {
   rankEntries,
   resultsPublic,
   slugifyJam,
+  unjudgedEntries,
   validateCategories,
   validateJamDates,
   type CategoryRange,
   type JamPhase,
 } from "../jams";
+import { emailBrandFor, sendEmail } from "../email";
 import { deleteFile, getFile, putFile } from "../storage";
+import { tenantUrl } from "../url";
 import { readSb3 } from "../sb3/project";
 import type { CurrentUser } from "./auth";
 import { AccessError } from "./classes";
@@ -46,7 +50,7 @@ async function orgOf(user: CurrentUser) {
 
 const jamListSelect = {
   id: true, slug: true, title: true, theme: true, scope: true, states: true, cities: true, orgIds: true,
-  startsAt: true, endsAt: true, judgingEndsAt: true, published: true, maxTeamSize: true,
+  startsAt: true, endsAt: true, judgingEndsAt: true, resultsSentAt: true, published: true, maxTeamSize: true,
   prizes: { orderBy: { place: "asc" as const }, select: { place: true, title: true, recipient: true } },
   _count: { select: { entries: true, teams: true } },
 };
@@ -108,7 +112,7 @@ export async function getJam(user: CurrentUser, slug: string) {
     jam: {
       id: jam.id, slug: jam.slug, title: jam.title, theme: jam.theme, description: jam.description, scope: jam.scope,
       states: jam.states, cities: jam.cities, startsAt: jam.startsAt, endsAt: jam.endsAt, judgingEndsAt: jam.judgingEndsAt,
-      maxTeamSize: jam.maxTeamSize, published: jam.published,
+      maxTeamSize: jam.maxTeamSize, published: jam.published, nextSteps: jam.nextSteps,
       prizes: jam.prizes,
       categories: jam.categories.map((c) => ({ id: c.id, name: c.name, minYear: c.minYear, maxYear: c.maxYear })),
       criteria: jam.criteria.map((c) => ({ name: c.name, weight: c.weight, maxScore: c.maxScore })),
@@ -260,13 +264,99 @@ export async function getJamForManager(user: CurrentUser, jamId: string) {
     },
   });
   if (!jam) throw new AccessError("Jam não encontrada.");
-  const entries = await db.jamEntry.findMany({ where: { jamId }, select: { id: true, anonCode: true, category: { select: { name: true } }, _count: { select: { feedbacks: true } }, scores: { select: { judgeId: true }, distinct: ["judgeId"] } } });
+  const [entries, scores] = await Promise.all([
+    db.jamEntry.findMany({ where: { jamId }, select: { id: true, anonCode: true, title: true, youtubeId: true, docExt: true, categoryId: true, category: { select: { name: true } }, _count: { select: { feedbacks: true } }, scores: { select: { judgeId: true }, distinct: ["judgeId"] } } }),
+    db.jamScore.findMany({ where: { entry: { jamId } }, select: { entryId: true, criterionId: true, judgeId: true, value: true } }),
+  ]);
+  const phase = jamPhase(jam);
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const groups = [...jam.categories.map((c) => ({ id: c.id as string | null, name: c.name })), { id: null, name: "Sem categoria" }];
+  // finalistas pela nota final, ainda pelo código anônimo (a escola só aparece no resultado)
+  const finalistGroups = phase === "JULGAMENTO" || phase === "ENCERRADA"
+    ? groups
+        .map((g) => {
+          const ids = entries.filter((e) => e.categoryId === g.id).map((e) => e.id);
+          const top = finalists(rankEntries(ids, jam.criteria, scores.filter((sc) => ids.includes(sc.entryId))));
+          return { category: g.name, entries: top.map((r) => { const e = byId.get(r.entryId)!; return { ...r, anonCode: e.anonCode, title: e.title, youtubeId: e.youtubeId, docExt: e.docExt }; }) };
+        })
+        .filter((g) => g.entries.length > 0)
+    : [];
   return {
     jam,
-    phase: jamPhase(jam),
+    phase,
+    finalists: finalistGroups,
+    pending: entries.filter((e) => unjudgedEntries([e.id], jam.criteria, scores).length > 0).map((e) => e.anonCode),
     // progresso do julgamento sem revelar origem
     entries: entries.map((e) => ({ anonCode: e.anonCode, category: e.category?.name ?? null, judgesScored: e.scores.length, feedbacks: e._count.feedbacks })),
   };
+}
+
+/**
+ * Encerra o julgamento: só com TODAS as entregas avaliadas. Revela o resultado (fase ENCERRADA)
+ * e avisa o professor de cada equipe por email (alunos não têm email; veem na página da jam).
+ * Equipe inscrita sem entrega completa (vídeo, .sb3 e "Como jogar:") fica desclassificada.
+ */
+export async function closeJudging(user: CurrentUser, jamId: string, nextSteps: string) {
+  requireManager(user);
+  const jam = await db.gameJam.findUnique({ where: { id: jamId }, include: { criteria: true, categories: true } });
+  if (!jam) throw new AccessError("Jam não encontrada.");
+  if (jamPhase(jam) !== "JULGAMENTO") throw new AccessError("Só dá para encerrar durante o julgamento.");
+  const [entries, scores, teams] = await Promise.all([
+    db.jamEntry.findMany({ where: { jamId }, select: { id: true, anonCode: true, categoryId: true } }),
+    db.jamScore.findMany({ where: { entry: { jamId } }, select: { entryId: true, criterionId: true, judgeId: true, value: true } }),
+    db.jamTeam.findMany({
+      where: { jamId },
+      select: {
+        name: true, categoryId: true, category: { select: { name: true } },
+        organization: { select: { id: true, slug: true } }, teacherId: true,
+        origin: { select: { entryId: true } },
+      },
+    }),
+  ]);
+  const pending = unjudgedEntries(entries.map((e) => e.id), jam.criteria, scores);
+  if (pending.length) {
+    const codes = entries.filter((e) => pending.includes(e.id)).map((e) => e.anonCode).join(", ");
+    throw new AccessError(`Ainda faltam avaliações: ${codes}. Todas as entregas precisam ser avaliadas antes de encerrar.`);
+  }
+  await db.gameJam.update({ where: { id: jamId }, data: { resultsSentAt: new Date(), nextSteps } });
+  await audit(user, "jam.encerrar", jam.slug);
+
+  const place = new Map<string, { place: number | null; finalist: boolean; of: number }>();
+  for (const catId of new Set(entries.map((e) => e.categoryId))) {
+    const ids = entries.filter((e) => e.categoryId === catId).map((e) => e.id);
+    const ranking = rankEntries(ids, jam.criteria, scores.filter((s) => ids.includes(s.entryId)));
+    const top = new Set(finalists(ranking).map((r) => r.entryId));
+    for (const r of ranking) place.set(r.entryId, { place: r.place, finalist: top.has(r.entryId), of: ranking.length });
+  }
+  const emails = new Map((await db.user.findMany({ where: { id: { in: teams.map((t) => t.teacherId) } }, select: { id: true, email: true } })).map((u) => [u.id, u.email]));
+  let sent = 0;
+  for (const t of teams) {
+    const email = emails.get(t.teacherId);
+    const r = t.origin ? place.get(t.origin.entryId) : undefined;
+    const cat = t.category?.name ?? "sem categoria";
+    const status = !r
+      ? "A equipe foi desclassificada: não entregou o projeto completo (vídeo, arquivo .sb3 e Como jogar:) no prazo."
+      : `Colocação: ${r.place}º lugar de ${r.of} na categoria ${cat}. ${r.finalist ? "A equipe está entre os finalistas!" : "A equipe não ficou entre os finalistas desta vez."}`;
+    const finalistNext = r?.finalist && nextSteps.trim() ? [`Próximos passos: ${nextSteps.trim()}`] : [];
+    // aviso no sino do professor (sempre) + email (quando tem)
+    await db.announcement.create({
+      data: { title: `${jam.title}: resultado da equipe ${t.name}`, body: [status, ...finalistNext, `Veja em /jams/${jam.slug}`].join("\n\n"), states: [], cities: [], orgIds: [], roles: [], userIds: [t.teacherId], createdById: user.id },
+    });
+    sent++;
+    if (!email) continue;
+    await sendEmail(email, await emailBrandFor(t.organization.id), {
+      subject: `Resultado da ${jam.title}: equipe ${t.name}`,
+      heading: `Resultado da equipe ${t.name}`,
+      paragraphs: [
+        `O julgamento da ${jam.title} terminou.`,
+        status,
+        ...finalistNext,
+        "Os alunos veem o resultado e os comentários dos jurados na página da jam.",
+      ],
+      button: { label: "Ver o resultado", url: `${tenantUrl(t.organization.slug)}/jams/${jam.slug}` },
+    });
+  }
+  return { sent };
 }
 
 /** Convida jurado: conta existente pelo email, ou cria uma conta de JURADO com senha temporária. */
@@ -360,7 +450,7 @@ export async function createTeam(user: CurrentUser, jamId: string, name: string,
 }
 
 /** Equipe acessível: aluno membro, professor que inscreveu, ou coordenação da escola. */
-async function requireTeam(user: CurrentUser, teamId: string) {
+export async function requireTeam(user: CurrentUser, teamId: string) {
   const team = await db.jamTeam.findUnique({
     where: { id: teamId },
     include: {
@@ -491,7 +581,7 @@ async function conflictedEntryIds(user: CurrentUser, jamId: string) {
 export async function listJudgeJams(user: CurrentUser) {
   const rows = await db.jamJudge.findMany({
     where: { userId: user.id },
-    select: { jam: { select: { id: true, title: true, theme: true, published: true, startsAt: true, endsAt: true, judgingEndsAt: true, _count: { select: { entries: true } } } } },
+    select: { jam: { select: { id: true, title: true, theme: true, published: true, startsAt: true, endsAt: true, judgingEndsAt: true, resultsSentAt: true, _count: { select: { entries: true } } } } },
   });
   return rows.map((r) => ({ ...r.jam, phase: jamPhase(r.jam) }));
 }

@@ -21,6 +21,7 @@ import {
   submitEntry,
   updateJam,
   type JamInput,
+  closeJudging,
 } from "@/lib/dal/jams";
 
 export type JamFormState = { error?: string; ok?: string; leaks?: string[]; password?: string | null } | undefined;
@@ -185,4 +186,15 @@ export async function saveJudgementAction(entryId: string, criteriaIds: string[]
   }
   revalidatePath("/jurado", "layout");
   return { ok: "Avaliação salva." };
+}
+
+export async function closeJudgingAction(jamId: string, _: JamFormState, fd: FormData): Promise<JamFormState> {
+  const user = await requireUser();
+  try {
+    const { sent } = await closeJudging(user, jamId, String(fd.get("nextSteps") ?? "").slice(0, 1000));
+    revalidatePath("/jams", "layout");
+    return { ok: `Julgamento encerrado. Resultado enviado a ${sent} equipe(s) (aviso no sino e email do professor).` };
+  } catch (e) {
+    return friendly(e);
+  }
 }

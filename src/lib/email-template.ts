@@ -2,7 +2,7 @@
 
 export type EmailBrand = { name: string; primary: string; primaryText: string; logoUrl: string | null; senderName: string; replyTo: string | null; showPlatform: boolean };
 
-const PLATFORM = process.env.PLATFORM_NAME ?? "Blocos";
+const PLATFORM = process.env.PLATFORM_NAME ?? "Blockin Lab";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 

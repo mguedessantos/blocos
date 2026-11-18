@@ -44,7 +44,7 @@ Isso é usado para avisos regionais e para game jams abertas a escolas de um est
     slug: "marca",
     title: "Marca da escola",
     body: `
-No plano **Escola+**, a plataforma fica com a cara da sua escola: o logo e as cores aparecem no site, nos emails e nos certificados.
+Em todos os planos, a plataforma fica com a cara da sua escola: o logo e as cores aparecem no site, nos emails e nos certificados.
 
 1. No menu, abra **Marca**.
 2. Defina o **Nome exibido**, a **Cor principal** e a **Cor de destaque**. Ao lado, a **Pré-visualização** mostra como fica.

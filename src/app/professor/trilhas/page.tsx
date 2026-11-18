@@ -4,14 +4,9 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { listCatalogCourses } from "@/lib/dal/lessons";
+import { LEVELS } from "@/lib/levels";
 
 export const metadata = { title: "Currículo" };
-
-const LEVELS: Record<number, { name: string; text: string }> = {
-  1: { name: "Básico", text: "Primeiro contato: movimento, falas, repetição, atores, fantasias e sons." },
-  2: { name: "Intermediário", text: "Decisões, controles, sensores e variáveis: as peças de um jogo." },
-  3: { name: "Avançado", text: "Clones, mensagens, telas, jogos completos e a preparação para a game jam." },
-};
 
 export default async function CurriculoPage() {
   const user = await requireUser(["TEACHER", "ORG_ADMIN"]);

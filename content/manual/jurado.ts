@@ -38,7 +38,7 @@ Para ser justo com todas as escolas, você **não vê** de onde vem cada jogo:
     title: "Avaliar uma entrega",
     body: `
 1. Clique em **Projeto XXXX** na lista.
-2. Assista ao **vídeo** e leia a **descrição da equipe**.
+2. Assista ao **vídeo** e leia o **Como jogar** (o manual do jogo escrito pela equipe).
 3. Para jogar, clique em **Jogar aqui**: o jogo abre na própria página, com a bandeira verde. Se preferir, baixe o **projeto** (.sb3) e abra no PictoBlox ou no Scratch. Baixe também a **documentação** para ver as etapas de desenvolvimento.
 4. Em **Sua avaliação**, dê uma nota para cada critério (por exemplo, de 0 a 10).
 5. Escreva um **comentário para a equipe**: as crianças leem depois do resultado, então capriche no incentivo e em uma dica concreta.

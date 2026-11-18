@@ -21,7 +21,7 @@ const STATUS = {
 export default async function MarcaPage() {
   const user = await requireUser(["ORG_ADMIN"]);
   const { org, entitled, branding: b, domains } = await getBrandingSettings(user);
-  const platformName = process.env.PLATFORM_NAME ?? "Blocos";
+  const platformName = process.env.PLATFORM_NAME ?? "Blockin Lab";
   const custom = domains.filter((d) => d.type === "CUSTOM");
 
   return (
@@ -30,7 +30,7 @@ export default async function MarcaPage() {
 
       {!entitled ? (
         <Card className="space-y-3">
-          <p className="text-lg font-extrabold">A marca própria faz parte do plano Escola+.</p>
+          <p className="text-lg font-extrabold">A marca própria precisa de uma assinatura ativa.</p>
           <p className="text-muted">Com ele, alunos e professores entram num site com o logo, as cores e o endereço da escola, e os certificados saem com a sua marca.</p>
           {billingEnabled() && <Link href="/escola/assinatura" className={buttonClass()}>Ver planos</Link>}
         </Card>

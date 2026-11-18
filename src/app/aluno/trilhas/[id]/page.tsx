@@ -64,7 +64,7 @@ export default async function TrilhaPage(props: PageProps<"/aluno/trilhas/[id]">
                     {kind.label}
                   </span>
                   <span className="block font-display text-lg font-extrabold leading-tight">{l.title}</span>
-                  <span className="block text-sm font-bold text-muted">{l.done ? <Stars value={l.stars} /> : l.locked ? "Trancada" : `${l.xp} XP`}</span>
+                  <span className="block text-sm font-bold text-muted">{l.done ? <Stars value={l.stars} /> : l.trialLocked ? "No acesso completo" : l.locked ? "Trancada" : `${l.xp} XP`}</span>
                 </span>
                 {l.done && <span className="faixa absolute -bottom-1 right-3">Concluído</span>}
                 {isCurrent && <span className="faixa absolute -bottom-1 right-3 !bg-cta">Você está aqui</span>}

@@ -29,8 +29,8 @@ const schema = z.object({
   accept: z.literal("on", { message: "É preciso aceitar os Termos de Uso e a Política de Privacidade." }),
 });
 
-// Plano usado durante o teste grátis: escolas experimentam o Escola+ completo.
-const TRIAL_PLAN = { ESCOLA: "escola_plus", PROFESSOR_INDEPENDENTE: "professor" } as const;
+// Plano usado durante o teste grátis: escolas experimentam o plano Escola completo.
+const TRIAL_PLAN = { ESCOLA: "escola", PROFESSOR_INDEPENDENTE: "professor" } as const;
 
 export async function signup(_: SignupState, formData: FormData): Promise<SignupState> {
   // Devolvemos o que foi digitado (menos a senha): o React limpa o formulário após a ação.

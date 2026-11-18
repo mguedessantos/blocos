@@ -113,4 +113,4 @@ console.log("\n  pronto.");
 // 5. lições e contas de teste em produção (idempotente; nunca apaga progresso)
 step("Seed de produção", "npx", ["tsx", "prisma/seed.ts"], { env: { ...process.env, DOTENV_CONFIG_PATH: ".env.prod", SEED_DEMO: "minimal" } });
 
-console.log("\n✔ Publicado: https://blocos-two.vercel.app");
+console.log("\n✔ Publicado: https://blockinlab.com.br");

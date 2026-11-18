@@ -42,9 +42,23 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - O estado do editor vai para a server action como string JSON (objetos do Blockly não serializam).
 
 ## Página inicial pública (HTML estático)
-- `public/inicio/index.html` + kit da skill taste em `public/inicio/assets` (CSS/JS próprios, isolados do Tailwind do app). Edite o HTML direto; caminhos sempre absolutos (`/inicio/...`).
+- `public/inicio/index.html` + kit da skill taste em `public/inicio/assets` (CSS/JS próprios, isolados do Tailwind do app). Edite o HTML direto; caminhos sempre absolutos (`/inicio/...`). Só ficam os ~20 arquivos que a página usa (o kit completo tinha 23 MB); peça nova do kit precisa ser copiada da skill.
 - `src/proxy.ts` entrega essa página em `/` só no domínio da plataforma e sem sessão (rewrite, a URL continua `/`). Logado → painel; domínio de escola → escolha de entrada (`src/app/page.tsx`).
 - Capturas em `public/inicio/img/` (tiradas do localhost, logo trocado para Blocos). Com `BILLING_ENABLED="true"` a página não mostra "Preços": ajustar o HTML se ligar a cobrança.
+
+## Planos (2026-11-18)
+- Dois planos, ambos com marca própria (`white_label`): **Professor Independente / Pequenas Escolas** (`professor`: 1 professor, 10 alunos, 3 turmas, adicionais `PlanAddon` +5/+10 que somam em `Subscription.extraStudents`) e **Escola** (`escola`: mensalidade fixa, para +100 alunos, tudo ilimitado). Preços provisórios no `prisma/seed.ts`.
+- Limite de professores (`Plan.maxTeachers`, `checkCanAddTeacher`) vale MESMO com a cobrança desligada; limites de alunos/turmas só com cobrança ligada.
+- Stripe: plano + adicionais são linhas da mesma assinatura; `stripe-sync.ts` acha o item do plano e soma os adicionais.
+
+## Contas sem uso (LGPD)
+- `src/lib/retention.ts` (regra pura) + `src/lib/dal/retention.ts` (tarefa). 1 ano sem login (`lastLoginAt`/`keptActiveAt`/`createdAt`) = apagada de vez; avisos aos 335 e 358 dias para os professores das turmas (e coordenação), com link assinado `/manter-ativo?t=` (confirma num botão).
+- Professor removido: turmas passam para outra pessoa da equipe; se for o último e a escola toda estiver inativa, a organização é apagada.
+- Roda 1x/dia pelo Cron da Vercel (`vercel.json`) em `/api/cron/inatividade`, protegido por `CRON_SECRET` (precisa existir nas variáveis da Vercel).
+
+## Teste grátis (2026-11-18)
+- Escola com `Subscription.status = TRIAL` (cadastro pelo site): alunos só abrem o nível Básico (`trialOnlyBasic`/`TRIAL_MAX_LEVEL` em `src/lib/dal/lessons.ts`). Acesso completo = pago (Stripe põe ACTIVE) ou o dono clica em "Liberar acesso completo" em /plataforma/escolas/[id] (`setFullAccess`). Escolas criadas pelo dono já nascem ACTIVE.
+- `/editor-livre`: editor completo (todos os blocos), sem missão e sem salvar no servidor; baixa o .sb3. No menu de aluno, professor e coordenação.
 
 ## Cobrança desligada por padrão
 - `BILLING_ENABLED="false"` (padrão): sem preços, assinatura, banner de teste, bloqueio somente-leitura nem limites de plano; webhook do Stripe responde 404. White-label continua seguindo o plano da organização.
@@ -75,6 +89,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Arquivos: limpos em `src/lib/jam-files.ts` (meta do .sb3, metadados de PDF/.docx) e guardados com chave aleatória em `src/lib/storage.ts` (`.data/uploads` no dev; trocar por bucket privado do Supabase em produção). Download só por `/jams/arquivo/[entryId]/[kind]`, com nome `projeto-CODIGO.sb3`.
 - Quem cria jams: SUPER_ADMIN ou usuário com `canOrganizeJams` (o dono concede na página da escola em /plataforma).
 - Categorias por ano escolar (2º–9º, `JamCategory`): na inscrição cada aluno tem `schoolYear`; a equipe precisa caber numa faixa (`categoryFor`). Ranking e prêmios são por categoria; a categoria aparece ao jurado (não identifica a escola).
+- Encerramento: só pelo botão do organizador em /jams/gerenciar (`closeJudging`), e só com todas as entregas avaliadas (`unjudgedEntries`). Até lá a fase fica JULGAMENTO mesmo depois da data (`resultsSentAt`). Avisa o professor de cada equipe por email; alunos veem na página da jam.
 - O e2e `fase8.spec.ts` move as datas da jam direto no banco para passar pelas fases.
 
 ## White-label (fase 10)
@@ -83,10 +98,10 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Imagens de marca: só PNG/JPG (checados pelos bytes; SVG proibido), até 1 MB, servidas em `/marca/arquivo/<uuid>` com `Content-Security-Policy: default-src 'none'`.
 - Domínio próprio: `src/lib/domain-rules.ts` (validação) + `src/lib/domains.ts` (Vercel API se configurada, senão checagem de DNS). Em dev, domínios `.test`/`.localhost` verificam sem DNS.
 - Emails: `src/lib/email.ts` (`sendEmail` + `emailBrandFor`), modelo puro em `email-template.ts`. Sem `RESEND_API_KEY` em dev → `.data/outbox/*.json`.
-- Certificados: `/certificados/<trilha>` (aluno) e `?aluno=<id>` (professor/coordenação); só sai com todas as lições obrigatórias concluídas. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).
+- Certificados (só estes dois tipos): nível `/certificados/nivel/<curso>/<1|2|3>` (todas as lições dos mundos do nível) e Game Jam `/certificados/jam/<equipe>` (equipe entregou e a jam está ENCERRADA); `?aluno=<id>` para professor/coordenação. Nomes dos níveis em `src/lib/levels.ts`. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).
 
 ## Produção (Vercel + Supabase)
-- Site: https://blocos-two.vercel.app (projeto Vercel `blocos`, região gru1 = São Paulo). Banco e arquivos: projeto Supabase em sa-east-1 (São Paulo), bucket privado `blocos-arquivos`. Site e banco PRECISAM ficar na mesma região (cada página faz várias consultas).
+- Site: https://blockinlab.com.br (nome da plataforma: Blockin Lab; antigo https://blocos-two.vercel.app) (projeto Vercel `blocos`, região gru1 = São Paulo). Banco e arquivos: projeto Supabase em sa-east-1 (São Paulo), bucket privado `blocos-arquivos`. Site e banco PRECISAM ficar na mesma região (cada página faz várias consultas).
 - Segredos de produção ficam SÓ em `.env.prod` (ignorado pelo git) e nas variáveis da Vercel. Nunca exibir valores.
 - Comandos contra produção usam `DOTENV_CONFIG_PATH=.env.prod`:
   - migrações: `DOTENV_CONFIG_PATH=.env.prod npx prisma migrate deploy` (o build da Vercel também roda `prisma migrate deploy`)

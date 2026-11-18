@@ -35,6 +35,20 @@ export async function startCheckout(_: BillingState, formData: FormData): Promis
     return openPortalFor(subscription.stripeCustomerId!, `${origin}/escola/assinatura`);
   }
 
+  // Adicionais de alunos (+5, +10...): campo addon_<id> com a quantidade de cada um.
+  const addonItems: { price: string; quantity: number }[] = [];
+  let extraStudents = 0;
+  for (const addon of plan.addons) {
+    const qty = Math.min(20, Math.max(0, Math.trunc(Number(formData.get(`addon_${addon.id}`)) || 0)));
+    if (!qty) continue;
+    if (!addon.stripePriceId) return { error: NOT_CONFIGURED };
+    addonItems.push({ price: addon.stripePriceId, quantity: qty });
+    extraStudents += addon.students * qty;
+  }
+  if (plan.maxStudents !== null && students > plan.maxStudents + extraStudents) {
+    return { error: `Você já tem ${students} alunos. Adicione mais alunos para caber no plano (hoje: ${plan.maxStudents + extraStudents}).` };
+  }
+
   let seats = 1;
   if (plan.perSeat) {
     seats = parsed.data.seats ?? plan.minSeats;
@@ -61,7 +75,7 @@ export async function startCheckout(_: BillingState, formData: FormData): Promis
     mode: "subscription",
     customer: customerId,
     client_reference_id: org.id,
-    line_items: [{ price: plan.stripePriceId, quantity: seats }],
+    line_items: [{ price: plan.stripePriceId, quantity: seats }, ...addonItems],
     subscription_data: { metadata: { organizationId: org.id } },
     metadata: { organizationId: org.id },
     locale: "pt-BR",

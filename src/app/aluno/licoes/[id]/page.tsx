@@ -7,7 +7,7 @@ import { LESSON_KIND, Stars } from "@/components/lesson-icon";
 import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
-import { getStudentLesson, lastWorkspace } from "@/lib/dal/lessons";
+import { getStudentLesson, lastWorkspace, TRIAL_LOCK_MESSAGE } from "@/lib/dal/lessons";
 import { verifyLessonAction } from "./actions";
 import { TheoryDone } from "./theory-done";
 import { objectivesOf } from "@/lib/checker";
@@ -21,7 +21,7 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
     if (err instanceof AccessError) notFound();
     throw err;
   });
-  const { lesson, locked, done, stars, position, nextLessonId } = data;
+  const { lesson, locked, trialLocked, done, stars, position, nextLessonId } = data;
   const track = lesson.module.track;
   const nextHref = nextLessonId ? `/aluno/licoes/${nextLessonId}` : `/aluno/trilhas/${track.id}`;
 
@@ -30,7 +30,7 @@ export default async function LicaoPage(props: PageProps<"/aluno/licoes/[id]">) 
       <Card className="mx-auto max-w-md space-y-4 text-center">
         <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-slate-200 text-slate-500" aria-hidden><Lock className="h-9 w-9" /></span>
         <h1 className="text-2xl font-extrabold">Esta lição ainda está trancada</h1>
-        <p className="font-semibold text-muted">Termine a lição anterior para liberar esta.</p>
+        <p className="font-semibold text-muted">{trialLocked ? TRIAL_LOCK_MESSAGE : "Termine a lição anterior para liberar esta."}</p>
         <Link href={`/aluno/trilhas/${track.id}`} className={buttonClass()}>Voltar para a trilha</Link>
       </Card>
     );

@@ -18,7 +18,7 @@ describe("brandFor", () => {
     expect(b.whiteLabel).toBe(false);
     expect(b.showPlatformBrand).toBe(true);
   });
-  it("Escola+ aplica a marca da escola", () => {
+  it("plano com marca própria aplica a marca da escola", () => {
     const b = brandFor(tenant(["white_label"], { displayName: "Aurora Code", primaryColor: "#0f766e", hidePlatformBrand: true }));
     expect(b).toMatchObject({ name: "Aurora Code", primary: "#0f766e", whiteLabel: true, showPlatformBrand: false });
   });
@@ -28,7 +28,7 @@ describe("brandFor", () => {
     expect(b.primary).toBe("#6d28d9");
     expect(b.orgName).toBe("Colégio Aurora");
   });
-  it("Escola+ sem branding configurado usa o nome da escola", () => {
+  it("plano com marca própria sem branding configurado usa o nome da escola", () => {
     const b = brandFor(tenant(["white_label"], null));
     expect(b).toMatchObject({ name: "Colégio Aurora", primary: "#6d28d9", whiteLabel: true, showPlatformBrand: true });
   });

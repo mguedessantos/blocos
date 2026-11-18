@@ -227,6 +227,27 @@ export async function getClassProgress(user: CurrentUser, classId: string, track
   });
   const cell = new Map(progress.map((p) => [`${p.userId}:${p.lessonId}`, p]));
 
+  // Níveis concluídos por aluno (certificado de nível): todas as lições de todos os mundos do nível.
+  const levelLessons = await db.lesson.findMany({
+    where: { draft: false, module: { track: { published: true, course: { published: true, comingSoon: false, assignments: { some: { classId } } } } } },
+    select: { id: true, module: { select: { track: { select: { courseId: true, level: true } } } } },
+  });
+  const byLevel = new Map<string, string[]>();
+  for (const l of levelLessons) {
+    const key = `${l.module.track.courseId}:${l.module.track.level}`;
+    byLevel.set(key, [...(byLevel.get(key) ?? []), l.id]);
+  }
+  const doneLessons = await db.progress.findMany({
+    where: { userId: { in: students.map((s) => s.id) }, lessonId: { in: levelLessons.map((l) => l.id) }, status: "CONCLUIDO" },
+    select: { userId: true, lessonId: true },
+  });
+  const doneSet = new Set(doneLessons.map((p) => `${p.userId}:${p.lessonId}`));
+  const levelsOf = (studentId: string) =>
+    [...byLevel].filter(([, ids]) => ids.every((id) => doneSet.has(`${studentId}:${id}`))).map(([key]) => {
+      const [courseId, level] = key.split(":");
+      return { courseId, level: Number(level) };
+    });
+
   return {
     tracks,
     track,
@@ -244,6 +265,7 @@ export async function getClassProgress(user: CurrentUser, classId: string, track
         done: cells.filter((c) => c.done).length,
         total: lessons.length,
         stuck: Boolean(firstPending && firstPending.attempts >= 3),
+        levels: levelsOf(s.id),
       };
     }),
   };

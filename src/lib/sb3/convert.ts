@@ -173,7 +173,7 @@ export function projectToSb3Json(state: ProjectState): { json: Record<string, un
     json: { targets: [stage, ...sprites], monitors: state.variables.map((v, i) => ({
       id: v.id, mode: "default", opcode: "data_variable", params: { VARIABLE: v.name }, spriteName: null, value: 0,
       width: 0, height: 0, x: 5, y: 5 + i * 27, visible: true, sliderMin: 0, sliderMax: 100, isDiscrete: true,
-    })), extensions: usesPen ? ["pen"] : [], meta: { semver: "3.0.0", vm: "0.2.0", agent: "Blocos" } },
+    })), extensions: usesPen ? ["pen"] : [], meta: { semver: "3.0.0", vm: "0.2.0", agent: "Blockin Lab" } },
     assets: [...assets],
   };
 }

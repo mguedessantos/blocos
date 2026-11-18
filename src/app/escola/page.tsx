@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Stat } from "@/components/app-shell";
 import { Card } from "@/components/ui";
-import { billingEnabled } from "@/lib/billing/entitlements";
+import { billingEnabled, studentLimit } from "@/lib/billing/entitlements";
 import { requireUser } from "@/lib/dal/auth";
 import { getOrgOverview, getSchoolDashboard } from "@/lib/dal/org";
 import { ROLE_LABEL } from "@/lib/roles";
@@ -37,7 +37,7 @@ export default async function EscolaPage(props: PageProps<"/escola">) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {billingEnabled() && <Stat label="Plano" value={sub?.plan.name ?? "Sem plano"} />}
-        <Stat label={sub?.seats && billingEnabled() ? "Alunos / vagas" : "Alunos"} value={sub?.seats && billingEnabled() ? `${students}/${sub.seats}` : students} />
+        <Stat label={studentLimit(sub) !== null ? "Alunos / limite" : "Alunos"} value={studentLimit(sub) !== null ? `${students}/${studentLimit(sub)}` : students} />
         <Stat label="Ativos nos últimos 7 dias" value={dash.totals.activeWeek} />
         <Stat label="Lições concluídas (30 dias)" value={dash.totals.doneMonth} />
         <Stat label="Turmas" value={dash.totals.classes} />

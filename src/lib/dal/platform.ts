@@ -14,6 +14,7 @@ import {
   type PlatformFilters,
   type SchoolRow,
 } from "../platform-filters";
+import { assertCanAddTeacher } from "./billing";
 import type { CurrentUser } from "./auth";
 import { AccessError } from "./classes";
 
@@ -181,6 +182,13 @@ export async function restoreOrganization(user: CurrentUser, orgId: string) {
   await audit(user, "plataforma.escola.restaurar", org.slug, org.id);
 }
 
+/** Dono libera o acesso completo (cortesia/pagamento por fora) ou volta ao teste grátis (só nível Básico). */
+export async function setFullAccess(user: CurrentUser, orgId: string, full: boolean) {
+  requireOwner(user);
+  const sub = await db.subscription.update({ where: { organizationId: orgId }, data: { status: full ? "ACTIVE" : "TRIAL" }, select: { organization: { select: { slug: true } } } });
+  await audit(user, full ? "plataforma.escola.liberar" : "plataforma.escola.teste", sub.organization.slug, orgId);
+}
+
 export async function removeUser(user: CurrentUser, userId: string, reason: string) {
   requireOwner(user);
   const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, role: true, organizationId: true, deletedAt: true } });
@@ -258,7 +266,7 @@ export async function deleteAnnouncement(user: CurrentUser, id: string) {
 
 export async function listAnnouncements(user: CurrentUser) {
   requireOwner(user);
-  return db.announcement.findMany({ orderBy: { publishedAt: "desc" }, include: { _count: { select: { reads: true } } } });
+  return db.announcement.findMany({ where: { userIds: { isEmpty: true } }, orderBy: { publishedAt: "desc" }, include: { _count: { select: { reads: true } } } });
 }
 
 /** Avisos em vigor para este usuário, marcando os já lidos. */
@@ -268,14 +276,17 @@ export async function getMyAnnouncements(user: CurrentUser) {
   const [org, list] = await Promise.all([
     user.organizationId ? db.organization.findUnique({ where: { id: user.organizationId }, select: { id: true, state: true, city: true } }) : null,
     db.announcement.findMany({
-      where: { publishedAt: { lte: now }, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      where: {
+        publishedAt: { lte: now },
+        AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }, { OR: [{ userIds: { isEmpty: true } }, { userIds: { has: user.id } }] }],
+      },
       orderBy: { publishedAt: "desc" },
       take: 50,
       include: { reads: { where: { userId: user.id }, select: { readAt: true } } },
     }),
   ]);
   return list
-    .filter((a) => announcementMatches(a, { role: user.role, org }))
+    .filter((a) => a.userIds.length > 0 || announcementMatches(a, { role: user.role, org }))
     .map((a) => ({ id: a.id, title: a.title, body: a.body, publishedAt: a.publishedAt, read: a.reads.length > 0 }));
 }
 
@@ -332,6 +343,8 @@ export async function addStaffAsOwner(user: CurrentUser, orgId: string, role: "O
   const org = await db.organization.findUnique({ where: { id: orgId }, select: { id: true, deletedAt: true } });
   if (!org || org.deletedAt) throw new AccessError("Escola não encontrada.");
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) throw new AccessError("Já existe uma conta com este email.");
+  const limit = await assertCanAddTeacher(org.id);
+  if (!limit.ok) throw new AccessError(limit.reason);
   const password = tempPassword();
   await db.user.create({ data: { role, name, email, passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true, organizationId: org.id } });
   await audit(user, "plataforma.conta.criar", email, org.id, { role });

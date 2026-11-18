@@ -5,14 +5,16 @@ import { cityKey } from "./br";
 
 export type JamPhase = "RASCUNHO" | "EM_BREVE" | "EM_ANDAMENTO" | "JULGAMENTO" | "ENCERRADA";
 
-type Dates = { published: boolean; startsAt: Date; endsAt: Date; judgingEndsAt: Date };
+type Dates = { published: boolean; startsAt: Date; endsAt: Date; judgingEndsAt: Date; resultsSentAt?: Date | null };
 
 /** Fase pelo relógio do SERVIDOR (o navegador só mostra a contagem). */
 export function jamPhase(j: Dates, now = new Date()): JamPhase {
   if (!j.published) return "RASCUNHO";
   if (now < j.startsAt) return "EM_BREVE";
   if (now < j.endsAt) return "EM_ANDAMENTO";
-  if (now < j.judgingEndsAt) return "JULGAMENTO";
+  if (j.resultsSentAt) return "ENCERRADA";
+  // só o organizador encerra (depois de conferir todas as entregas); undefined = consulta sem o campo, vale a data
+  if (now < j.judgingEndsAt || j.resultsSentAt === null) return "JULGAMENTO";
   return "ENCERRADA";
 }
 
@@ -20,7 +22,7 @@ export function jamPhase(j: Dates, now = new Date()): JamPhase {
 export function phaseTarget(phase: JamPhase, j: { startsAt: Date; endsAt: Date; judgingEndsAt: Date }) {
   if (phase === "EM_BREVE") return { to: j.startsAt.toISOString(), label: "Começa em" };
   if (phase === "EM_ANDAMENTO") return { to: j.endsAt.toISOString(), label: "Entregas fecham em" };
-  if (phase === "JULGAMENTO") return { to: j.judgingEndsAt.toISOString(), label: "Resultado em" };
+  if (phase === "JULGAMENTO" && j.judgingEndsAt > new Date()) return { to: j.judgingEndsAt.toISOString(), label: "Resultado em" };
   return null;
 }
 
@@ -130,6 +132,20 @@ export function rankEntries(entryIds: string[], criteria: Criterion[], scores: S
     return { ...r, place: r.score === null ? null : place };
   });
 }
+
+/** Entregas sem nenhuma avaliação completa (um jurado com nota em todos os critérios). O julgamento só encerra sem nenhuma. */
+export function unjudgedEntries(entryIds: string[], criteria: { id: string }[], scores: Score[]) {
+  return entryIds.filter((id) => {
+    const perJudge = new Map<string, Set<string>>();
+    for (const s of scores) if (s.entryId === id) perJudge.set(s.judgeId, (perJudge.get(s.judgeId) ?? new Set()).add(s.criterionId));
+    return ![...perJudge.values()].some((got) => criteria.every((c) => got.has(c.id)));
+  });
+}
+
+/** Finalistas de uma categoria: os 5 primeiros colocados com nota; empate no 5º lugar entra também (pelo menos 5). */
+export const FINALISTS_PER_CATEGORY = 5;
+export const finalists = <R extends { place: number | null }>(ranking: R[], n = FINALISTS_PER_CATEGORY) =>
+  ranking.filter((r) => r.place !== null && r.place <= n);
 
 /** "AAAA-MM-DDTHH:MM" no horário de Brasília (para <input type="datetime-local">). */
 export function toBrasiliaInput(d: Date) {

@@ -24,7 +24,7 @@ const PLATFORM_SECONDARY = "#f59e0b";
 
 export function defaultBrand(orgName: string | null = null): Brand {
   return {
-    name: process.env.PLATFORM_NAME ?? "Blocos",
+    name: process.env.PLATFORM_NAME ?? "Blockin Lab",
     orgName,
     logoUrl: null,
     faviconUrl: null,

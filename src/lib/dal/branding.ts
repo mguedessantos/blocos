@@ -55,7 +55,7 @@ type Image = { bytes: Uint8Array } | null | "remove";
 
 export async function updateBranding(user: CurrentUser, input: BrandingInput, logo: Image, favicon: Image) {
   const org = await requireBrandAdmin(user);
-  if (!hasFeature(org.subscription, "white_label")) throw new AccessError("A marca própria faz parte do plano Escola+.");
+  if (!hasFeature(org.subscription, "white_label")) throw new AccessError("A marca própria precisa de uma assinatura ativa.");
   const colors = brandingColorError(input.primaryColor, input.secondaryColor);
   if (colors) throw new AccessError(colors);
 
@@ -97,7 +97,7 @@ const MAX_CUSTOM_DOMAINS = 2;
 
 export async function addCustomDomain(user: CurrentUser, raw: string) {
   const org = await requireBrandAdmin(user);
-  if (!hasFeature(org.subscription, "white_label")) throw new AccessError("Domínio próprio faz parte do plano Escola+.");
+  if (!hasFeature(org.subscription, "white_label")) throw new AccessError("O domínio próprio precisa de uma assinatura ativa.");
   const check = checkCustomHostname(raw, process.env.ROOT_DOMAIN ?? "localhost:3000");
   if ("error" in check) throw new AccessError(check.error);
   if (org.domains.filter((d) => d.type === "CUSTOM").length >= MAX_CUSTOM_DOMAINS) throw new AccessError(`Cada escola pode ter até ${MAX_CUSTOM_DOMAINS} domínios próprios.`);

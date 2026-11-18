@@ -54,20 +54,21 @@ describe("email com a marca", () => {
 describe("certificado", () => {
   it("gera PDF com logo, acentos e metadados da escola", async () => {
     const bytes = await buildCertificate({
-      studentName: "Ana Conceição", trackTitle: "Mundo 1 · Vila do Palco", courseTitle: "Introdução à Programação de Blocos",
-      lessons: 8, schoolName: "Colégio Aurora", brandName: "Aurora Code", primary: "#0f766e", secondary: "#facc15",
+      studentName: "Ana Conceição", kind: "conclusão", title: "Introdução à Programação de Blocos - Básico",
+      achievement: "concluiu o nível Básico", detail: "do curso Introdução à Programação de Blocos, com 4 mundos e 30 lições de programação.",
+      skills: ["Sequência de comandos", "Movimento e coordenadas", "Repetição (laços)", "Atores, cenários, fantasias e sons"], platformName: "Blockin Lab", schoolName: "Colégio Aurora", brandName: "Aurora Code", primary: "#0f766e", secondary: "#facc15",
       completedAt: new Date("2026-11-12T15:00:00Z"), code: "ABC123DEF0", logo: { bytes: PNG_1x1, kind: "png" },
     });
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
     expect(doc.getAuthor()).toBe("Aurora Code");
-    expect(doc.getTitle()).toContain("Vila do Palco");
+    expect(doc.getTitle()).toContain("Básico");
     const [w, h] = [doc.getPage(0).getWidth(), doc.getPage(0).getHeight()];
     expect(w).toBeGreaterThan(h); // paisagem
   });
   it("funciona sem logo e com caracteres fora do WinAnsi", async () => {
     const bytes = await buildCertificate({
-      studentName: "Zoë 🚀", trackTitle: "T", courseTitle: "C", lessons: 1, schoolName: "E", brandName: "B",
+      studentName: "Zoë 🚀", kind: "participação", title: "Jam 🎮", achievement: "participou", detail: "D", skills: ["Uma só"], platformName: "P", schoolName: "E", brandName: "B",
       primary: "#6d28d9", secondary: "#f59e0b", completedAt: new Date(), code: "X", logo: null,
     });
     expect(bytes.length).toBeGreaterThan(500);

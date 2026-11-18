@@ -35,6 +35,7 @@ describe("subscriptionUpdateFromStripe", () => {
       planId: "escola",
       status: "ACTIVE",
       seats: 120,
+      extraStudents: 0,
       stripeCustomerId: "cus_1",
       stripeSubscriptionId: "sub_1",
       currentPeriodEnd: new Date(1_800_000_000 * 1000),
@@ -45,6 +46,16 @@ describe("subscriptionUpdateFromStripe", () => {
   it("plano fixo não tem assentos; cliente expandido também funciona", () => {
     const u = subscriptionUpdateFromStripe(fakeSub({ customer: { id: "cus_2" } }, { price: { id: "price_prof" }, quantity: 1 }), plans);
     expect(u).toMatchObject({ planId: "professor", seats: null, stripeCustomerId: "cus_2" });
+  });
+  it("adicionais de alunos somam alunos × quantidade, em qualquer ordem dos itens", () => {
+    const sub = fakeSub();
+    sub.items.data = [
+      { price: { id: "price_mais5" }, quantity: 2 },
+      { price: { id: "price_prof" }, quantity: 1, current_period_end: 1_800_000_000 },
+      { price: { id: "price_mais10" }, quantity: 1 },
+    ] as unknown as Stripe.SubscriptionItem[];
+    const u = subscriptionUpdateFromStripe(sub, plans, new Map([["price_mais5", 5], ["price_mais10", 10]]));
+    expect(u).toMatchObject({ planId: "professor", extraStudents: 20, seats: null });
   });
   it("preço desconhecido é ignorado", () => {
     expect(subscriptionUpdateFromStripe(fakeSub({}, { price: { id: "price_x" } }), plans)).toBeNull();

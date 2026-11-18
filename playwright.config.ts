@@ -4,6 +4,7 @@ import { defineConfig } from "@playwright/test";
 // ou deixe o Playwright subir o servidor de dev.
 export default defineConfig({
   testDir: "tests/e2e",
+  workers: 1, // os arquivos compartilham os alunos do seed (ana/bruno/clara); em paralelo um atrapalha o outro
   use: { baseURL: "http://localhost:3000", locale: "pt-BR" },
   webServer: { command: "npm run dev", url: "http://localhost:3000", reuseExistingServer: true, timeout: 120_000 },
 });

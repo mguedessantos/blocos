@@ -13,7 +13,7 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
         <nav aria-label="Principal" className="flex items-center gap-2 text-sm font-extrabold">
           {billingEnabled() && <Link href="/precos" className="rounded-xl px-3 py-2 hover:bg-white/5">Preços</Link>}
           <Link href="/entrar" className="rounded-xl px-3 py-2 hover:bg-white/5">Entrar</Link>
-          <Link href="/cadastro" className={buttonClass("primary", "sm")}>{billingEnabled() ? "Teste grátis" : "Criar conta"}</Link>
+          <Link href="/cadastro" className={buttonClass("primary", "sm")}>Teste gratuitamente</Link>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">{children}</main>

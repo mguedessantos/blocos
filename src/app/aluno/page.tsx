@@ -3,12 +3,17 @@ import Link from "next/link";
 import { BadgeIcon } from "@/components/badge-icon";
 import { Island } from "@/components/island";
 import { buttonClass } from "@/components/ui";
+import { LEVELS } from "@/lib/levels";
 import { requireUser } from "@/lib/dal/auth";
 import { getAchievements } from "@/lib/dal/badges";
 import { listStudentCourses } from "@/lib/dal/lessons";
 import { listStudentClasses } from "@/lib/dal/org";
 
 export const metadata = { title: "Meus mundos" };
+
+/** Níveis (1 básico, 2 intermediário, 3 avançado) com todos os mundos concluídos. */
+const completedLevels = (tracks: { level: number; done: number; total: number }[]) =>
+  [...new Set(tracks.map((t) => t.level))].filter((lv) => tracks.every((t) => t.level !== lv || (t.total > 0 && t.done >= t.total)));
 
 export default async function AlunoPage() {
   const user = await requireUser(["STUDENT"]);
@@ -68,8 +73,23 @@ export default async function AlunoPage() {
             <p className="font-display text-sm font-extrabold uppercase tracking-widest text-star">Curso</p>
             <h2 className="text-2xl font-extrabold sm:text-3xl">{course.title}</h2>
           </div>
+          {[...new Set(course.tracks.map((t) => t.level))].sort((a, b) => a - b).map((lv) => (
+          <div key={lv} className="space-y-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xl font-extrabold sm:text-2xl">Nível {LEVELS[lv]?.name ?? lv}</h3>
+                {LEVELS[lv] && <p className="text-sm font-semibold text-muted">{LEVELS[lv].text}</p>}
+                {course.tracks.some((t) => t.level === lv && t.trialLocked) && <p className="text-sm font-extrabold text-cta">Disponível no acesso completo (o teste grátis vai até o nível Básico).</p>}
+              </div>
+              {completedLevels(course.tracks).includes(lv) && (
+                <a href={`/certificados/nivel/${course.id}/${lv}`} target="_blank" className="inline-flex items-center gap-1 text-sm font-extrabold text-star underline-offset-2 hover:underline" aria-label={`Certificado do nível ${LEVELS[lv]?.name ?? lv} de ${course.title}`}>
+                  <Award aria-hidden className="h-4 w-4" /> Certificado {LEVELS[lv]?.name}
+                </a>
+              )}
+            </div>
           <ol className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
-            {course.tracks.map((t, i) => {
+            {course.tracks.filter((t) => t.level === lv).map((t) => {
+              const i = course.tracks.indexOf(t); // número do mundo no curso (ilha e rótulo)
               const complete = t.total > 0 && t.done >= t.total;
               const current = nextTrack?.id === t.id;
               const [label, ...rest] = t.title.split(" · ");
@@ -87,21 +107,18 @@ export default async function AlunoPage() {
                     <p className="font-display text-sm font-extrabold text-star">{rest.length ? label : `Mundo ${i + 1}`}</p>
                     <p className="font-display text-lg font-extrabold leading-tight">{rest.length ? rest.join(" · ") : t.title}</p>
                     <p className="mt-1 text-xs font-bold text-muted">
-                      {t.done} de {t.total} lições
+                      {t.trialLocked ? "Acesso completo" : `${t.done} de ${t.total} lições`}
                     </p>
                     <div className="mx-auto mt-1.5 h-1.5 w-24 overflow-hidden rounded-full bg-black/40" aria-hidden>
                       <div className="h-full rounded-full bg-star" style={{ width: `${t.total ? Math.round((100 * t.done) / t.total) : 0}%` }} />
                     </div>
                   </Link>
-                  {complete && (
-                    <a href={`/certificados/${t.id}`} target="_blank" className="mt-1 inline-flex w-full items-center justify-center gap-1 text-sm font-extrabold text-star underline-offset-2 hover:underline" aria-label={`Certificado da trilha ${t.title}`}>
-                      <Award aria-hidden className="h-4 w-4" /> Certificado
-                    </a>
-                  )}
                 </li>
               );
             })}
           </ol>
+          </div>
+          ))}
         </section>
       ))}
 

@@ -7,7 +7,7 @@ import { buttonClass, Card } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getJam, listTeamCandidates } from "@/lib/dal/jams";
-import { fmtDateTime, phaseTarget, youtubeEmbed } from "@/lib/jams";
+import { FINALISTS_PER_CATEGORY, fmtDateTime, phaseTarget, youtubeEmbed } from "@/lib/jams";
 import { CreateTeamForm } from "./team-form";
 
 export const metadata = { title: "Game Jam" };
@@ -79,6 +79,19 @@ export default async function JamPage(props: PageProps<"/jams/[slug]">) {
       {d.results && (
         <Card className="space-y-4">
           <h2 className="text-2xl font-extrabold">Resultado</h2>
+          {d.teams.map((t) => {
+            const mine = d.results!.flatMap((g) => g.entries).find((r) => r.isMine && r.entryId === t.entry?.id);
+            const finalist = mine?.place != null && mine.place <= FINALISTS_PER_CATEGORY;
+            return (
+              <div key={t.id} role="status" className="rounded-2xl bg-brand-soft/40 px-4 py-3 text-sm font-semibold">
+                <strong>{t.name}:</strong>{" "}
+                {!t.entry
+                  ? "desclassificada, a entrega não foi completa (vídeo, projeto .sb3 e Como jogar:)."
+                  : `${mine?.place ?? "-"}º lugar. ${finalist ? "A equipe está entre os finalistas!" : "Não ficou entre os finalistas desta vez."}`}
+                {finalist && d.jam.nextSteps && <p className="mt-1 whitespace-pre-line">Próximos passos: {d.jam.nextSteps}</p>}
+              </div>
+            );
+          })}
           {d.results.map((group) => (
           <section key={group.category} className="space-y-3">
           <h3 className="text-xl font-extrabold text-brand">Categoria {group.category}</h3>

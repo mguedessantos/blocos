@@ -6,11 +6,11 @@ import { Card, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/dal/auth";
 import { AccessError } from "@/lib/dal/classes";
 import { getJamForManager, isJamManager, listSchoolsForJam } from "@/lib/dal/jams";
-import { toBrasiliaInput } from "@/lib/jams";
+import { FINALISTS_PER_CATEGORY, fmtDateTime, toBrasiliaInput } from "@/lib/jams";
 import { ROLE_LABEL } from "@/lib/roles";
 import { removeJudgeAction, setPublishedAction } from "../../actions";
 import { JamForm } from "../../jam-form";
-import { AddJudgeForm } from "./judge-form";
+import { AddJudgeForm, CloseJudgingForm } from "./judge-form";
 
 export const metadata = { title: "Gerenciar jam" };
 
@@ -19,7 +19,7 @@ export default async function GerenciarJamPage(props: PageProps<"/jams/gerenciar
   if (!isJamManager(user)) redirect("/jams");
   const { id } = await props.params;
   const created = (await props.searchParams).criada === "1";
-  const [{ jam, phase, entries }, schools] = await Promise.all([
+  const [{ jam, phase, entries, finalists, pending }, schools] = await Promise.all([
     getJamForManager(user, id).catch((e) => {
       if (e instanceof AccessError) notFound();
       throw e;
@@ -81,6 +81,54 @@ export default async function GerenciarJamPage(props: PageProps<"/jams/gerenciar
           {entries.length === 0 && <span className="text-sm text-muted">Nenhuma entrega ainda.</span>}
         </div>
       </Card>
+
+      {(phase === "JULGAMENTO" || phase === "ENCERRADA") && (
+        <Card>
+          <h2 className="mb-1 text-lg font-bold">Finalistas</h2>
+          <p className="mb-3 text-sm text-muted">
+            Os {FINALISTS_PER_CATEGORY} primeiros de cada categoria pela nota final (0 a 100, média dos jurados), para o julgamento final. Empate no {FINALISTS_PER_CATEGORY}º lugar entra também. Mostrado só pelo código anônimo.
+          </p>
+          {finalists.length === 0 && <p className="text-sm text-muted">Nenhuma entrega com nota ainda.</p>}
+          <div className="space-y-4">
+            {finalists.map((g) => (
+              <section key={g.category} aria-label={`Finalistas ${g.category}`}>
+                <h3 className="mb-2 font-extrabold">{g.category}</h3>
+                <ol className="divide-y divide-line">
+                  {g.entries.map((e) => (
+                    <li key={e.entryId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
+                      <span className="w-8 font-extrabold">{e.place}º</span>
+                      <span className="font-mono font-bold">{e.anonCode}</span>
+                      <span className="min-w-0 flex-1 font-semibold">{e.title}</span>
+                      <span className="font-extrabold">{e.score?.toLocaleString("pt-BR")} pts</span>
+                      <span className="text-muted">{e.judges} {e.judges === 1 ? "jurado" : "jurados"}</span>
+                      <a href={`https://youtu.be/${e.youtubeId}`} target="_blank" className="font-semibold text-brand underline">Vídeo</a>
+                      <a href={`/jams/arquivo/${e.entryId}/projeto`} className="font-semibold text-brand underline">Projeto</a>
+                      <a href={`/jams/arquivo/${e.entryId}/documentacao`} className="font-semibold text-brand underline">Documentação</a>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {jam.resultsSentAt && (
+        <Card>
+          <p role="status" className="font-bold">Julgamento encerrado em {fmtDateTime(jam.resultsSentAt)}. O resultado foi enviado às equipes.</p>
+        </Card>
+      )}
+
+      {phase === "JULGAMENTO" && (
+        <Card>
+          <h2 className="mb-1 text-lg font-bold">Encerrar julgamento</h2>
+          <p className="mb-3 text-sm text-muted">
+            O resultado só é revelado quando você encerra, e só depois que todas as entregas forem avaliadas. Cada professor recebe por email a colocação da equipe,
+            se ela está entre os finalistas e os próximos passos; os alunos veem tudo na página da jam. Equipes sem entrega completa ficam desclassificadas.
+          </p>
+          <CloseJudgingForm jamId={jam.id} pending={pending} />
+        </Card>
+      )}
 
       <Card>
         <h2 className="mb-3 text-lg font-bold">Editar jam</h2>

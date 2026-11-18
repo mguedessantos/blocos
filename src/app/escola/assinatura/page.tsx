@@ -91,6 +91,9 @@ export default async function AssinaturaPage(props: PageProps<"/escola/assinatur
                   priceCents: p.priceCents,
                   perSeat: p.perSeat,
                   minSeats: p.minSeats,
+                  maxStudents: p.maxStudents,
+                  maxTeachers: p.maxTeachers,
+                  addons: p.addons.map((a) => ({ id: a.id, name: a.name, students: a.students, priceCents: a.priceCents })),
                   features: p.features,
                   current: sub?.planId === p.id && sub.status !== "TRIAL",
                 }}

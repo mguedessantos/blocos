@@ -113,6 +113,10 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
   lastLoginAt    DateTime?
+  /// "Manter ativo" (link do email de aviso): conta como atividade para a remoção por 1 ano sem uso.
+  keptActiveAt   DateTime?
+  /// Último aviso de remoção por inatividade enviado (evita repetir o mesmo aviso).
+  inactivityNoticeAt DateTime?
 
   teachingClasses Class[]       @relation("ClassTeacher")
   enrollments     Enrollment[]
@@ -144,7 +148,7 @@ model Invite {
 // ───────────────────────────── Cobrança ─────────────────────────────
 
 model Plan {
-  id               String         @id // ex.: "professor", "escola", "escola_plus"
+  id               String         @id // ex.: "professor", "escola"
   name             String
   description      String         @default("")
   order            Int            @default(0)
@@ -155,9 +159,23 @@ model Plan {
   stripePriceId    String?        @unique
   maxStudents      Int? // null = ilimitado / por assento
   maxClasses       Int?
+  maxTeachers      Int? // professores + coordenação; null = ilimitado
   features         String[] // ex.: ["white_label", "ai_tutor", "unlimited_jams"]
   aiMonthlyQuota   Int            @default(0)
   subscriptions    Subscription[]
+  addons           PlanAddon[]
+}
+
+/// Adicional de alunos na mensalidade (ex.: +5, +10 no plano Professor).
+model PlanAddon {
+  id            String  @id // ex.: "professor_mais5"
+  planId        String
+  plan          Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  name          String
+  students      Int
+  priceCents    Int
+  order         Int     @default(0)
+  stripePriceId String? @unique
 }
 
 enum SubscriptionStatus {
@@ -176,6 +194,7 @@ model Subscription {
   plan                 Plan               @relation(fields: [planId], references: [id])
   status               SubscriptionStatus @default(TRIAL)
   seats                Int?
+  extraStudents        Int                @default(0) // soma dos adicionais contratados
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
   trialEndsAt          DateTime?
@@ -440,6 +459,10 @@ model GameJam {
   endsAt        DateTime // entregas fecham
   judgingEndsAt DateTime // resultados revelados
   maxTeamSize   Int       @default(4)
+  /// Julgamento encerrado pelo organizador (só com todas as entregas avaliadas); revela o resultado e avisa as equipes.
+  resultsSentAt DateTime?
+  /// Próximos passos enviados às equipes no encerramento.
+  nextSteps     String    @default("")
   published     Boolean   @default(false)
   createdById   String?
   createdAt     DateTime  @default(now())
@@ -596,6 +619,8 @@ model Announcement {
   cities      String[] // cidades alvo
   orgIds      String[] // escolas específicas
   roles       Role[] // papéis alvo (padrão: coordenação e professores)
+  /// Aviso pessoal (ex.: resultado da equipe na game jam); vazio = segue os filtros acima.
+  userIds     String[]  @default([])
   publishedAt DateTime  @default(now())
   expiresAt   DateTime?
   createdById String?

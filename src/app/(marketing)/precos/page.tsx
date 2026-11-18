@@ -9,7 +9,7 @@ import { getTenant } from "@/lib/tenant";
 export const metadata = { title: "Preços" };
 
 const FEATURE_LABEL: Record<string, string> = {
-  white_label: "Marca, cores e domínio próprios",
+  white_label: "Marca, cores e domínio da sua escola",
   ai_tutor: "Tutor com IA (dicas para os alunos)",
   unlimited_jams: "Game jams ilimitadas",
 };
@@ -25,12 +25,12 @@ export default async function PrecosPage() {
         <h1 className="text-4xl font-extrabold">Planos e preços</h1>
         <p className="text-muted">Teste grátis por 14 dias, sem cartão. Cancele quando quiser.</p>
       </div>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
         {plans.map((p) => (
           <div key={p.id} className="clay clay-hover flex flex-col gap-4 p-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-black/40">
-                {p.orgType === "ESCOLA" ? "Para escolas" : "Para professores"}
+                {p.orgType === "ESCOLA" ? "Para escolas com mais de 100 alunos" : "Para professores e pequenas escolas"}
               </p>
               <h2 className="text-2xl font-extrabold">{p.name}</h2>
               <p className="text-sm text-muted">{p.description}</p>
@@ -43,8 +43,10 @@ export default async function PrecosPage() {
               <li>✓ Todas as trilhas de programação em blocos</li>
               <li>✓ Editor no navegador + envio de projetos .sb3</li>
               <li>✓ Painel de progresso para professores</li>
-              <li>✓ {p.maxStudents ? `Até ${p.maxStudents} alunos` : p.perSeat ? `A partir de ${p.minSeats} alunos` : "Alunos ilimitados"}</li>
-              <li>✓ {p.maxClasses ? `Até ${p.maxClasses} turmas` : "Turmas e professores ilimitados"}</li>
+              <li>✓ {p.maxTeachers === 1 ? "1 professor" : "Professores ilimitados"}</li>
+              <li>✓ {p.maxStudents ? `Até ${p.maxStudents} alunos` : "Alunos ilimitados"}</li>
+              {p.addons.length > 0 && <li>✓ Mais alunos quando precisar: {p.addons.map((a) => `${a.name} por ${formatBRL(a.priceCents)}/mês`).join(" ou ")}</li>}
+              <li>✓ {p.maxClasses ? `Até ${p.maxClasses} turmas` : "Turmas ilimitadas"}</li>
               {p.features.map((f) => <li key={f}>✓ {FEATURE_LABEL[f] ?? f}</li>)}
             </ul>
             <Link href="/cadastro" className="btn">

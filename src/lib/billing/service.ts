@@ -12,7 +12,8 @@ export async function syncStripeSubscription(stripeSubscriptionId: string, orgId
 
   const plans = await db.plan.findMany({ where: { stripePriceId: { not: null } } });
   const byPrice = new Map(plans.map((p) => [p.stripePriceId!, { id: p.id, perSeat: p.perSeat }]));
-  const update = subscriptionUpdateFromStripe(stripeSub, byPrice);
+  const addons = await db.planAddon.findMany({ where: { stripePriceId: { not: null } } });
+  const update = subscriptionUpdateFromStripe(stripeSub, byPrice, new Map(addons.map((a) => [a.stripePriceId!, a.students])));
   if (!update) {
     console.warn(`[stripe] assinatura ${stripeSub.id} com preço desconhecido — ignorada`);
     return;

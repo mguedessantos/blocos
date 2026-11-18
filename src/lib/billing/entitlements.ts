@@ -9,12 +9,14 @@ type PlanLike = {
   minSeats?: number;
   maxStudents?: number | null;
   maxClasses?: number | null;
+  maxTeachers?: number | null;
 };
 
 export type SubscriptionLike = {
   status: SubStatus;
   trialEndsAt: Date | null;
   seats?: number | null;
+  extraStudents?: number;
   plan: PlanLike;
 } | null;
 
@@ -41,12 +43,13 @@ export function hasFeature(sub: SubscriptionLike, feature: Feature, now = new Da
   return isSubscriptionUsable(sub, now) && sub!.plan.features.includes(feature);
 }
 
-/** Máximo de alunos (null = ilimitado). Planos por assento usam a quantidade contratada. */
+/** Máximo de alunos (null = ilimitado): o do plano + adicionais contratados. Planos por assento usam a quantidade contratada. */
 export function studentLimit(sub: SubscriptionLike): number | null {
   if (!billingEnabled()) return null;
   if (!sub) return 0;
   if (sub.plan.perSeat) return sub.seats ?? sub.plan.minSeats ?? 0;
-  return sub.plan.maxStudents ?? null;
+  const max = sub.plan.maxStudents ?? null;
+  return max === null ? null : max + (sub.extraStudents ?? 0);
 }
 
 export function classLimit(sub: SubscriptionLike): number | null {
@@ -62,7 +65,7 @@ export function checkCanAddStudents(sub: SubscriptionLike, current: number, addi
   if (!canWrite(sub, now)) return { ok: false, reason: "Sua assinatura não está ativa. Regularize em Assinatura." };
   const limit = studentLimit(sub);
   if (limit !== null && current + adding > limit) {
-    return { ok: false, reason: `Seu plano permite ${limit} alunos (você tem ${current}). Aumente os assentos em Assinatura.` };
+    return { ok: false, reason: `Seu plano permite ${limit} alunos (você tem ${current}). Contrate mais alunos em Assinatura.` };
   }
   return { ok: true };
 }
@@ -73,6 +76,15 @@ export function checkCanAddClass(sub: SubscriptionLike, current: number, now = n
   const limit = classLimit(sub);
   if (limit !== null && current + 1 > limit) {
     return { ok: false, reason: `Seu plano permite ${limit} turmas. Faça upgrade em Assinatura.` };
+  }
+  return { ok: true };
+}
+
+/** Professores + coordenação. Regra do plano (não de pagamento): vale mesmo com a cobrança desligada. */
+export function checkCanAddTeacher(sub: SubscriptionLike, current: number): LimitCheck {
+  const limit = sub?.plan.maxTeachers ?? null;
+  if (limit !== null && current + 1 > limit) {
+    return { ok: false, reason: limit === 1 ? "Este plano é para 1 professor. Para ter mais professores, mude para o plano Escola." : `Seu plano permite ${limit} professores.` };
   }
   return { ok: true };
 }

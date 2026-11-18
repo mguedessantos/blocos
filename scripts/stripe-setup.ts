@@ -32,7 +32,7 @@ async function main() {
       const product =
         products.data[0] ??
         (await stripe.products.create({
-          name: `Blocos — ${plan.name}`,
+          name: `Blockin Lab — ${plan.name}`,
           description: plan.description || undefined,
           metadata: { planId: plan.id },
         }));
@@ -50,6 +50,24 @@ async function main() {
       console.log(`= ${plan.name}: preço já existe ${price.id}`);
     }
     await db.plan.update({ where: { id: plan.id }, data: { stripePriceId: price.id } });
+  }
+  // Adicionais de alunos (ex.: +5, +10): um produto por adicional, preço mensal fixo.
+  for (const addon of await db.planAddon.findMany({ orderBy: { order: "asc" } })) {
+    const lookupKey = `blocos_addon_${addon.id}_${addon.priceCents}_brl_month`;
+    let price = (await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 })).data[0];
+    if (!price) {
+      const product =
+        (await stripe.products.search({ query: `metadata['addonId']:'${addon.id}'` })).data[0] ??
+        (await stripe.products.create({ name: `Blockin Lab — ${addon.name}`, metadata: { addonId: addon.id } }));
+      price = await stripe.prices.create({
+        product: product.id, currency: "brl", unit_amount: addon.priceCents, recurring: { interval: "month" },
+        lookup_key: lookupKey, nickname: addon.name, metadata: { addonId: addon.id },
+      });
+      console.log(`+ ${addon.name}: preço criado ${price.id}`);
+    } else {
+      console.log(`= ${addon.name}: preço já existe ${price.id}`);
+    }
+    await db.planAddon.update({ where: { id: addon.id }, data: { stripePriceId: price.id } });
   }
   console.log("Pronto ✔  Lembre de ativar o Portal do Cliente no Dashboard do Stripe.");
 }

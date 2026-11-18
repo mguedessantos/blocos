@@ -35,7 +35,7 @@ export default async function JudgeEntryPage(props: PageProps<"/jurado/[jamId]/[
           </div>
           <GamePlayer src={`/jams/arquivo/${e.id}/projeto`} title={`Projeto ${e.anonCode}`} />
           <Card>
-            <h2 className="mb-1 font-extrabold">Descrição da equipe</h2>
+            <h2 className="mb-1 font-extrabold">Como jogar:</h2>
             <p className="whitespace-pre-line">{e.description}</p>
           </Card>
           <div className="flex flex-wrap gap-2">

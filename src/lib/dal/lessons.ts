@@ -38,15 +38,27 @@ const unlockedForTests = cache(async (userId: string) => {
   return u?.role === "STUDENT" && !!u.username && names.includes(u.username);
 });
 
+export const TRIAL_LOCK_MESSAGE = "No teste grátis só o nível Básico fica aberto. O acesso completo vem com a assinatura.";
+const lockedMessage = (trial: boolean) => (trial ? TRIAL_LOCK_MESSAGE : "Conclua a lição anterior primeiro.");
+
+/** Teste grátis (cadastro sem pagamento e sem liberação do dono): só o nível Básico abre. */
+export const TRIAL_MAX_LEVEL = 1;
+export const trialOnlyBasic = cache(async (organizationId: string | null) => {
+  if (!organizationId) return false;
+  const sub = await db.subscription.findUnique({ where: { organizationId }, select: { status: true } });
+  return sub?.status === "TRIAL";
+});
+
 /** Lições de várias trilhas (uma consulta só), com o progresso do aluno e a liberação em sequência. */
-async function lessonsByTrack(userId: string, trackIds: string[]) {
-  const unlocked = await unlockedForTests(userId);
+async function lessonsByTrack(user: CurrentUser, trackIds: string[]) {
+  const userId = user.id;
+  const [unlocked, trial] = await Promise.all([unlockedForTests(userId), trialOnlyBasic(user.organizationId)]);
   const lessons = await db.lesson.findMany({
     where: { module: { trackId: { in: trackIds } }, draft: false },
     orderBy: lessonOrder,
     select: {
       id: true, title: true, type: true, xp: true,
-      module: { select: { id: true, title: true, trackId: true } },
+      module: { select: { id: true, title: true, trackId: true, track: { select: { level: true } } } },
       progress: { where: { userId }, select: { status: true, stars: true } },
     },
   });
@@ -56,8 +68,9 @@ async function lessonsByTrack(userId: string, trackIds: string[]) {
   function toItem(l: (typeof lessons)[number]) {
     const p = l.progress[0];
     const done = p?.status === "CONCLUIDO";
-    const { trackId, ...module } = l.module;
-    const item = { id: l.id, title: l.title, type: l.type, xp: l.xp, module, done, stars: p?.stars ?? 0, locked: prevDone.get(trackId) === false && !unlocked };
+    const { trackId, track, ...module } = l.module;
+    const trialLocked = trial && track.level > TRIAL_MAX_LEVEL;
+    const item = { id: l.id, title: l.title, type: l.type, xp: l.xp, module, done, stars: p?.stars ?? 0, trialLocked, locked: trialLocked || (prevDone.get(trackId) === false && !unlocked) };
     prevDone.set(trackId, done);
     return item;
   }
@@ -65,7 +78,7 @@ async function lessonsByTrack(userId: string, trackIds: string[]) {
   return out;
 }
 
-const trackLessons = async (userId: string, trackId: string) => (await lessonsByTrack(userId, [trackId])).get(trackId)!;
+const trackLessons = async (user: CurrentUser, trackId: string) => (await lessonsByTrack(user, [trackId])).get(trackId)!;
 
 /** Cursos liberados para o aluno, com o progresso de cada trilha. */
 export async function listStudentCourses(user: CurrentUser) {
@@ -77,12 +90,12 @@ export async function listStudentCourses(user: CurrentUser) {
       tracks: { where: { published: true }, orderBy: [{ level: "asc" }, { order: "asc" }], select: { id: true, title: true, description: true, level: true } },
     },
   });
-  const byTrack = await lessonsByTrack(user.id, courses.flatMap((c) => c.tracks.map((t) => t.id)));
+  const [byTrack, trial] = await Promise.all([lessonsByTrack(user, courses.flatMap((c) => c.tracks.map((t) => t.id))), trialOnlyBasic(user.organizationId)]);
   return courses.map((c) => ({
     ...c,
     tracks: c.tracks.map((t) => {
       const lessons = byTrack.get(t.id)!;
-      return { ...t, total: lessons.length, done: lessons.filter((l) => l.done).length, next: lessons.find((l) => !l.done && !l.locked) };
+      return { ...t, trialLocked: trial && t.level > TRIAL_MAX_LEVEL, total: lessons.length, done: lessons.filter((l) => l.done).length, next: lessons.find((l) => !l.done && !l.locked) };
     }),
   }));
 }
@@ -101,7 +114,7 @@ export async function getStudentTrack(user: CurrentUser, trackId: string) {
     : 0;
   const { courseId: _c, level: _l, order: _o, ...rest } = track;
   void _c; void _l; void _o;
-  return { ...rest, worldIndex: before + 1, lessons: await trackLessons(user.id, track.id) };
+  return { ...rest, worldIndex: before + 1, lessons: await trackLessons(user, track.id) };
 }
 
 export async function getStudentLesson(user: CurrentUser, lessonId: string) {
@@ -110,12 +123,13 @@ export async function getStudentLesson(user: CurrentUser, lessonId: string) {
     include: { module: { select: { title: true, track: { select: { id: true, title: true } } } } },
   });
   if (!lesson) throw new AccessError("Lição não encontrada.");
-  const lessons = await trackLessons(user.id, lesson.module.track.id);
+  const lessons = await trackLessons(user, lesson.module.track.id);
   const idx = lessons.findIndex((l) => l.id === lesson.id);
   const me = lessons[idx];
   return {
     lesson,
     locked: me.locked,
+    trialLocked: me.trialLocked,
     done: me.done,
     stars: me.stars,
     position: { index: idx + 1, total: lessons.length },
@@ -136,8 +150,8 @@ export type AttemptOutcome = { ok: true; result: CheckResult; xpGained: number; 
 
 /** Verifica no SERVIDOR (o resultado do navegador nunca é confiável) e registra o progresso. */
 export async function submitAttempt(user: CurrentUser, lessonId: string, workspaceJson: string): Promise<AttemptOutcome> {
-  const { lesson, locked } = await getStudentLesson(user, lessonId);
-  if (locked) return { ok: false, error: "Conclua a lição anterior primeiro." };
+  const { lesson, locked, trialLocked } = await getStudentLesson(user, lessonId);
+  if (locked) return { ok: false, error: lockedMessage(trialLocked) };
   if (lesson.type === "TEORIA") return { ok: false, error: "Esta lição não tem exercício." };
   if (typeof workspaceJson !== "string" || workspaceJson.length > MAX_WORKSPACE_BYTES) return { ok: false, error: "Programa grande demais." };
   let workspace: ReturnType<typeof normalizeProject>;
@@ -161,8 +175,8 @@ export async function submitAttempt(user: CurrentUser, lessonId: string, workspa
 
 /** Lições de teoria/demonstração: concluir é só marcar como lida. */
 export async function completeTheory(user: CurrentUser, lessonId: string) {
-  const { lesson, locked, nextLessonId } = await getStudentLesson(user, lessonId);
-  if (locked) return { ok: false as const, error: "Conclua a lição anterior primeiro." };
+  const { lesson, locked, trialLocked, nextLessonId } = await getStudentLesson(user, lessonId);
+  if (locked) return { ok: false as const, error: lockedMessage(trialLocked) };
   if (lesson.type !== "TEORIA" && lesson.type !== "DEMO") return { ok: false as const, error: "Resolva o exercício para concluir." };
   const xpGained = await recordProgress(user, lesson.id, lesson.xp, true, 3, null);
   return { ok: true as const, xpGained, newBadges: await awardBadges(user), nextLessonId, trackId: lesson.module.track.id };
@@ -273,8 +287,8 @@ export async function getCatalogTrack(user: CurrentUser, trackId: string) {
 
 /** Guarda o último .sb3 do aluno nesta lição (substitui o anterior). Lança Sb3Error se o arquivo não for um projeto. */
 export async function saveLessonProject(user: CurrentUser, lessonId: string, bytes: Uint8Array) {
-  const { lesson, locked } = await getStudentLesson(user, lessonId);
-  if (locked) throw new AccessError("Conclua a lição anterior primeiro.");
+  const { lesson, locked, trialLocked } = await getStudentLesson(user, lessonId);
+  if (locked) throw new AccessError(lockedMessage(trialLocked));
   await readSb3(bytes); // valida: zip com project.json, dentro do limite
   const key = await putFile("projetos", bytes);
   const where = { userId_lessonId: { userId: user.id, lessonId: lesson.id } };

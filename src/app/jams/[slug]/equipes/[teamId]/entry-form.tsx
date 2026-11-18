@@ -15,12 +15,12 @@ export function EntryForm({ teamId, hasEntry, hasStudio, maxDescription, initial
     <form action={action} className="space-y-4">
       <Input label="Nome do jogo" name="title" required maxLength={60} defaultValue={initial?.title} />
       <label className="flex flex-col gap-1.5 text-sm font-bold">
-        Descrição breve
+        Como jogar:
         <textarea
           name="description" required rows={4} maxLength={maxDescription} value={desc} onChange={(e) => setDesc(e.target.value)}
           className="rounded-2xl border-2 border-line bg-surface text-foreground px-4 py-3 text-base font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
         />
-        <span className="text-xs font-semibold text-muted">{desc.length}/{maxDescription} · Conte do que se trata o jogo e como se joga.</span>
+        <span className="text-xs font-semibold text-muted">{desc.length}/{maxDescription} · Um manual do jogo: o objetivo e as teclas ou cliques. Não escreva o nome da escola, da cidade ou dos alunos.</span>
       </label>
       <Input label="Link do vídeo no YouTube" name="youtubeUrl" type="url" required defaultValue={initial?.youtubeUrl} placeholder="https://youtu.be/..." hint="Grave o jogo funcionando. Pode publicar como “não listado”, num canal que não tenha o nome da escola." />
       <fieldset className="space-y-2 text-sm font-bold">
@@ -51,7 +51,7 @@ export function EntryForm({ teamId, hasEntry, hasStudio, maxDescription, initial
       {state?.ok && <p role="status" className="font-bold text-green-700">{state.ok}</p>}
       {state?.leaks && state.leaks.length > 0 && (
         <p role="alert" className="rounded-2xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
-          Atenção: encontramos {state.leaks.map((l) => `“${l}”`).join(", ")} no jogo, na descrição ou na documentação. Isso pode revelar quem vocês são aos jurados — troque e envie de novo.
+          Atenção: encontramos {state.leaks.map((l) => `“${l}”`).join(", ")} no jogo, no “Como jogar” ou na documentação. Isso pode revelar quem vocês são aos jurados — troque e envie de novo.
         </p>
       )}
       <Button disabled={pending}>{pending ? "Enviando..." : hasEntry ? "Atualizar entrega" : "Enviar entrega"}</Button>

@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { FileError, findIdentityLeaks, sanitizeDocx, sanitizePdf, sanitizeSb3 } from "@/lib/jam-files";
-import { categoryFor, DEFAULT_CATEGORIES, jamOpenTo, jamPhase, newAnonCode, parseYouTube, rangeName, rankEntries, slugifyJam, validateCategories, validateJamDates } from "@/lib/jams";
+import { categoryFor, DEFAULT_CATEGORIES, finalists, jamOpenTo, jamPhase, newAnonCode, parseYouTube, rangeName, rankEntries, slugifyJam, validateCategories, validateJamDates } from "@/lib/jams";
 import { projectJson } from "./sb3-builder";
 
 const d = (s: string) => new Date(s);
@@ -180,5 +180,28 @@ describe("categorias por ano escolar", () => {
   it("nomes das faixas", () => {
     expect(rangeName(5, 5)).toBe("5º ano");
     expect(rangeName(2, 9)).toBe("2º ao 9º ano");
+  });
+});
+
+describe("finalistas", () => {
+  it("os 5 primeiros com nota, empate no 5º entra, sem nota fica de fora", () => {
+    const r = [1, 2, 3, 4, 5, 5, 7].map((place, i) => ({ id: i, place })).concat([{ id: 9, place: null as unknown as number }]);
+    expect(finalists(r).map((x) => x.id)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(finalists([{ place: 1 }, { place: null }])).toHaveLength(1);
+  });
+});
+
+describe("unjudgedEntries", () => {
+  it("só conta avaliação completa de pelo menos um jurado", async () => {
+    const { unjudgedEntries } = await import("@/lib/jams");
+    const crit = [{ id: "c1" }, { id: "c2" }];
+    const s = (entryId: string, criterionId: string, judgeId: string) => ({ entryId, criterionId, judgeId, value: 5 });
+    expect(unjudgedEntries(["a", "b", "c"], crit, [s("a", "c1", "j1"), s("a", "c2", "j1"), s("b", "c1", "j1"), s("b", "c2", "j2")])).toEqual(["b", "c"]);
+  });
+  it("encerrada só pelo organizador depois da data", async () => {
+    const { jamPhase } = await import("@/lib/jams");
+    const d = { published: true, startsAt: new Date(0), endsAt: new Date(1), judgingEndsAt: new Date(2) };
+    expect(jamPhase({ ...d, resultsSentAt: null })).toBe("JULGAMENTO");
+    expect(jamPhase({ ...d, resultsSentAt: new Date() })).toBe("ENCERRADA");
   });
 });

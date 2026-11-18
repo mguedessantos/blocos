@@ -174,12 +174,30 @@ Aparece um aviso com os nomes dos alunos que tentaram **3 vezes ou mais** sem co
     slug: "certificados",
     title: "Certificados",
     body: `
-Quando o aluno conclui todas as lições obrigatórias de um mundo, a plataforma gera um **certificado em PDF** com a marca da escola.
+A plataforma gera **certificados em PDF** com a marca da escola:
 
-- O aluno baixa pelo botão **Certificado** no card do mundo.
-- Você baixa pelo mapa de progresso: clique no **ícone de certificado** ao lado do aluno.
+- **Por nível:** Básico, Intermediário e Avançado. Sai quando o aluno conclui todas as lições de todos os mundos daquele nível.
+- **Participação em Game Jam:** sai para cada aluno da equipe que entregou o jogo, depois que a jam termina.
+
+Como baixar:
+
+- O aluno baixa os de nível pelo botão **Certificado** ao lado do nome do curso, e o da jam na página da equipe.
+- Você baixa os de nível pelo mapa de progresso: clique no **ícone de certificado** ao lado do aluno (B, I ou A). Os da jam ficam na página da equipe.
 
 > Dica: o certificado tem um código de conferência. Ele não mostra dados além do primeiro nome do aluno e da escola.
+`,
+  },
+  {
+    slug: "contas-sem-uso",
+    title: "Contas sem uso",
+    body: `
+Para proteger os dados das crianças, **contas sem nenhum acesso por 1 ano são apagadas de vez**, com todo o progresso.
+
+- Você recebe um email **30 dias** e outro **7 dias** antes, com a lista dos seus alunos que vão ser removidos.
+- Se eles ainda vão usar a plataforma, clique em **Manter alunos ativos** no email: as contas ficam por mais 1 ano.
+- Sua própria conta segue a mesma regra. Para mantê-la, basta entrar na plataforma ou usar o botão do email.
+
+> Se um(a) professor(a) da escola for removido(a), as turmas passam para outra pessoa da equipe. Nenhum aluno ativo é apagado por isso.
 `,
   },
   {
@@ -195,6 +213,7 @@ A Game Jam é uma competição em que as equipes criam um jogo sobre um tema, de
 - **Em andamento**: as equipes entregam (e podem atualizar) até o fim do prazo. O cronômetro mostra quanto falta.
 - **Em julgamento**: os jurados avaliam.
 - **Encerrada**: saem o resultado, os prêmios e os comentários dos jurados para cada equipe.
+- **Para quem organiza a jam**: durante o julgamento, a página **Gerenciar** mostra os **finalistas** de cada categoria, os 5 primeiros pela nota final (empate no 5º lugar entra também), para o julgamento final.
 
 ## Inscrever uma equipe
 1. Abra a jam e clique em **+ Inscrever nova equipe**.
@@ -215,7 +234,7 @@ Depois de inscrita, cada equipe tem um **estúdio**: o editor de blocos completo
 ## A entrega
 Você ou os alunos da equipe abrem a equipe e clicam em **Entregar**. A entrega tem quatro partes:
 1. O **projeto** do jogo: escolha **Usar o jogo do estúdio da equipe** ou envie um arquivo .sb3 do PictoBlox ou do Scratch.
-2. Uma **descrição breve** do jogo.
+2. O **Como jogar**: um manual curto do jogo (objetivo e controles). Nada que identifique a escola, a cidade ou os alunos.
 3. O **link do YouTube** com o jogo funcionando. Pode ser um vídeo "não listado".
 4. A **documentação** com as etapas de desenvolvimento (PDF ou Word).
 

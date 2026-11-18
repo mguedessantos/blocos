@@ -21,9 +21,10 @@ async function signup(page: Page, opts: { type?: "Escola" | "Professor"; org: st
 test("página de preços lista os planos em reais", async ({ page }) => {
   test.skip(!BILLING, "cobrança desativada (BILLING_ENABLED)");
   await page.goto("/precos");
-  await expect(page.getByRole("heading", { name: "Escola+" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Escola", exact: true })).toBeVisible();
   await expect(page.getByText("R$ 49,00")).toBeVisible();
-  await expect(page.getByText("R$ 12,00")).toBeVisible();
+  await expect(page.getByText("R$ 690,00")).toBeVisible();
+  await expect(page.getByText(/\+5 alunos por R\$ 15,00/)).toBeVisible();
 });
 
 test("preços e cadastro não aparecem no domínio de uma escola", async ({ page }) => {
@@ -47,13 +48,14 @@ test("escola se cadastra, começa o teste e vê a assinatura", async ({ page }) 
   await page.getByRole("link", { name: "Assinar agora" }).click();
   await expect(page).toHaveURL("/escola/assinatura");
   await expect(page.getByText("Teste grátis", { exact: true })).toBeVisible();
-  // planos da escola (não o de professor)
-  await expect(page.getByRole("heading", { name: "Escola+" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Professor" })).toHaveCount(0);
-  // total por aluno recalcula
-  const card = page.locator("form", { has: page.getByRole("heading", { name: "Escola+" }) });
-  await card.getByLabel("Número de alunos").fill("50");
-  await expect(card.getByText("R$ 600,00/mês")).toBeVisible();
+  // os dois planos aparecem (pequenas escolas podem usar o plano Professor)
+  await expect(page.getByRole("heading", { name: "Escola", exact: true })).toBeVisible();
+  const card = page.locator("form", { has: page.getByRole("heading", { name: /Professor Independente/ }) });
+  // adicionais recalculam o total: 49 + 2×15 + 25 = 104, até 30 alunos
+  await card.getByLabel(/Adicional \+5 alunos/).fill("2");
+  await card.getByLabel(/Adicional \+10 alunos/).fill("1");
+  await expect(card.getByText("R$ 104,00/mês")).toBeVisible();
+  await expect(card.getByText("30 alunos")).toBeVisible();
 
   if (!process.env.STRIPE_SECRET_KEY) {
     await expect(page.getByText(/não estão configurados/)).toBeVisible();
@@ -66,7 +68,7 @@ test("escola se cadastra, começa o teste e vê a assinatura", async ({ page }) 
   await page.getByLabel("Senha").fill("senhaforte123");
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(`http://${slug}.localhost:3000/escola`);
-  // no teste a escola usa o Escola+, então o domínio já aparece com a marca dela (nome no título)
+  // no teste a escola usa o plano Escola (com marca própria), então o domínio já aparece com a marca dela (nome no título)
   await expect(page).toHaveTitle(new RegExp(`Escola ${run}`));
 });
 

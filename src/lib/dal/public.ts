@@ -8,6 +8,7 @@ export async function listPublicPlans() {
     select: {
       id: true, name: true, description: true, priceCents: true, perSeat: true,
       minSeats: true, maxStudents: true, maxClasses: true, features: true, orgType: true,
+      maxTeachers: true, addons: { orderBy: { order: "asc" }, select: { id: true, name: true, priceCents: true } },
     },
   });
 }

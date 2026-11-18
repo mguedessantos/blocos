@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { db } from "../db";
+import { assertCanAddTeacher } from "./billing";
 import type { CurrentUser } from "./auth";
 import { AccessError } from "./classes";
 
@@ -35,6 +36,8 @@ export async function createTeacherInvite(user: CurrentUser, email: string) {
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
     return { ok: false as const, reason: "Já existe uma conta com este email." };
   }
+  const limit = await assertCanAddTeacher(org.id);
+  if (!limit.ok) return { ok: false as const, reason: limit.reason };
   await db.invite.deleteMany({ where: { organizationId: org.id, email, acceptedAt: null } }); // reenviar = novo link
   const invite = await db.invite.create({
     data: {
@@ -77,6 +80,8 @@ export async function acceptInvite(token: string, tenantOrgId: string | null, na
   if (await db.user.findUnique({ where: { email: invite.email }, select: { id: true } })) {
     return { ok: false as const, reason: "Já existe uma conta com este email. Tente entrar." };
   }
+  const limit = await assertCanAddTeacher(invite.organizationId);
+  if (!limit.ok) return { ok: false as const, reason: limit.reason };
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await db.$transaction(async (tx) => {
     const created = await tx.user.create({

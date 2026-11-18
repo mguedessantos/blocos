@@ -16,6 +16,7 @@ import {
   removeOrganization,
   removeUser,
   restoreOrganization,
+  setFullAccess,
   restoreUser,
 } from "@/lib/dal/platform";
 
@@ -62,6 +63,11 @@ export async function removeUserAction(userId: string, _: FormState, formData: F
 
 export async function restoreOrgAction(orgId: string) {
   await restoreOrganization(await owner(), orgId);
+  refresh();
+}
+
+export async function setFullAccessAction(orgId: string, full: boolean) {
+  await setFullAccess(await owner(), orgId, full);
   refresh();
 }
 
