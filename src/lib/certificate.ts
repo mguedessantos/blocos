@@ -20,7 +20,7 @@ export type CertificateData = {
 };
 
 // shortcut: domínio fixo da plataforma; trocar por variável se houver outro domínio principal.
-const PLATFORM_SITE = "blockinlab.com.br";
+const PLATFORM_SITE = "blokinlab.com.br";
 
 const hex = (h: string) => {
   const n = parseInt(h.slice(1), 16);

@@ -101,7 +101,7 @@ Plano completo: ~/.claude/plans/i-want-to-create-refactored-floyd.md
 - Certificados (só estes dois tipos): nível `/certificados/nivel/<curso>/<1|2|3>` (todas as lições dos mundos do nível) e Game Jam `/certificados/jam/<equipe>` (equipe entregou e a jam está ENCERRADA); `?aluno=<id>` para professor/coordenação. Nomes dos níveis em `src/lib/levels.ts`. PDF em `src/lib/certificate.ts` (pdf-lib, fontes WinAnsi).
 
 ## Produção (Vercel + Supabase)
-- Site: https://blockinlab.com.br (nome da plataforma: Blockin Lab; antigo https://blocos-two.vercel.app) (projeto Vercel `blocos`, região gru1 = São Paulo). Banco e arquivos: projeto Supabase em sa-east-1 (São Paulo), bucket privado `blocos-arquivos`. Site e banco PRECISAM ficar na mesma região (cada página faz várias consultas).
+- Site: https://blokinlab.com.br (nome da plataforma: Blockin Lab; antigo https://blocos-two.vercel.app) (projeto Vercel `blocos`, região gru1 = São Paulo). Banco e arquivos: projeto Supabase em sa-east-1 (São Paulo), bucket privado `blocos-arquivos`. Site e banco PRECISAM ficar na mesma região (cada página faz várias consultas).
 - Segredos de produção ficam SÓ em `.env.prod` (ignorado pelo git) e nas variáveis da Vercel. Nunca exibir valores.
 - Comandos contra produção usam `DOTENV_CONFIG_PATH=.env.prod`:
   - migrações: `DOTENV_CONFIG_PATH=.env.prod npx prisma migrate deploy` (o build da Vercel também roda `prisma migrate deploy`)
