@@ -83,6 +83,27 @@
   .anonimo b { font-family: var(--font-mono); font-size: 18px; }
   .estudio { display: grid; gap: 6px; width: min(260px, 80%); }
   .estudio i { font-style: normal; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+  /* ritmo: cada seção com a altura do seu conteúdo e o mesmo respiro em cima e embaixo (o kit forçava uma tela inteira por seção e sobrava espaço vazio) */
+  main > section.section, footer.closing { height: auto !important; min-height: 0 !important; padding: 112px 0 !important; display: block !important; }
+  main > section + section.section { padding-top: 0 !important; }
+  main > section.section > .wrap, footer.closing > .wrap { height: auto !important; display: flex; flex-direction: column; gap: var(--s-7); }
+  main > section.section > .wrap > .grid { align-items: center; }
+  .hero__texto { align-self: center; }
+  /* capturas inteiras, sem corte */
+  #editor .tela.fill { flex: none; }
+  #editor .tela img { height: auto !important; object-fit: contain !important; }
+  #professor .captura img { display: block; width: 100%; height: auto; border-radius: var(--r-lg); border: 1px solid rgb(255 255 255 / .12); }
+  main > .hero { height: auto !important; min-height: 0 !important; padding-bottom: 48px !important; }
+  main > .hero .ly-collage { aspect-ratio: 16 / 11; height: auto !important; }
+  #frase .wrap { gap: var(--s-4); }
+  main > section.section .section-head { margin-bottom: 0 !important; }
+  #jam .card { padding-bottom: var(--s-5); }
+  #jam .panel { border-radius: var(--r-md); }
+  footer.closing { padding-bottom: 48px !important; }
+  footer.closing .closing__links { margin-top: 64px; }
+  @media (max-width: 639px) {
+    main > section.section, footer.closing { padding: 64px 0 !important; }
+  }
 </style>
 </head>
 <body>
@@ -115,11 +136,12 @@
 <main id="top">
   <section class="hero hero--triptych" data-enter aria-labelledby="hero-h">
     <div class="wrap"><div class="hero-text grid hero__grid">
-      <div class="span-3">
+      <div class="span-4 stack-6 hero__texto">
         <h1 id="hero-h">Programação em blocos para escolas</h1>
         <p class="hero__lead">Do 2º ao 9º ano, os alunos criam 11 jogos no navegador. Cada lição se corrige sozinha.</p>
+        <div><a class="btn btn--primary btn--xl" href="/cadastro">Teste gratuitamente</a></div>
       </div>
-      <div class="ly-collage span-6 start-4" role="img" aria-label="O mapa dos mundos do aluno, uma lição no editor de blocos e o progresso da turma no painel do professor">
+      <div class="ly-collage span-8 start-5" role="img" aria-label="O mapa dos mundos do aluno, uma lição no editor de blocos e o progresso da turma no painel do professor">
         <div class="ly-collage__set is-on">
           <div class="ly-piece" style="left: 4%; top: 6%; width: 78%; height: 62%"><img src="/inicio/img/mundos.png" alt=""></div>
           <div class="ly-piece pc-chip" style="left: 62%; top: 74%; width: 30%">3 estrelas · +10 XP</div>
@@ -134,7 +156,6 @@
           <div class="ly-piece pc-card" style="left: 30%; top: 58%; width: 50%"><b>Certificado em PDF</b><span>Nível Básico, Intermediário e Avançado</span></div>
         </div>
       </div>
-      <div class="span-3 start-10 hero__cta"><a class="btn btn--primary" href="/cadastro">Teste gratuitamente</a></div>
     </div></div>
   </section>
 
@@ -185,7 +206,7 @@
           </ul>
           <a class="link" href="#perguntas">Ler as perguntas frequentes</a>
         </div>
-        <div class="frame frame--split span-6 start-7"><img class="frame__img" src="/inicio/img/progresso.png" alt="Progresso da turma: Ana, Bruno e Clara, com um quadrado verde para cada lição concluída" loading="lazy"></div>
+        <div class="span-7 start-6 captura"><img src="/inicio/img/progresso.png" alt="Progresso da turma: Ana, Bruno e Clara, com um quadrado verde para cada lição concluída" loading="lazy"></div>
       </div>
     </div>
   </section>
